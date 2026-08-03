@@ -54,9 +54,64 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
     setSavedMsg(`Đang chỉnh ${id}.`);
   }
 
+  /**
+   * Optimistic bump with immediate write to Supabase. Computes the new value,
+   * updates local state immediately, and fires a background write. On error,
+   * rolls back to the last server-confirmed value (activeMatch.sa/sb).
+   */
   function bump(side: "a" | "b", delta: number) {
-    if (side === "a") setDraftA((v) => Math.max(0, v + delta));
-    else setDraftB((v) => Math.max(0, v + delta));
+    if (side === "a") {
+      const newVal = Math.max(0, draftA + delta);
+      setDraftA(newVal);
+      void commitLive(newVal, draftB);
+    } else {
+      const newVal = Math.max(0, draftB + delta);
+      setDraftB(newVal);
+      void commitLive(draftA, newVal);
+    }
+  }
+
+  /**
+   * Persists a live score immediately (triggered by ± taps). Writes to `public.matches` with
+   * `state: 'live'` via the authenticated browser client, with the same RLS guard as `commit()`.
+   * On error (including RLS rejection), rolls back local state to the last server-confirmed values
+   * from activeMatch.
+   */
+  async function commitLive(scoreA: number, scoreB: number) {
+    if (!activeMatch || saving) return;
+    setSaving(true);
+
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const { data, error } = await supabase
+        .from("matches")
+        .update({ score_a: scoreA, score_b: scoreB, state: "live" })
+        .eq("code", activeMatch.id)
+        .select();
+
+      if (error) {
+        setSavedMsg(`Lỗi khi lưu ${activeMatch.id}: ${error.message}`);
+        setDraftA(activeMatch.sa);
+        setDraftB(activeMatch.sb);
+        return;
+      }
+      if (!data || data.length === 0) {
+        setSavedMsg(`Không thể lưu ${activeMatch.id}: tài khoản này không có quyền trọng tài.`);
+        setDraftA(activeMatch.sa);
+        setDraftB(activeMatch.sb);
+        return;
+      }
+
+      // Optimistic local patch ahead of the realtime echo
+      setMatches((prev) => prev.map((m) => (m.id === activeMatch.id ? { ...m, sa: scoreA, sb: scoreB, state: "live" } : m)));
+      setSavedMsg(`Đã lưu ${activeMatch.id} lúc ${new Date().toLocaleTimeString("vi-VN")}`);
+    } catch (err) {
+      setSavedMsg(`Lỗi khi lưu ${activeMatch.id}: ${err instanceof Error ? err.message : String(err)}`);
+      setDraftA(activeMatch.sa);
+      setDraftB(activeMatch.sb);
+    } finally {
+      setSaving(false);
+    }
   }
 
   /**
@@ -304,30 +359,7 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
             </div>
           </div>
 
-          <div style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button
-              type="button"
-              disabled={saving}
-              onClick={() => {
-                void commit("live");
-              }}
-              style={{
-                flex: 1,
-                minWidth: 150,
-                height: 50,
-                borderRadius: 12,
-                border: "1px solid rgba(255,255,255,.22)",
-                background: "transparent",
-                color: "#FFFDF7",
-                fontSize: 14,
-                fontWeight: 700,
-                cursor: saving ? "not-allowed" : "pointer",
-                opacity: saving ? 0.6 : 1,
-                fontFamily: "var(--font-archivo), sans-serif",
-              }}
-            >
-              Lưu tỉ số đang đấu
-            </button>
+          <div style={{ marginTop: 16, display: "flex", gap: 10 }}>
             <button
               type="button"
               disabled={saving}
