@@ -11,11 +11,28 @@ function pad2(n: number): string {
 }
 
 function useCountdown(target: string) {
+  const [mounted, setMounted] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [mounted]);
+
+  if (!mounted) {
+    return [
+      { v: "00", l: "NGÀY" },
+      { v: "00", l: "GIỜ" },
+      { v: "00", l: "PHÚT" },
+      { v: "00", l: "GIÂY" },
+    ];
+  }
 
   const diff = Math.max(0, new Date(target).getTime() - now);
   const days = Math.floor(diff / 864e5);
