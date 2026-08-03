@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
 
 interface IRefereeAuthContextValue {
@@ -30,6 +31,7 @@ const RefereeAuthContext = createContext<IRefereeAuthContextValue | undefined>(u
  * referee scoring UI.
  */
 export function RefereeAuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [supabase] = useState(() => createBrowserSupabaseClient());
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,9 +76,11 @@ export function RefereeAuthProvider({ children }: { children: ReactNode }) {
         if (error) {
           throw new Error(`Sign-out failed: ${error.message}`);
         }
+        router.replace("/");
+        router.refresh();
       },
     }),
-    [user, loading, supabase],
+    [user, loading, supabase, router],
   );
 
   return <RefereeAuthContext.Provider value={value}>{children}</RefereeAuthContext.Provider>;
