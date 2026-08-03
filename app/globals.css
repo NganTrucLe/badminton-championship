@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+:root {
+  /* Palette ported from .design-reference/Giai Cau Long CLB.dc.html <style> block */
+  --color-bg: #f4f1e6;
+  --color-cream: #fffdf7;
+  --color-primary: #0b5d4e;
+  --color-primary-dark: #08483c;
+  --color-dark: #0a1f1a;
+  --color-darker: #08241e;
+  --color-gold: #f2b544;
+  --color-gold-light: #ffc85c;
+  --color-live: #ff5a47;
+  --color-live-soft: #ff8c7d;
+  --color-text: #0a1f1a;
+  --color-text-soft: #3c5a53;
+  --color-text-muted: #5b7a72;
+  --color-text-faint: #8aa39c;
+  --color-border: rgba(10, 31, 26, 0.12);
+}
+
+@theme inline {
+  --color-bg: var(--color-bg);
+  --color-cream: var(--color-cream);
+  --color-primary: var(--color-primary);
+  --color-primary-dark: var(--color-primary-dark);
+  --color-dark: var(--color-dark);
+  --color-darker: var(--color-darker);
+  --color-gold: var(--color-gold);
+  --color-gold-light: var(--color-gold-light);
+  --color-live: var(--color-live);
+  --color-live-soft: var(--color-live-soft);
+  --color-text: var(--color-text);
+  --color-text-soft: var(--color-text-soft);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-faint: var(--color-text-faint);
+  --font-archivo: var(--font-archivo);
+  --font-bricolage: var(--font-bricolage);
+  --font-jetbrains: var(--font-jetbrains);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  color: #e08a1e;
+}
+
+::selection {
+  background: var(--color-gold);
+  color: var(--color-darker);
+}
+
+@keyframes livePulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.82);
+  }
+}
+
+@keyframes floatUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+body {
+  min-height: 100vh;
+  background: var(--color-bg);
+  font-family: var(--font-archivo), Helvetica, sans-serif;
+  color: var(--color-text);
+  overflow-x: hidden;
+}

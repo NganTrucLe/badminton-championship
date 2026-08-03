@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Bricolage+Grotesque:opsz,wght@12..96,400..900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<meta name="ext-resource-dependency" content="./assets/trung-avatar.jpg" data-resource-id="trung-avatar" />
+<meta name="ext-resource-dependency" content="./assets/minhanh-avatar.jpg" data-resource-id="minhanh-avatar" />
+<meta name="ext-resource-dependency" content="./assets/vinh-avatar.jpg" data-resource-id="vinh-avatar" />
+<meta name="ext-resource-dependency" content="./assets/truc-avatar.jpg" data-resource-id="truc-avatar" />
+<meta name="ext-resource-dependency" content="./assets/hao-avatar.jpg" data-resource-id="hao-avatar" />
+<meta name="ext-resource-dependency" content="./assets/duy-avatar.jpg" data-resource-id="duy-avatar" />
+<meta name="ext-resource-dependency" content="./assets/tung-avatar.jpg" data-resource-id="tung-avatar" />
+<meta name="ext-resource-dependency" content="./assets/myho-avatar.jpg" data-resource-id="myho-avatar" />
+<meta name="ext-resource-dependency" content="./assets/nhan-avatar.jpg" data-resource-id="nhan-avatar" />
+<meta name="ext-resource-dependency" content="./assets/gai-avatar.jpg" data-resource-id="gai-avatar" />
+<meta name="ext-resource-dependency" content="./assets/phat-avatar.jpg" data-resource-id="phat-avatar" />
+<template id="__bundler_thumbnail">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" data-bg-color="#0B5D4E">
+<rect width="200" height="200" fill="#0B5D4E" />
+<circle cx="100" cy="100" r="52" fill="none" stroke="#F4F1E6" stroke-width="10" />
+<line x1="100" y1="48" x2="100" y2="152" stroke="#F4F1E6" stroke-width="6" />
+</svg>
+</template>
+<script src="./image-slot.js"></script>
+<style>
+  html, body { margin: 0; padding: 0; background: #F4F1E6; }
+  * { box-sizing: border-box; }
+  a { color: #0B5D4E; text-decoration: none; }
+  a:hover { color: #E08A1E; }
+  ::selection { background: #F2B544; color: #08241E; }
+  @keyframes livePulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.82); } }
+  @keyframes floatUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#F4F1E6;font-family:Archivo,Helvetica,sans-serif;color:#0A1F1A;overflow-x:hidden">
+
+  <div style="position:sticky;top:0;z-index:50;background:rgba(244,241,230,.92);backdrop-filter:blur(10px);border-bottom:1px solid rgba(10,31,26,.12)">
+    <div style="max-width:1240px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:10px;margin-right:auto">
+        <div style="width:30px;height:30px;border-radius:50%;background:#0B5D4E;display:flex;align-items:center;justify-content:center;flex:none">
+          <div style="width:11px;height:11px;border-radius:50%;background:#F4F1E6"></div>
+        </div>
+        <div style="line-height:1">
+          <div style="font-weight:900;font-size:15px;letter-spacing:-.02em">GIẢI CẦU LÔNG CLB</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;color:#5B7A72;margin-top:3px">15.08 · SÂN GIA TƯỞNG</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:2px;background:rgba(11,93,78,.07);padding:4px;border-radius:999px">
+        <button onClick="{{ goHome }}" style="border:none;cursor:pointer;font-family:Archivo,sans-serif;font-weight:700;font-size:13px;padding:8px 15px;border-radius:999px;background:transparent;color:#3C5A53;position:relative" style-hover="background:rgba(11,93,78,.1)">
+          <sc-if value="{{ isHome }}"><span style="position:absolute;inset:0;background:#0B5D4E;border-radius:999px"></span></sc-if>
+          <span style="position:relative;color:{{ homeFg }}">Trang chủ</span>
+        </button>
+        <button onClick="{{ goTeams }}" style="border:none;cursor:pointer;font-family:Archivo,sans-serif;font-weight:700;font-size:13px;padding:8px 15px;border-radius:999px;background:transparent;color:#3C5A53;position:relative" style-hover="background:rgba(11,93,78,.1)">
+          <sc-if value="{{ isTeams }}"><span style="position:absolute;inset:0;background:#0B5D4E;border-radius:999px"></span></sc-if>
+          <span style="position:relative;color:{{ teamsFg }}">Các cặp</span>
+        </button>
+        <button onClick="{{ goSchedule }}" style="border:none;cursor:pointer;font-family:Archivo,sans-serif;font-weight:700;font-size:13px;padding:8px 15px;border-radius:999px;background:transparent;color:#3C5A53;position:relative" style-hover="background:rgba(11,93,78,.1)">
+          <sc-if value="{{ isSchedule }}"><span style="position:absolute;inset:0;background:#0B5D4E;border-radius:999px"></span></sc-if>
+          <span style="position:relative;color:{{ schedFg }}">Lịch &amp; Bảng đấu</span>
+        </button>
+        <button onClick="{{ goRef }}" style="border:none;cursor:pointer;font-family:Archivo,sans-serif;font-weight:700;font-size:13px;padding:8px 15px;border-radius:999px;background:transparent;color:#3C5A53;position:relative" style-hover="background:rgba(11,93,78,.1)">
+          <sc-if value="{{ isRef }}"><span style="position:absolute;inset:0;background:#0B5D4E;border-radius:999px"></span></sc-if>
+          <span style="position:relative;color:{{ refFg }}">Trọng tài</span>
+        </button>
+        <button onClick="{{ goRules }}" style="border:none;cursor:pointer;font-family:Archivo,sans-serif;font-weight:700;font-size:13px;padding:8px 15px;border-radius:999px;background:transparent;color:#3C5A53;position:relative" style-hover="background:rgba(11,93,78,.1)">
+          <sc-if value="{{ isRules }}"><span style="position:absolute;inset:0;background:#0B5D4E;border-radius:999px"></span></sc-if>
+          <span style="position:relative;color:{{ rulesFg }}">Quy tắc</span>
+        </button>
+      </div>
+
+      <sc-if value="{{ signedIn }}">
+        <div style="display:flex;align-items:center;gap:9px;padding:5px 12px 5px 5px;border-radius:999px;background:#0B5D4E">
+          <div style="width:24px;height:24px;border-radius:50%;background:#F2B544;color:#08241E;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center">TT</div>
+          <span style="color:#EAF3F0;font-size:12px;font-weight:600">Trọng tài Nhân</span>
+        </div>
+      </sc-if>
+      <sc-if value="{{ signedOut }}">
+        <button onClick="{{ signIn }}" style="display:flex;align-items:center;gap:8px;border:1px solid rgba(10,31,26,.2);background:#FFFDF7;padding:8px 14px;border-radius:999px;cursor:pointer;font-family:Archivo,sans-serif;font-size:12px;font-weight:700;color:#0A1F1A" style-hover="border-color:#0B5D4E">
+          <span style="width:14px;height:14px;border-radius:50%;background:conic-gradient(#EA4335 0 25%,#FBBC05 0 50%,#34A853 0 75%,#4285F4 0)"></span>
+          Đăng nhập Google
+        </button>
+      </sc-if>
+    </div>
+  </div>
+
+  <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+  <div>
+
+    <div style="max-width:1240px;margin:22px auto 0;padding:0 20px">
+      <div style="position:relative;border-radius:26px;overflow:hidden;background:#0B5D4E;padding:clamp(30px,5vw,64px);min-height:clamp(430px,60vw,560px);display:flex;flex-direction:column;justify-content:space-between">
+        <div style="position:absolute;inset:0;pointer-events:none;opacity:.5">
+          <div style="position:absolute;left:0;right:0;top:26%;height:2px;background:rgba(255,255,255,.5)"></div>
+          <div style="position:absolute;left:0;right:0;bottom:14%;height:2px;background:rgba(255,255,255,.32)"></div>
+          <div style="position:absolute;top:0;bottom:0;left:50%;width:2px;background:rgba(255,255,255,.28)"></div>
+          <div style="position:absolute;left:-14%;right:-14%;top:20%;bottom:-40%;border:2px solid rgba(255,255,255,.22);border-radius:50%"></div>
+        </div>
+        <div style="position:absolute;right:-70px;top:-70px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(242,181,68,.5),transparent 62%);pointer-events:none"></div>
+
+        <div style="position:relative">
+          <div style="display:inline-flex;align-items:center;gap:9px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.24);padding:7px 14px;border-radius:999px">
+            <span style="width:7px;height:7px;border-radius:50%;background:#F2B544;animation:livePulse 1.6s ease-in-out infinite"></span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;color:#DCEDE7">MÙA GIẢI 2026 · 8 CẶP ĐÔI</span>
+          </div>
+          <h1 style="margin:20px 0 0;font-family:'Bricolage Grotesque',Archivo,sans-serif;font-size:clamp(36px,7vw,84px);line-height:.9;font-weight:900;letter-spacing:-.04em;color:#FFFDF7;text-wrap:balance">GIẢI CẦU<br />LÔNG CLB<span style="color:#F2B544">.</span></h1>
+          <p style="margin:20px 0 0;max-width:440px;font-size:clamp(15px,1.6vw,18px);line-height:1.55;color:#B9D6CD;text-wrap:pretty">16 tay vợt, 8 đội, một buổi sáng. Thể thức Swiss-system (Bo1): thắng đủ 3 trận vào playoffs, thua đủ 3 trận dừng bước. Bạn bè trước, ăn thua sau — nhưng vẫn phải thắng.</p>
+        </div>
+
+        <div style="position:relative;margin-top:38px;display:flex;gap:34px;flex-wrap:wrap;align-items:flex-end">
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;color:#8FBCB0;margin-bottom:10px">TRẬN ĐẤU SẼ BẮT ĐẦU SAU</div>
+            <div style="display:flex;gap:10px">
+              <sc-for list="{{ countdown }}" as="c" hint-placeholder-count="4">
+                <div style="background:rgba(255,253,247,.1);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:10px 14px;min-width:72px;text-align:center">
+                  <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:clamp(24px,3.4vw,34px);color:#FFFDF7;line-height:1">{{ c.v }}</div>
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.14em;color:#8FBCB0;margin-top:6px">{{ c.l }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="border-left:1px solid rgba(255,255,255,.2);padding-left:26px">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;color:#8FBCB0;margin-bottom:8px">THỜI GIAN</div>
+            <div style="font-size:20px;font-weight:800;color:#FFFDF7">09:00 – 12:00</div>
+            <div style="font-size:14px;color:#B9D6CD;margin-top:2px">Thứ Bảy, 15 tháng 8</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:12px">
+              <span style="width:14px;height:14px;flex:none;border-radius:50%;border:2px solid #F2B544;position:relative"><span style="position:absolute;left:50%;top:50%;width:4px;height:4px;background:#F2B544;border-radius:50%;transform:translate(-50%,-50%)"></span></span>
+              <span style="font-size:13px;font-weight:600;color:#DCEDE7">Sân Gia Tưởng, Tân Bình</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="max-width:1240px;margin:16px auto 0;padding:0 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px">
+
+      <div style="grid-column:span 1;background:#0A1F1A;border-radius:22px;padding:26px;color:#FFFDF7;position:relative;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:9px">
+          <span style="width:8px;height:8px;border-radius:50%;background:#FF5A47;animation:livePulse 1.3s ease-in-out infinite"></span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.18em;color:#FF8C7D">ĐANG THI ĐẤU</span>
+          <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:#6E8A83">{{ live.round }} · SÂN {{ live.court }}</span>
+        </div>
+        <div style="margin-top:22px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px">
+          <div>
+            <div style="font-size:13px;font-weight:800;letter-spacing:.04em;color:#8FBCB0">{{ live.aName }}</div>
+            <div style="font-size:17px;font-weight:700;margin-top:5px;line-height:1.3">{{ live.aPlayers }}</div>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:clamp(38px,6vw,54px);letter-spacing:-.03em;white-space:nowrap">{{ live.aScore }}<span style="color:#496660;margin:0 6px">:</span>{{ live.bScore }}</div>
+          <div style="text-align:right">
+            <div style="font-size:13px;font-weight:800;letter-spacing:.04em;color:#8FBCB0">{{ live.bName }}</div>
+            <div style="font-size:17px;font-weight:700;margin-top:5px;line-height:1.3">{{ live.bPlayers }}</div>
+          </div>
+        </div>
+        <div style="margin-top:22px;height:5px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden">
+          <div style="height:100%;background:#F2B544;border-radius:999px;width: {{ live.pct }}"></div>
+        </div>
+        <div style="margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#6E8A83">CHẠM 21 · CÁCH BIỆT 2 ĐIỂM</div>
+      </div>
+
+      <div style="background:#FFFDF7;border:1px solid rgba(10,31,26,.12);border-radius:22px;padding:26px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;color:#5B7A72">KẾT QUẢ GẦN NHẤT</div>
+        <div style="margin-top:16px;display:flex;flex-direction:column;gap:2px">
+          <sc-for list="{{ recent }}" as="m" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid rgba(10,31,26,.08)">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#8AA39C;width:26px;flex:none">{{ m.code }}</span>
+              <span style="font-size:14px;font-weight:700;flex:1;min-width:0">{{ m.aName }}</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;flex:none">{{ m.score }}</span>
+              <span style="font-size:14px;font-weight:700;flex:1;min-width:0;text-align:right;color:#5B7A72">{{ m.bName }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <button onClick="{{ goSchedule }}" style="margin-top:16px;border:none;background:transparent;padding:0;cursor:pointer;font-family:Archivo,sans-serif;font-size:13px;font-weight:700;color:#0B5D4E">Xem toàn bộ lịch đấu →</button>
+      </div>
+
+      <div style="background:#FFFDF7;border:1px solid rgba(10,31,26,.12);border-radius:22px;padding:26px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;color:#5B7A72">ĐỊA ĐIỂM</div>
+        <div style="margin-top:14px;font-size:24px;font-weight:900;letter-spacing:-.02em">Sân Gia Tưởng</div>
+        <div style="margin-top:8px;font-size:14px;line-height:1.55;color:#3C5A53">33 Trần Văn Quang, Q. Tân Bình,<br />TP. Hồ Chí Minh 70000</div>
+        <div style="margin-top:16px;position:relative;height:130px;border-radius:14px;overflow:hidden;background:#0B5D4E">
+          <div style="position:absolute;inset:0;opacity:.45">
+            <div style="position:absolute;left:8%;right:8%;top:14%;bottom:14%;border:2px solid rgba(255,255,255,.55)"></div>
+            <div style="position:absolute;left:8%;right:8%;top:50%;height:2px;background:rgba(255,255,255,.55)"></div>
+            <div style="position:absolute;top:14%;bottom:14%;left:30%;width:2px;background:rgba(255,255,255,.35)"></div>
+            <div style="position:absolute;top:14%;bottom:14%;right:30%;width:2px;background:rgba(255,255,255,.35)"></div>
+          </div>
+          <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:#F2B544;box-shadow:0 0 0 8px rgba(242,181,68,.25)"></div>
+        </div>
+        <a href="https://maps.app.goo.gl/mM8kAaS4AYuqpPJ28" target="_blank" rel="noopener" style="margin-top:14px;display:inline-flex;align-items:center;gap:8px;background:#0B5D4E;color:#FFFDF7;padding:11px 18px;border-radius:999px;font-size:13px;font-weight:700" style-hover="background:#08483C;color:#FFFDF7">Mở Google Maps →</a>
+      </div>
+    </div>
+
+    <div style="max-width:1240px;margin:16px auto 0;padding:0 20px">
+      <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:14px">
+        <h2 style="margin:0;font-family:'Bricolage Grotesque',Archivo,sans-serif;font-size:clamp(26px,3.4vw,38px);font-weight:900;letter-spacing:-.03em">Phần thưởng</h2>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8AA39C">TOP 3 · CHI TIẾT SẼ CÔNG BỐ TRƯỚC NGÀY THI ĐẤU</span>
+      </div>
+      <div style="display:flex;align-items:flex-end;justify-content:center;gap:16px;flex-wrap:wrap;padding:20px 0 8px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:12px;width:220px">
+          <div style="width:76px;height:76px;border-radius:50%;background:#C9D6D2;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;color:#08241E;box-shadow:0 6px 0 rgba(10,31,26,.18)">🥈</div>
+          <div style="font-size:19px;font-weight:800;line-height:1.3;text-align:center">Huy chương bạc + phần thưởng</div>
+          <div style="background:#FFFDF7;border:1px solid rgba(10,31,26,.14);border-radius:20px 20px 10px 10px;width:100%;height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.18em;color:#5B7A72">HẠNG NHÌ</div>
+            <div style="font-size:44px;font-weight:900;letter-spacing:-.05em;color:#0B5D4E">02</div>
+            <div style="font-size:13px;color:#8AA39C">Sẽ công bố 🎉</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:12px;width:240px">
+          <div style="width:96px;height:96px;border-radius:50%;background:#F2B544;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:900;color:#08241E;box-shadow:0 8px 0 rgba(10,31,26,.2)">🏆</div>
+          <div style="font-size:21px;font-weight:900;line-height:1.3;text-align:center">Cúp vô địch + phần thưởng chính</div>
+          <div style="background:#F2B544;border-radius:24px 24px 10px 10px;width:100%;height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#08241E">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.18em">HẠNG NHẤT</div>
+            <div style="font-size:56px;font-weight:900;letter-spacing:-.05em">01</div>
+            <div style="font-size:14px;opacity:.75">Sẽ công bố 🥳</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:12px;width:220px">
+          <div style="width:76px;height:76px;border-radius:50%;background:#E0A672;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;color:#08241E;box-shadow:0 6px 0 rgba(10,31,26,.18)">🥉</div>
+          <div style="font-size:19px;font-weight:800;line-height:1.3;text-align:center">Huy chương đồng + phần thưởng</div>
+          <div style="background:#FFFDF7;border:1px solid rgba(10,31,26,.14);border-radius:20px 20px 10px 10px;width:100%;height:130px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.18em;color:#5B7A72">HẠNG BA</div>
+            <div style="font-size:40px;font-weight:900;letter-spacing:-.05em;color:#0B5D4E">03</div>
+            <div style="font-size:13px;color:#8AA39C">Sẽ công bố 🎊</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isTeams }}">
+  <div style="max-width:1240px;margin:0 auto;padding:34px 20px 60px">
+    <h2 style="margin:0;font-family:'Bricolage Grotesque',Archivo,sans-serif;font-size:clamp(30px,4.6vw,52px);font-weight:900;letter-spacing:-.035em">8 cặp đôi</h2>
+    <p style="margin:10px 0 0;max-width:560px;font-size:15px;line-height:1.6;color:#3C5A53;text-wrap:pretty">16 tay vợt được xếp vào 4 bậc trình. Luật ghép cặp: <strong>Bậc 1 + Bậc 4</strong> và <strong>Bậc 2 + Bậc 3</strong> — để mọi cặp có sức mạnh tương đương nhau.</p>
+
+    <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
+      <sc-for list="{{ tierLegend }}" as="t" hint-placeholder-count="4">
+        <div style="display:flex;align-items:center;gap:8px;background:#FFFDF7;border:1px solid rgba(10,31,26,.12);border-radius:999px;padding:7px 14px 7px 8px">
+          <span style="width:22px;height:22px;border-radius:50%;background:{{ t.color }};color:{{ t.fg }};font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">{{ t.n }}</span>
+          <span style="font-size:12px;font-weight:600;color:#3C5A53">{{ t.label }}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="margin-top:24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">
+      <sc-for list="{{ teams }}" as="t" hint-placeholder-count="8">
+        <div style="background:#FFFDF7;border:1px solid rgba(10,31,26,.12);border-radius:22px;padding:20px" style-hover="border-color:#0B5D4E">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;color:#8AA39C">{{ t.code }}</div>
+          </div>
+          <div style="margin-top:4px;font-size:22px;font-weight:900;letter-spacing:-.02em">{{ t.name }}</div>
+          <div style="margin-top:16px;display:flex;flex-direction:column;gap:16px">
+            <sc-for list="{{ t.players }}" as="p" hint-placeholder-count="2">
+              <div style="display:flex;align-items:center;gap:12px">
+                <div style="position:relative;width:64px;height:64px;flex:none">
+                  <sc-if value="{{ p.hasPhoto }}">
+                    <image-slot id="{{ p.slotId }}" src="{{ p.photo }}" shape="circle" placeholder="Ảnh"></image-slot>
+                  </sc-if>
+                  <sc-if value="{{ p.noPhoto }}">
+                    <div style="width:64px;height:64px;border-radius:50%;background:{{ p.avatarColor }};display:flex;align-items:center;justify-content:center;color:#FFFDF7;font-weight:900;font-size:20px;letter-spacing:.02em">{{ p.initials }}</div>
+                  </sc-if>
+                </div>
+                <div style="min-width:0">
+                  <div style="font-size:16px;font-weight:700">{{ p.name }}</div>
+                  <div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:#8AA39C;margin-top:2px">{{ p.tierLabel }}</div>
+                </div>
+                <span style="margin-left:auto;width:26px;height:26px;flex:none;border-radius:50%;background:{{ p.color }};color:{{ p.fg }};font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">{{ p.tier }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isSchedule }}">
+  <div style="max-width:1240px;margin:0 auto;padding:34px 20px 60px">
+    <h2 style="margin:0;font-family:'Bricolage Grotesque',Archivo,sans-serif;font-size:clamp(30px,4.6vw,52px);font-weight:900;letter-spacing:-.035em">Lịch &amp; bảng đấu</h2>
+    <p style="margin:10px 0 0;max-width:640px;font-size:15px;line-height:1.6;color:#3C5A53;text-wrap:pretty">Thể thức <strong>Swiss-system</strong> theo chuẩn esport, mỗi trận <strong>Bo1</strong> (1 ván tới 21). Sau mỗi vòng, các đội cùng thành tích được ghép với nhau. Thắng đủ <strong>3 trận</strong> → vào playoffs. Thua đủ <strong>3 trận</strong> → dừng bước. Tối đa 5 vòng, 2 sân chạy song song.</p>
+
+    <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:8px;background:#EEF7F1;border:1px solid #A8D3BB;border-radius:999px;padding:7px 14px"><span style="width:9px;height:9px;border-radius:50%;background:#1F7A45"></span><span style="font-size:12px;font-weight:700;color:#1F7A45">Nhóm thắng nhiều hơn</span></div>
+      <div style="display:flex;align-items:center;gap:8px;background:#FFF9EC;border:1px solid #EBD7A4;border-radius:999px;padding:7px 14px"><span style="width:9px;height:9px;border-radius:50%;background:#A3790A"></span><span style="font-size:12px;font-weight:700;color:#A3790A">Nhóm cân bằng</span></div>
+      <div style="display:flex;align-items:center;gap:8px;background:#FBEFE7;border:1px solid #E6C0A4;border-radius:999px;padding:7px 14px"><span style="width:9px;height:9px;border-radius:50%;background:#B5562B"></span><span style="font-size:12px;font-weight:700;color:#B5562B">Nhóm thua nhiều hơn</span></div>
+    </div>
+
+    <div style="margin-top:20px;background:#FFFDF7;border:1px solid rgba(10,31,26,.12);border-radius:22px;padding:20px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;color:#5B7A72">BOARD 1 · SWISS STAGE</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#B4BEBA">CUỘN NGANG ĐỂ XEM CÁC VÒNG SAU →</div>
+      </div>
+      <div style="overflow-x:auto;padding-bottom:6px">
+        <div style="min-width:1160px;display:grid;grid-template-columns:repeat(6,minmax(184px,1fr));gap:12px;align-items:start">
+          <sc-for list="{{ swissCols }}" as="col" hint-placeholder-count="5">
+            <div>
+              <div style="background:#0B5D4E;color:#FFFDF7;border-radius:9px;padding:8px;text-align:center;font-size:12px;font-weight:800">{{ col.title }}</div>
+              <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:9px;color:#8AA39C;margin:6px 0 2px">{{ col.time }}</div>
+              <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;color:{{ col.statusColor }};margin-bottom:10px">{{ col.status }}</div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <sc-for list="{{ col.groups }}" as="g" hint-placeholder-count="2">
+                  <div style="background:{{ g.bg }};border:1.5px solid {{ g.border }};border-radius:12px;padding:10px">
+                    <div style="font-size:11px;font-weight:800;letter-spacing:.04em;color:{{ g.fg }}">{{ g.label }}</div>
+                    <div style="font-size:9.5px;color:#8AA39C;margin-top:3px">{{ g.sub }}</div>
+                    <div style="display:flex;flex-direction:column;gap:7px;margin-top:9px">
+                      <sc-for list="{{ g.matches }}" as="m" hint-placeholder-count="2">
+                        <div style="background:#fff;border:1px solid rgba(10,31,26,.12);border-radius:9px;overflow:hidden">
+                          <div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:rgba(10,31,26,.035)">
+                            <span style="font-family:'JetBrains Mono',monospace;font-size:8.5px;color:#8AA39C">{{ m.meta }}</span>
+                            <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.06em;color:{{ m.stateColor }}">{{ m.state }}</span>
+                          </div>
+                          <div style="display:flex;align-items:center;gap:7px;padding:6px 8px;background:{{ m.aBg }}">
+                            <div style="display:flex;gap:2px;flex:none">
+                              <sc-for list="{{ m.aAv }}" as="pl" hint-placeholder-count="2">
+                                <sc-if value="{{ pl.hasPhoto }}"><img src="{{ pl.photo }}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;border:1.5px solid #fff"></img></sc-if>
+                                <sc-if value="{{ pl.noPhoto }}"><div style="width:20px;height:20px;border-radius:50%;background:{{ pl.color }};border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:800">{{ pl.initials }}</div></sc-if>
+                              </sc-for>
+                            </div>
+                            <span style="flex:1;min-width:0;font-size:11.5px;font-weight:{{ m.aWeight }};color:{{ m.aFg }}">{{ m.aName }}</span>
+                            <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;font-weight:700;color:{{ m.aFg }}">{{ m.sa }}</span>
+                          </div>
+                          <div style="display:flex;align-items:center;gap:7px;padding:6px 8px;background:{{ m.bBg }};border-top:1px solid rgba(10,31,26,.07)">
+                            <div style="display:flex;gap:2px;flex:none">
+                              <sc-for list="{{ m.bAv }}" as="pl" hint-placeholder-count="2">
+                                <sc-if value="{{ pl.hasPhoto }}"><img src="{{ pl.photo }}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;border:1.5px solid #fff"></img></sc-if>
+                                <sc-if value="{{ pl.noPhoto }}"><div style="width:20px;height:20px;border-radius:50%;background:{{ pl.color }};border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:800">{{ pl.initials }}</div></sc-if>
+                              </sc-for>
+                            </div>
+                            <span style="flex:1;min-width:0;font-size:11.5px;font-weight:{{ m.bWeight }};color:{{ m.bFg }}">{{ m.bName }}</span>
+                            <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;font-weight:700;color:{{ m.bFg }}">{{ m.sb }}</span>
+                          </div>
+                        </div>
+                      </sc-for>
+                      <sc-for list="{{ g.chips }}" as="c" hint-placeholder-count="2">
+                        <div style="display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.75);border:1px dashed rgba(10,31,26,.2);border-radius:9px;padding:6px 8px">
+                          <div style="display:flex;gap:2px;flex:none">
+                            <sc-for list="{{ c.av }}" as="pl" hint-placeholder-count="2">
+                              <sc-if value="{{ pl.hasPhoto }}"><img src="{{ pl.photo }}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;border:1.5px solid #fff"></img></sc-if>
+                              <sc-if value="{{ pl.noPhoto }}"><div style="width:20px;height:20px;border-radius:50%;background:{{ pl.color }};border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:800">{{ pl.initials }}</div></sc-if>
+                            </sc-for>
+                          </div>
+                          <span style="flex:1;min-width:0;font-size:11.5px;font-weight:700;color:#0A1F1A">{{ c.name }}</span>
+                          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#8AA39C">{{ c.rec }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+
+          <div>
+            <div style="background:#0A1F1A;color:#FFFDF7;border-radius:9px;padding:8px;text-align:center;font-size:12px;font-weight:800">Kết quả Swiss</div>
+            <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:9px;color:#8AA39C;margin:6px 0 10px">4 VÀO · 4 RA</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="background:#E9F8EE;border:1.5px solid #9CCFB0;border-radius:12px;padding:10px">
+                <div style="font-size:11px;font-weight:800;letter-spacing:.04em;color:#1A6B3A">QUALIFIED · 3 THẮNG</div>
+                <div style="font-size:9.5px;color:#8AA39C;margin-top:3px">Vào Board 2 — playoffs</div>
+                <div style="display:flex;flex-direction:column;gap:6px;margin-top:9px">
+                  <sc-for list="{{ qualified }}" as="c" hint-placeholder-count="1">
+                    <div style="display:flex;align-items:center;gap:7px;background:#fff;border-radius:8px;padding:6px 8px">
+                      <div style="display:flex;gap:2px;flex:none">
+                        <sc-for list="{{ c.av }}" as="pl" hint-placeholder-count="2">
+                          <sc-if value="{{ pl.hasPhoto }}"><img src="{{ pl.photo }}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;border:1.5px solid #fff"></img></sc-if>
+                          <sc-if value="{{ pl.noPhoto }}"><div style="width:20px;height:20px;border-radius:50%;background:{{ pl.color }};border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:800">{{ pl.initials }}</div></sc-if>
+                        </sc-for>
+                      </div>
+                      <span style="flex:1;min-width:0;font-size:11.5px;font-weight:700">{{ c.name }}</span>
+                      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#8AA39C">{{ c.rec }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ noQualified }}"><div style="margin-top:9px;font-size:11px;color:#8AA39C;font-style:italic">Chưa có đội nào đủ 3 thắng</div></sc-if>
+              </div>
+              <div style="background:#F3F3F0;border:1.5px solid #DCDCD4;border-radius:12px;padding:10px">
+                <div style="font-size:11px;font-weight:800;letter-spacing:.04em;color:#7A8A85">ELIMINATED · 3 THUA</div>
+                <div style="display:flex;flex-direction:column;gap:6px;margin-top:9px">
+                  <sc-for list="{{ eliminated }}" as="c" hint-placeholder-count="1">
+                    <div style="display:flex;align-items:center;gap:7px;background:#fff;border-radius:8px;padding:6px 8px">
+                      <div style="display:flex;gap:2px;flex:none;opacity:.7">
+                        <sc-for list="{{ c.av }}" as="pl" hint-placeholder-count="2">
+                          <sc-if value="{{ pl.hasPhoto }}"><img src="{{ pl.photo }}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;border:1.5px solid #fff"></img></sc-if>
+                          <sc-if value="{{ pl.noPhoto }}"><div style="width:20px;height:20px;border-radius:50%;background:{{ pl.color }};border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:800">{{ pl.initials }}</div></sc-if>
+                        </sc-for>
+                      </div>
+                      <span style="flex:1;min-width:0;font-size:11.5px;font-weight:700;color:#7A8A85">{{ c.name }}</span>
+                      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#B4BEBA">{{ c.rec }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ noEliminated }}"><div style="margin-top:9px;font-size:11px;color:#B4BEBA;font-style:italic">Chưa có đội nào bị loại</div></sc-if>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:34px;background:#0B5D4E;border-radius:22px;padding:clamp(22px,3vw,34px);overflow-x:auto">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;color:#8FBCB0">BOARD 2 · PLAYOFFS (4 ĐỘI QUALIFIED)</div>
+      <div style="margin-top:18px;min-width:660px;display:grid;grid-template-columns:1fr 30px 1fr;align-items:stretch">
+        <div style="display:flex;flex-direction:column;gap:22px;justify-content:center">
+          <sc-for list="{{ semis }}" as="m" hint-placeholder-count="2">
+            <div style="background:rgba(255,253,247,.08);border:1px solid rgba(255,255,255,.18);border-radius:12px;overflow:hidden">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.1em;color:#8FBCB0;padding:7px 12px;background:rgba(0,0,0,.18)">{{ m.code }} · {{ m.time }}</div>
+              <div style="padding:10px 12px;font-size:14px;font-weight:700;color:#FFFDF7">{{ m.aName }}</div>
+              <div style="padding:10px 12px;font-size:14px;font-weight:700;color:#FFFDF7;border-top:1px solid rgba(255,255,255,.14)">{{ m.bName }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="margin:62px 0;border:2px solid rgba(255,255,255,.28);border-left:none;border-radius:0 10px 10px 0"></div>
+        <div style="display:flex;flex-direction:column;gap:14px;justify-content:center;padding-left:16px">
+          <div style="background:#F2B544;border-radius:12px;padding:16px;color:#08241E">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em">CHUNG KẾT · 12:00 · SÂN 1</div>
+            <div style="margin-top:10px;font-size:16px;font-weight:800">Thắng Bán kết 1</div>
+            <div style="margin-top:7px;font-size:16px;font-weight:800">Thắng Bán kết 2</div>
+          </div>
+          <div style="background:rgba(255,253,247,.08);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:16px;color:#DCEDE7">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:#8FBCB0">TRANH HẠNG 3 · 12:00 · SÂN 2</div>
+            <div style="margin-top:10px;font-size:16px;font-weight:800">Thua Bán kết 1</div>
+            <div style="margin-top:7px;font-size:16px;font-weight:800">Thua Bán kết 2</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;background:#FFFDF7;border:1px solid rgba(10,31,26,.12);border-radius:22px;padding:22px;overflow-x:auto">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;color:#5B7A72;margin-bottom:14px">BẢNG THEO DÕI THEO VÒNG</div>
+      <div style="min-width:640px">
+        <div style="display:grid;grid-template-columns:1fr repeat(5,44px) 46px 46px 96px;gap:8px;padding-bottom:9px;border-bottom:1px solid rgba(10,31,26,.12);font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.08em;color:#8AA39C">
+          <div>ĐỘI</div><div style="text-align:center">R1</div><div style="text-align:center">R2</div><div style="text-align:center">R3</div><div style="text-align:center">R4</div><div style="text-align:center">R5</div><div style="text-align:center">T</div><div style="text-align:center">B</div><div style="text-align:center">TRẠNG THÁI</div>
+        </div>
+        <sc-for list="{{ trackRows }}" as="r" hint-placeholder-count="8">
+          <div style="display:grid;grid-template-columns:1fr repeat(5,44px) 46px 46px 96px;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid rgba(10,31,26,.07)">
+            <div style="display:flex;align-items:center;gap:8px;min-width:0">
+              <div style="display:flex;gap:2px;flex:none">
+                <sc-for list="{{ r.av }}" as="pl" hint-placeholder-count="2">
+                  <sc-if value="{{ pl.hasPhoto }}"><img src="{{ pl.photo }}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1.5px solid #fff"></img></sc-if>
+                  <sc-if value="{{ pl.noPhoto }}"><div style="width:22px;height:22px;border-radius:50%;background:{{ pl.color }};border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:800">{{ pl.initials }}</div></sc-if>
+                </sc-for>
+              </div>
+              <span style="font-size:13.5px;font-weight:700">{{ r.name }}</span>
+            </div>
+            <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="5">
+              <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:{{ c.weight }};color:{{ c.color }}">{{ c.v }}</div>
+            </sc-for>
+            <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:#1F7A45">{{ r.w }}</div>
+            <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:#B5562B">{{ r.l }}</div>
+            <div style="text-align:center"><span style="display:inline-block;background:{{ r.statusBg }};color:{{ r.statusFg }};border-radius:6px;padding:3px 9px;font-size:10.5px;font-weight:700">{{ r.status }}</span></div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isRef }}">
+  <div style="max-width:1240px;margin:0 auto;padding:34px 20px 60px">
+    <sc-if value="{{ signedOut }}">
+      <div style="max-width:420px;margin:6vh auto;background:#FFFDF7;border:1px solid rgba(10,31,26,.12);border-radius:24px;padding:36px;text-align:center">
+        <div style="width:48px;height:48px;margin:0 auto;border-radius:50%;background:#0B5D4E;display:flex;align-items:center;justify-content:center">
+          <div style="width:16px;height:16px;border-radius:50%;background:#F4F1E6"></div>
+        </div>
+        <h2 style="margin:20px 0 0;font-family:'Bricolage Grotesque',Archivo,sans-serif;font-size:26px;font-weight:900;letter-spacing:-.03em">Khu vực trọng tài</h2>
+        <p style="margin:10px 0 0;font-size:14px;line-height:1.6;color:#5B7A72">Chỉ tài khoản được cấp quyền mới cập nhật được tỉ số. Đăng nhập bằng Google của bạn.</p>
+        <button onClick="{{ signIn }}" style="margin-top:24px;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;border:1px solid rgba(10,31,26,.2);background:#fff;padding:14px;border-radius:12px;cursor:pointer;font-family:Archivo,sans-serif;font-size:15px;font-weight:700;color:#0A1F1A" style-hover="border-color:#0B5D4E">
+          <span style="width:18px;height:18px;border-radius:50%;background:conic-gradient(#EA4335 0 25%,#FBBC05 0 50%,#34A853 0 75%,#4285F4 0)"></span>
+          Đăng nhập với Google
+        </button>
+        <div style="margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8AA39C">DEMO · KHÔNG XÁC THỰC THẬT</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ signedIn }}">
+      <div>
+        <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap">
+          <h2 style="margin:0;font-family:'Bricolage Grotesque',Archivo,sans-serif;font-size:clamp(28px,4vw,44px);font-weight:900;letter-spacing:-.035em">Cập nhật tỉ số</h2>
+          <button onClick="{{ signOut }}" style="margin-left:auto;border:1px solid rgba(10,31,26,.18);background:transparent;padding:8px 14px;border-radius:999px;cursor:pointer;font-family:Archivo,sans-serif;font-size:12px;font-weight:700;color:#3C5A53" style-hover="border-color:#0A1F1A">Đăng xuất</button>
+        </div>
+
+        <div style="margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start">
+          <div style="background:#FFFDF7;border:1px solid rgba(10,31,26,.12);border-radius:20px;padding:20px">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;color:#5B7A72">CHỌN TRẬN</div>
+            <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+              <sc-for list="{{ refMatches }}" as="m" hint-placeholder-count="6">
+                <button onClick="{{ m.select }}" style="text-align:left;width:100%;border:1px solid {{ m.selBorder }};background:{{ m.selBg }};border-radius:12px;padding:12px 14px;cursor:pointer;font-family:Archivo,sans-serif">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#8AA39C">{{ m.code }}</span>
+                    <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;color:{{ m.stateColor }}">{{ m.state }}</span>
+                  </div>
+                  <div style="margin-top:6px;font-size:14px;font-weight:700;color:#0A1F1A">{{ m.label }}</div>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="grid-column:span 1;background:#0A1F1A;border-radius:20px;padding:clamp(20px,3vw,30px);color:#FFFDF7">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;color:#8FBCB0">{{ draft.code }} · SÂN {{ draft.court }}</span>
+              <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:#F2B544">{{ draft.state }}</span>
+            </div>
+
+            <div style="margin-top:22px;display:grid;grid-template-columns:1fr 1fr;gap:14px">
+              <div style="background:rgba(255,253,247,.07);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:18px;text-align:center">
+                <div style="font-size:14px;font-weight:800;color:#8FBCB0">{{ draft.aName }}</div>
+                <div style="font-size:11px;color:#5F817A;margin-top:3px">{{ draft.aPlayers }}</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:clamp(46px,9vw,68px);line-height:1;margin:14px 0">{{ draft.a }}</div>
+                <div style="display:flex;gap:8px;justify-content:center">
+                  <button onClick="{{ decA }}" style="width:48px;height:48px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:transparent;color:#FFFDF7;font-size:22px;font-weight:700;cursor:pointer;font-family:Archivo,sans-serif" style-hover="background:rgba(255,255,255,.1)">−</button>
+                  <button onClick="{{ incA }}" style="flex:1;height:48px;border-radius:12px;border:none;background:#F2B544;color:#08241E;font-size:22px;font-weight:800;cursor:pointer;font-family:Archivo,sans-serif" style-hover="background:#FFC85C">+</button>
+                </div>
+              </div>
+              <div style="background:rgba(255,253,247,.07);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:18px;text-align:center">
+                <div style="font-size:14px;font-weight:800;color:#8FBCB0">{{ draft.bName }}</div>
+                <div style="font-size:11px;color:#5F817A;margin-top:3px">{{ draft.bPlayers }}</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:clamp(46px,9vw,68px);line-height:1;margin:14px 0">{{ draft.b }}</div>
+                <div style="display:flex;gap:8px;justify-content:center">
+                  <button onClick="{{ decB }}" style="width:48px;height:48px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:transparent;color:#FFFDF7;font-size:22px;font-weight:700;cursor:pointer;font-family:Archivo,sans-serif" style-hover="background:rgba(255,255,255,.1)">−</button>
+                  <button onClick="{{ incB }}" style="flex:1;height:48px;border-radius:12px;border:none;background:#F2B544;color:#08241E;font-size:22px;font-weight:800;cursor:pointer;font-family:Archivo,sans-serif" style-hover="background:#FFC85C">+</button>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+              <button onClick="{{ saveLive }}" style="flex:1;min-width:150px;height:50px;border-radius:12px;border:1px solid rgba(255,255,255,.22);background:transparent;color:#FFFDF7;font-size:14px;font-weight:700;cursor:pointer;font-family:Archivo,sans-serif" style-hover="background:rgba(255,255,255,.1)">Lưu tỉ số đang đấu</button>
+              <button onClick="{{ finish }}" style="flex:1;min-width:150px;height:50px;border-radius:12px;border:none;background:#3FBF8F;color:#052D22;font-size:14px;font-weight:800;cursor:pointer;font-family:Archivo,sans-serif" style-hover="background:#4FD9A5">Kết thúc trận</button>
+            </div>
+            <div style="margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#5F817A">{{ savedMsg }}</div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isRules }}">
+  <div style="max-width:1000px;margin:0 auto;padding:34px 20px 60px">
+    <h2 style="margin:0;font-family:'Bricolage Grotesque',Archivo,sans-serif;font-size:clamp(30px,4.6vw,52px);font-weight:900;letter-spacing:-.035em">Quy tắc thi đấu</h2>
+    <p style="margin:10px 0 0;max-width:640px;font-size:15px;line-height:1.6;color:#3C5A53">Hai phần: thể thức giải (Swiss-system) và luật đánh cầu lông đôi tiêu chuẩn.</p>
+
+    <div style="margin-top:28px;background:#FFFDF7;border:1px solid rgba(10,31,26,.12);border-radius:22px;padding:clamp(22px,3vw,32px)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="width:28px;height:28px;border-radius:8px;background:#0B5D4E;color:#FFFDF7;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700">1</span>
+        <h3 style="margin:0;font-size:20px;font-weight:900;letter-spacing:-.02em">Thể thức Swiss-system</h3>
+      </div>
+      <div style="margin-top:18px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;gap:12px"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8AA39C;flex:none;width:20px">1</span><div style="font-size:14px;line-height:1.6">Mỗi trận đấu <strong>Bo1</strong> — một ván duy nhất, chạm 21 điểm trước và cách biệt tối thiểu 2 điểm để thắng.</div></div>
+        <div style="display:flex;gap:12px"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8AA39C;flex:none;width:20px">2</span><div style="font-size:14px;line-height:1.6">Vòng 1: các đội được bốc thăm ghép cặp ngẫu nhiên.</div></div>
+        <div style="display:flex;gap:12px"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8AA39C;flex:none;width:20px">3</span><div style="font-size:14px;line-height:1.6">Từ vòng 2 trở đi: các đội có <strong>cùng số trận thắng–thua</strong> được ghép với nhau (ví dụ nhóm 1–0 đấu nội bộ, nhóm 0–1 đấu nội bộ). Ưu tiên tránh ghép lại đối thủ đã gặp.</div></div>
+        <div style="display:flex;gap:12px"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8AA39C;flex:none;width:20px">4</span><div style="font-size:14px;line-height:1.6">Thắng đủ <strong>3 trận</strong> → <span style="color:#1F7A45;font-weight:700">Qualified</span>, vào vòng playoffs. Thua đủ <strong>3 trận</strong> → <span style="color:#B5562B;font-weight:700">bị loại</span>, dừng bước.</div></div>
+        <div style="display:flex;gap:12px"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8AA39C;flex:none;width:20px">5</span><div style="font-size:14px;line-height:1.6">Giải đấu tối đa 5 vòng. Khi một nhóm thành tích có số đội lẻ, một đội sẽ đấu chéo với đội cùng thành tích ở nhóm liền kề.</div></div>
+        <div style="display:flex;gap:12px"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8AA39C;flex:none;width:20px">6</span><div style="font-size:14px;line-height:1.6">4 đội qualified bước vào <strong>bán kết</strong> (hạt giống 1 gặp 4, hạt giống 2 gặp 3), sau đó <strong>chung kết</strong> và <strong>tranh hạng 3</strong>.</div></div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;background:#FFFDF7;border:1px solid rgba(10,31,26,.12);border-radius:22px;padding:clamp(22px,3vw,32px)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="width:28px;height:28px;border-radius:8px;background:#0B5D4E;color:#FFFDF7;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700">2</span>
+        <h3 style="margin:0;font-size:20px;font-weight:900;letter-spacing:-.02em">Luật đánh cầu lông đôi</h3>
+      </div>
+      <div style="margin-top:18px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;gap:12px"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8AA39C;flex:none;width:20px">1</span><div style="font-size:14px;line-height:1.6">Mỗi ván thắng đủ <strong>21 điểm</strong> và cách biệt tối thiểu 2 điểm; tối đa <strong>30 điểm</strong> (29–29 thì 30 điểm thắng).</div></div>
+        <div style="display:flex;gap:12px"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8AA39C;flex:none;width:20px">2</span><div style="font-size:14px;line-height:1.6">Tính điểm trực tiếp (rally point) — bên nào thắng pha cầu thì được điểm, bất kể bên nào giao cầu.</div></div>
+        <div style="display:flex;gap:12px"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8AA39C;flex:none;width:20px">3</span><div style="font-size:14px;line-height:1.6">Giao cầu chéo sân; điểm số của đội giao cầu chẵn → giao từ ô bên phải, lẻ → giao từ ô bên trái.</div></div>
+        <div style="display:flex;gap:12px"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8AA39C;flex:none;width:20px">4</span><div style="font-size:14px;line-height:1.6">Chỉ người đứng đúng ô giao cầu mới được giao; sau khi giao, hai VĐV có thể di chuyển tự do trong sân của đội mình.</div></div>
+        <div style="display:flex;gap:12px"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8AA39C;flex:none;width:20px">5</span><div style="font-size:14px;line-height:1.6">Đội thắng pha cầu trước đó sẽ giao cầu ở ván tiếp theo (nếu là giao cầu đầu ván, đội thắng ván trước giao trước).</div></div>
+        <div style="display:flex;gap:12px"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8AA39C;flex:none;width:20px">6</span><div style="font-size:14px;line-height:1.6">Lỗi thường gặp: chạm lưới, cầu chạm người/áo, vợt hoặc người vượt qua lưới sang sân đối phương, giao cầu sai ô, cầu rơi ngoài biên.</div></div>
+        <div style="display:flex;gap:12px"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8AA39C;flex:none;width:20px">7</span><div style="font-size:14px;line-height:1.6">Đổi sân sau mỗi ván; ở ván quyết định, đổi sân khi một đội đạt 11 điểm.</div></div>
+      </div>
+      <div style="margin-top:18px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#8AA39C">TRỌNG TÀI CÓ QUYỀN QUYẾT ĐỊNH CUỐI CÙNG TRONG MỌI TÌNH HUỐNG TRANH CHẤP.</div>
+    </div>
+  </div>
+  </sc-if>
+
+  <div style="border-top:1px solid rgba(10,31,26,.12);padding:26px 20px;text-align:center">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;color:#8AA39C">GIẢI CẦU LÔNG CLB · 15.08.2026 · SÂN GIA TƯỞNG, TÂN BÌNH</div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;autoLiveTicker&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Trận đấu&quot;},&quot;tickerSpeed&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:10,&quot;min&quot;:1,&quot;max&quot;:15,&quot;step&quot;:0.5,&quot;unit&quot;:&quot;s&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Trận đấu&quot;},&quot;startTime&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;2026-08-15T09:00:00+07:00&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Sự kiện&quot;}}">
+const AVATAR_COLORS = ['#E0724A', '#3F7CB0', '#B0553F', '#4E8A6E', '#8A5FB0', '#C99A2E', '#4A7E9E', '#B0435F'];
+function hashStr(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return h; }
+const TIER = {
+  1: { color: '#0B5D4E', fg: '#FFFDF7', label: 'Bậc 1' },
+  2: { color: '#3FBF8F', fg: '#052D22', label: 'Bậc 2' },
+  3: { color: '#F2B544', fg: '#08241E', label: 'Bậc 3' },
+  4: { color: '#E4DFCE', fg: '#3C5A53', label: 'Bậc 4' }
+};
+
+const TEAMS = [
+  { id: 1, letter: 'A', name: 'Trung – Kiên', players: [['Trung', 1, 'trung-avatar'], ['Kiên', 4]] },
+  { id: 2, letter: 'B', name: 'Minh Anh – Bình', players: [['Minh Anh', 2, 'minhanh-avatar'], ['Bình', 3]] },
+  { id: 3, letter: 'C', name: 'Vinh – Trúc', players: [['Vinh', 2, 'vinh-avatar'], ['Trúc', 3, 'truc-avatar']] },
+  { id: 4, letter: 'D', name: 'Vũ – Quang Hào', players: [['Vũ', 2], ['Quang Hào', 3, 'hao-avatar']] },
+  { id: 5, letter: 'E', name: 'Duy – Huy Nguyễn', players: [['Duy', 1, 'duy-avatar'], ['Huy Nguyễn', 4]] },
+  { id: 6, letter: 'F', name: 'Tùng – Mỹ Hồ', players: [['Tùng', 1, 'tung-avatar'], ['Mỹ Hồ', 4, 'myho-avatar']] },
+  { id: 7, letter: 'G', name: 'Nhân – Gái', players: [['Nhân', 1, 'nhan-avatar'], ['Gái', 4, 'gai-avatar']] },
+  { id: 8, letter: 'H', name: 'Phát – Hùng Bùi', players: [['Phát', 2, 'phat-avatar'], ['Hùng Bùi', 3]] }
+];
+
+const RES_PATHS = {
+  'trung-avatar': './assets/trung-avatar.jpg', 'minhanh-avatar': './assets/minhanh-avatar.jpg',
+  'vinh-avatar': './assets/vinh-avatar.jpg', 'truc-avatar': './assets/truc-avatar.jpg',
+  'hao-avatar': './assets/hao-avatar.jpg', 'duy-avatar': './assets/duy-avatar.jpg',
+  'tung-avatar': './assets/tung-avatar.jpg', 'myho-avatar': './assets/myho-avatar.jpg',
+  'nhan-avatar': './assets/nhan-avatar.jpg', 'gai-avatar': './assets/gai-avatar.jpg',
+  'phat-avatar': './assets/phat-avatar.jpg'
+};
+function resolveRes(id) { return (window.__resources && window.__resources[id]) || RES_PATHS[id] || ''; }
+
+const MATCHES = [
+  { id: 'M1', round: 1, court: 1, time: '09:00', a: 1, b: 5, sa: 21, sb: 15, state: 'done' },
+  { id: 'M2', round: 1, court: 2, time: '09:00', a: 2, b: 6, sa: 21, sb: 18, state: 'done' },
+  { id: 'M3', round: 1, court: 1, time: '09:20', a: 3, b: 7, sa: 21, sb: 19, state: 'done' },
+  { id: 'M4', round: 1, court: 2, time: '09:20', a: 4, b: 8, sa: 21, sb: 17, state: 'done' },
+  { id: 'M5', round: 2, court: 1, time: '09:40', a: 1, b: 4, sa: 17, sb: 14, state: 'live' },
+  { id: 'M6', round: 2, court: 2, time: '09:40', a: 2, b: 3, sa: 0, sb: 0, state: 'next' },
+  { id: 'M7', round: 2, court: 1, time: '10:00', a: 5, b: 8, sa: 0, sb: 0, state: 'next' },
+  { id: 'M8', round: 2, court: 2, time: '10:00', a: 6, b: 7, sa: 0, sb: 0, state: 'next' }
+];
+
+const ROUND_META = [
+  { n: 1, title: 'Round 1', time: '09:00 – 09:40', sub: 'Ghép cặp mở màn' },
+  { n: 2, title: 'Round 2', time: '09:40 – 10:20', sub: 'Ghép theo thành tích' },
+  { n: 3, title: 'Round 3', time: '10:20 – 10:50', sub: 'Ghép theo thành tích' },
+  { n: 4, title: 'Round 4', time: '10:50 – 11:10', sub: 'Có trận đấu chéo' },
+  { n: 5, title: 'Round 5', time: '11:10 – 11:25', sub: 'Chốt suất cuối' }
+];
+
+class Component extends DCLogic {
+  state = {
+    screen: 'home',
+    hero: null,
+    signedIn: false,
+    now: Date.now(),
+    matches: MATCHES.map(m => ({ ...m })),
+    activeId: 'M5',
+    draftA: 17,
+    draftB: 14,
+    savedMsg: 'Mọi thay đổi hiển thị ngay trên trang chủ.'
+  };
+
+  componentDidMount() {
+    this.t = setInterval(() => this.setState({ now: Date.now() }), 1000);
+    this.t2 = setInterval(() => {
+      if (this.props.autoLiveTicker === false) return;
+      this.setState(s => {
+        const ms = s.matches.map(m => {
+          if (m.state !== 'live') return m;
+          const bump = Math.random() < 0.5 ? 'sa' : 'sb';
+          if (m.sa >= 21 || m.sb >= 21) return m;
+          return { ...m, [bump]: m[bump] + 1 };
+        });
+        return { matches: ms };
+      });
+    }, (this.props.tickerSpeed || 4.5) * 1000);
+  }
+  componentWillUnmount() { clearInterval(this.t); clearInterval(this.t2); }
+
+  team(id) { return TEAMS.find(t => t.id === id); }
+  tname(id) { return this.team(id).name; }
+  tplayers(id) { return this.team(id).players.map(p => p[0]).join(' & '); }
+  duo(id) {
+    return this.team(id).players.map((p, i) => ({
+      photo: p[2] ? resolveRes(p[2]) : '', hasPhoto: !!p[2], noPhoto: !p[2],
+      initials: p[0].trim()[0].toUpperCase(),
+      color: AVATAR_COLORS[Math.abs(hashStr(p[0])) % AVATAR_COLORS.length],
+      left: i * 10
+    }));
+  }
+
+  select(id) {
+    const m = this.state.matches.find(x => x.id === id);
+    this.setState({ activeId: id, draftA: m.sa, draftB: m.sb, savedMsg: 'Đang chỉnh ' + id + '.' });
+  }
+  bump(k, d) { this.setState(s => ({ [k]: Math.max(0, s[k] + d) })); }
+  commit(state) {
+    this.setState(s => ({
+      matches: s.matches.map(m => m.id === s.activeId ? { ...m, sa: s.draftA, sb: s.draftB, state } : m),
+      savedMsg: state === 'done' ? 'Đã kết thúc ' + s.activeId + ' · ' + s.draftA + '–' + s.draftB : 'Đã lưu ' + s.activeId + ' lúc ' + new Date().toLocaleTimeString('vi-VN')
+    }));
+  }
+
+  renderVals() {
+    const s = this.state;
+    const pad = n => String(n).padStart(2, '0');
+    const start = new Date(this.props.startTime || '2026-08-15T09:00:00+07:00').getTime();
+    let d = Math.max(0, start - s.now);
+    const days = Math.floor(d / 864e5), hrs = Math.floor(d / 36e5) % 24, mins = Math.floor(d / 6e4) % 60, secs = Math.floor(d / 1e3) % 60;
+
+    const liveM = s.matches.find(m => m.state === 'live') || s.matches.find(m => m.state === 'next');
+    const live = {
+      round: 'VÒNG ' + liveM.round, court: liveM.court,
+      aName: this.tname(liveM.a), bName: this.tname(liveM.b),
+      aPlayers: this.tplayers(liveM.a), bPlayers: this.tplayers(liveM.b),
+      aScore: liveM.sa, bScore: liveM.sb,
+      pct: Math.min(100, Math.round(Math.max(liveM.sa, liveM.sb) / 21 * 100)) + '%'
+    };
+
+    const done = s.matches.filter(m => m.state === 'done');
+    const recent = done.slice(-4).reverse().map(m => ({
+      code: m.id, aName: this.tname(m.a), bName: this.tname(m.b), score: m.sa + ' – ' + m.sb
+    }));
+
+    const tbl = {};
+    TEAMS.forEach(t => tbl[t.id] = { id: t.id, w: 0, l: 0, pf: 0, pa: 0, hist: {} });
+    done.forEach(m => {
+      const A = tbl[m.a], B = tbl[m.b];
+      A.pf += m.sa; A.pa += m.sb; B.pf += m.sb; B.pa += m.sa;
+      if (m.sa > m.sb) { A.w++; B.l++; A.hist[m.round] = 'T'; B.hist[m.round] = 'B'; }
+      else { B.w++; A.l++; B.hist[m.round] = 'T'; A.hist[m.round] = 'B'; }
+    });
+    const standings = Object.values(tbl)
+      .sort((x, y) => y.w - x.w || x.id - y.id)
+      .map((r, i) => ({
+        rank: pad(i + 1), rankColor: i < 4 ? '#0B5D4E' : '#B9C4C0',
+        name: this.tname(r.id), players: this.tplayers(r.id),
+        w: r.w, l: r.l
+      }));
+
+    const stateMeta = {
+      done: { label: 'KẾT THÚC', color: '#8AA39C', bg: '#FFFDF7', border: 'rgba(10,31,26,.12)', meta: '#8AA39C', score: '#0A1F1A' },
+      live: { label: 'ĐANG ĐẤU', color: '#FF5A47', bg: '#0A1F1A', border: '#0A1F1A', meta: '#6E8A83', score: '#F2B544' },
+      next: { label: 'SẮP DIỄN RA', color: '#0B5D4E', bg: 'rgba(11,93,78,.05)', border: 'rgba(10,31,26,.1)', meta: '#8AA39C', score: '#B9C4C0' }
+    };
+    const letter = id => this.team(id).letter;
+    const gStyle = (w, l) => w > l ? { bg: '#EEF7F1', border: '#A8D3BB', fg: '#1F7A45' }
+      : w < l ? { bg: '#FBEFE7', border: '#E6C0A4', fg: '#B5562B' }
+      : { bg: '#FFF9EC', border: '#EBD7A4', fg: '#A3790A' };
+    const chip = id => ({ letter: letter(id), name: this.tname(id), rec: tbl[id].w + '–' + tbl[id].l, av: this.duo(id) });
+
+    const mkMatch = m => {
+      const fin = m.state === 'done';
+      const aw = fin && m.sa > m.sb, bw = fin && m.sb > m.sa;
+      const row = (win, lose) => win
+        ? { bg: '#EAF8EE', fg: '#1A6B3A', weight: '800' }
+        : lose ? { bg: '#FAFAF8', fg: '#9AA09B', weight: '600' }
+        : { bg: '#FFFFFF', fg: '#0A1F1A', weight: '700' };
+      const A = row(aw, fin && !aw), B = row(bw, fin && !bw);
+      return {
+        code: m.id, meta: m.time + ' · Sân ' + m.court,
+        state: stateMeta[m.state].label, stateColor: stateMeta[m.state].color,
+        aLetter: letter(m.a), bLetter: letter(m.b), aAv: this.duo(m.a), bAv: this.duo(m.b),
+        aName: this.tname(m.a), bName: this.tname(m.b),
+        sa: m.state === 'next' ? '–' : m.sa, sb: m.state === 'next' ? '–' : m.sb,
+        aBg: A.bg, aFg: A.fg, aWeight: A.weight,
+        bBg: B.bg, bFg: B.fg, bWeight: B.weight
+      };
+    };
+
+    const alive = id => tbl[id].w < 3 && tbl[id].l < 3;
+    const swissCols = ROUND_META.map(r => {
+      const ms = s.matches.filter(m => m.round === r.n);
+      const groups = [];
+      if (r.n === 1) {
+        groups.push({ label: 'TẤT CẢ 8 ĐỘI · 0–0', sub: 'Bốc thăm mở màn', bg: '#EEF3F7', border: '#B9CBD8', fg: '#2A5470', matches: ms.map(mkMatch), chips: [] });
+      } else {
+        const keys = [];
+        TEAMS.forEach(t => {
+          const R = tbl[t.id];
+          if (!alive(t.id) || R.w + R.l !== r.n - 1) return;
+          const k = R.w + '-' + R.l;
+          if (keys.indexOf(k) < 0) keys.push(k);
+        });
+        keys.sort((x, y) => Number(y.split('-')[0]) - Number(x.split('-')[0]));
+        keys.forEach(k => {
+          const w = Number(k.split('-')[0]), l = Number(k.split('-')[1]);
+          const ids = TEAMS.filter(t => tbl[t.id].w === w && tbl[t.id].l === l && alive(t.id)).map(t => t.id);
+          const gm = ms.filter(m => ids.indexOf(m.a) >= 0 && ids.indexOf(m.b) >= 0);
+          const paired = [];
+          gm.forEach(m => { paired.push(m.a, m.b); });
+          groups.push(Object.assign({
+            label: 'NHÓM ' + w + '–' + l,
+            sub: ids.length + ' đội · thắng đi tiếp ' + (w + 1) + '–' + l,
+            matches: gm.map(mkMatch),
+            chips: ids.filter(i => paired.indexOf(i) < 0).map(chip)
+          }, gStyle(w, l)));
+        });
+        if (!groups.length) groups.push({ label: 'CHỜ VÒNG TRƯỚC', sub: 'Ghép cặp khi có đủ kết quả', bg: '#F4F4F1', border: '#DEDED7', fg: '#8AA39C', matches: [], chips: [] });
+      }
+      const anyLive = ms.some(m => m.state === 'live');
+      const allDone = ms.length > 0 && ms.every(m => m.state === 'done');
+      return {
+        title: r.title, time: r.time, sub: r.sub, groups: groups,
+        status: allDone ? 'HOÀN TẤT' : anyLive ? 'ĐANG DIỄN RA' : 'CHƯA BẮT ĐẦU',
+        statusColor: allDone ? '#8AA39C' : anyLive ? '#FF5A47' : '#B4BEBA'
+      };
+    });
+
+    const qualified = TEAMS.filter(t => tbl[t.id].w >= 3).map(t => chip(t.id));
+    const eliminated = TEAMS.filter(t => tbl[t.id].l >= 3).map(t => chip(t.id));
+    const seedName = i => qualified[i] ? qualified[i].letter + ' · ' + qualified[i].name : 'Hạt giống #' + (i + 1);
+    const semis = [
+      { code: 'BÁN KẾT 1', time: '11:30 · Sân 1', aName: seedName(0), bName: seedName(3) },
+      { code: 'BÁN KẾT 2', time: '11:30 · Sân 2', aName: seedName(1), bName: seedName(2) }
+    ];
+
+    const trackRows = TEAMS.map(t => {
+      const R = tbl[t.id];
+      const st = R.w >= 3 ? { label: 'Qualified', bg: '#E9F8EE', fg: '#1A6B3A' }
+        : R.l >= 3 ? { label: 'Bị loại', bg: '#FBEAE7', fg: '#A3312B' }
+        : { label: 'Đang đấu', bg: '#F2F3F0', fg: '#5B7A72' };
+      return {
+        letter: t.letter, name: t.name, w: R.w, l: R.l, av: this.duo(t.id),
+        status: st.label, statusBg: st.bg, statusFg: st.fg,
+        cells: [1, 2, 3, 4, 5].map(n => {
+          const v = R.hist[n];
+          return { v: v || '–', color: v === 'T' ? '#1F7A45' : v === 'B' ? '#B5562B' : '#C4CAC6', weight: v ? '700' : '400' };
+        })
+      };
+    });
+
+    const refMatches = s.matches.map(m => ({
+      code: m.id + ' · ' + m.time,
+      label: this.tname(m.a) + ' vs ' + this.tname(m.b),
+      state: stateMeta[m.state].label, stateColor: stateMeta[m.state].color,
+      selBorder: m.id === s.activeId ? '#0B5D4E' : 'rgba(10,31,26,.12)',
+      selBg: m.id === s.activeId ? 'rgba(11,93,78,.08)' : 'transparent',
+      select: () => this.select(m.id)
+    }));
+    const am = s.matches.find(m => m.id === s.activeId);
+    const draft = {
+      code: am.id, court: am.court, state: stateMeta[am.state].label,
+      aName: this.tname(am.a), bName: this.tname(am.b),
+      aPlayers: this.tplayers(am.a), bPlayers: this.tplayers(am.b),
+      a: s.draftA, b: s.draftB
+    };
+
+    return {
+      homeFg: s.screen === 'home' ? '#FFFDF7' : '#3C5A53',
+      teamsFg: s.screen === 'teams' ? '#FFFDF7' : '#3C5A53',
+      schedFg: s.screen === 'schedule' ? '#FFFDF7' : '#3C5A53',
+      refFg: s.screen === 'ref' ? '#FFFDF7' : '#3C5A53',
+      rulesFg: s.screen === 'rules' ? '#FFFDF7' : '#3C5A53',
+      isHome: s.screen === 'home', isTeams: s.screen === 'teams',
+      isSchedule: s.screen === 'schedule', isRef: s.screen === 'ref',
+      isRules: s.screen === 'rules',
+      goHome: () => this.setState({ screen: 'home' }),
+      goTeams: () => this.setState({ screen: 'teams' }),
+      goSchedule: () => this.setState({ screen: 'schedule' }),
+      goRef: () => this.setState({ screen: 'ref' }),
+      goRules: () => this.setState({ screen: 'rules' }),
+      signedIn: s.signedIn, signedOut: !s.signedIn,
+      signIn: () => this.setState({ signedIn: true, screen: 'ref' }),
+      signOut: () => this.setState({ signedIn: false }),
+      countdown: [
+        { v: pad(days), l: 'NGÀY' }, { v: pad(hrs), l: 'GIỜ' },
+        { v: pad(mins), l: 'PHÚT' }, { v: pad(secs), l: 'GIÂY' }
+      ],
+      incA: () => this.bump('draftA', 1), decA: () => this.bump('draftA', -1),
+      incB: () => this.bump('draftB', 1), decB: () => this.bump('draftB', -1),
+      saveLive: () => this.commit('live'), finish: () => this.commit('done'),
+      live, recent, standings, swissCols, semis, refMatches, draft,
+      qualified, eliminated, trackRows,
+      noQualified: qualified.length === 0, noEliminated: eliminated.length === 0,
+      savedMsg: s.savedMsg,
+      tierLegend: [1, 2, 3, 4].map(n => ({ n, color: TIER[n].color, fg: TIER[n].fg, label: TIER[n].label })),
+      teams: TEAMS.map(t => {
+        const r = tbl[t.id];
+        return {
+          code: 'ĐỘI ' + t.letter, name: t.name, record: r.w + 'T – ' + r.l + 'B',
+          players: t.players.map((p, i) => ({
+            name: p[0], tier: p[1], tierLabel: TIER[p[1]].label,
+            color: TIER[p[1]].color, fg: TIER[p[1]].fg,
+            photo: p[2] ? resolveRes(p[2]) : '', hasPhoto: !!p[2], noPhoto: !p[2],
+            avatarColor: AVATAR_COLORS[Math.abs(hashStr(p[0])) % AVATAR_COLORS.length],
+            initials: p[0].split(' ').filter(Boolean).slice(-2).map(w => w[0]).join('').toUpperCase(),
+            slotId: 'p-' + t.id + '-' + i
+          }))
+        };
+      })
+    };
+  }
+}
+
+</script>
+</body>
+</html>
