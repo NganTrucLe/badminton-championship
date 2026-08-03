@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useRefereeAuth } from "@/contexts/RefereeAuthContext";
 
 const NAV_ITEMS: { href: string; label: string }[] = [
@@ -16,10 +16,23 @@ function isActivePath(pathname: string, href: string): boolean {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
 
+/** Best-effort display name from Supabase's Google OAuth user metadata, falling back to email. */
+function displayName(user: { email?: string | null; user_metadata?: Record<string, unknown> }): string {
+  const fullName = user.user_metadata?.full_name;
+  if (typeof fullName === "string" && fullName.trim().length > 0) return fullName;
+  return user.email ?? "Trọng tài";
+}
+
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "TT";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
 export function SiteHeader() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { signedIn, signIn } = useRefereeAuth();
+  const { user, signInWithGoogle } = useRefereeAuth();
 
   return (
     <div
@@ -114,7 +127,7 @@ export function SiteHeader() {
           })}
         </nav>
 
-        {signedIn ? (
+        {user ? (
           <div
             style={{
               display: "flex",
@@ -139,16 +152,15 @@ export function SiteHeader() {
                 justifyContent: "center",
               }}
             >
-              TT
+              {initialsOf(displayName(user))}
             </div>
-            <span style={{ color: "#EAF3F0", fontSize: 12, fontWeight: 600 }}>Trọng tài Nhân</span>
+            <span style={{ color: "#EAF3F0", fontSize: 12, fontWeight: 600 }}>{displayName(user)}</span>
           </div>
         ) : (
           <button
             type="button"
             onClick={() => {
-              signIn();
-              router.push("/referee");
+              void signInWithGoogle("/referee");
             }}
             style={{
               display: "flex",

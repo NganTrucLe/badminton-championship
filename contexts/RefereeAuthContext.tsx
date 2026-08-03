@@ -1,31 +1,82 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import type { User } from "@supabase/supabase-js";
+import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
 
 interface IRefereeAuthContextValue {
-  signedIn: boolean;
-  signIn: () => void;
-  signOut: () => void;
+  /** Current Supabase session user, or null if signed out. Loaded asynchronously on mount. */
+  user: User | null;
+  /** True until the initial session check resolves. */
+  loading: boolean;
+  /**
+   * Starts the Google OAuth flow (full-page redirect to Google, then back to `/auth/callback`,
+   * which exchanges the code for a session and redirects to `next`).
+   *
+   * NOTE: this only proves *who* the caller is — it does NOT grant referee access. Organizer
+   * status is checked server-side via `lib/auth/organizer.ts` (which calls the DB's
+   * `is_organizer()` function) and enforced for real by the `matches` RLS write policies.
+   */
+  signInWithGoogle: (next?: string) => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 const RefereeAuthContext = createContext<IRefereeAuthContextValue | undefined>(undefined);
 
 /**
- * TODO(Phase 3/4): replace with real Supabase Google OAuth + organizer allow-list check.
- * For Phase 1 this is purely local client state — the "Đăng nhập Google" button is a no-op
- * placeholder that just flips a boolean, matching the design's demo-only auth ("DEMO · KHÔNG
- * XÁC THỰC THẬT"). Resets on page reload; nothing is persisted or verified server-side.
+ * Real Supabase Google OAuth session state (Phase 3). Replaces the Phase 1 mock boolean —
+ * `signedIn` is no longer a client-only flag; it mirrors the actual Supabase auth session, which
+ * the server independently re-checks (via `lib/auth/organizer.ts`) before ever rendering the
+ * referee scoring UI.
  */
 export function RefereeAuthProvider({ children }: { children: ReactNode }) {
-  const [signedIn, setSignedIn] = useState(false);
+  const [supabase] = useState(() => createBrowserSupabaseClient());
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const value = useMemo(
+  useEffect(() => {
+    let cancelled = false;
+
+    supabase.auth.getUser().then(({ data }) => {
+      if (cancelled) return;
+      setUser(data.user);
+      setLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  const value = useMemo<IRefereeAuthContextValue>(
     () => ({
-      signedIn,
-      signIn: () => setSignedIn(true),
-      signOut: () => setSignedIn(false),
+      user,
+      loading,
+      signInWithGoogle: async (next = "/referee") => {
+        const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo },
+        });
+        if (error) {
+          throw new Error(`Google sign-in failed: ${error.message}`);
+        }
+      },
+      signOut: async () => {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+          throw new Error(`Sign-out failed: ${error.message}`);
+        }
+      },
     }),
-    [signedIn],
+    [user, loading, supabase],
   );
 
   return <RefereeAuthContext.Provider value={value}>{children}</RefereeAuthContext.Provider>;
