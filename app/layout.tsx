@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import { Archivo, Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
+import { MatchesProvider } from "@/contexts/MatchesContext";
+import { RefereeAuthProvider } from "@/contexts/RefereeAuthContext";
+import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 import "./globals.css";
 
 const archivo = Archivo({
@@ -35,7 +39,15 @@ export default function RootLayout({
       className={`${archivo.variable} ${bricolageGrotesque.variable} ${jetBrainsMono.variable}`}
     >
       <body className="min-h-screen bg-[var(--color-bg)] font-[family-name:var(--font-archivo)] text-[var(--color-text)]">
-        {children}
+        <RefereeAuthProvider>
+          <MatchesProvider>
+            <div style={{ minHeight: "100vh", overflowX: "hidden" }}>
+              <SiteHeader />
+              {children}
+              <SiteFooter />
+            </div>
+          </MatchesProvider>
+        </RefereeAuthProvider>
       </body>
     </html>
   );
