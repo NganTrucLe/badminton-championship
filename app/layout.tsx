@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Archivo, Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
-import { MatchesProvider } from "@/contexts/MatchesContext";
 import { RefereeAuthProvider } from "@/contexts/RefereeAuthContext";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -40,13 +39,11 @@ export default function RootLayout({
     >
       <body className="min-h-screen bg-[var(--color-bg)] font-[family-name:var(--font-archivo)] text-[var(--color-text)]">
         <RefereeAuthProvider>
-          <MatchesProvider>
-            <div style={{ minHeight: "100vh", overflowX: "hidden" }}>
-              <SiteHeader />
-              {children}
-              <SiteFooter />
-            </div>
-          </MatchesProvider>
+          <div style={{ minHeight: "100vh", overflowX: "hidden" }}>
+            <SiteHeader />
+            {children}
+            <SiteFooter />
+          </div>
         </RefereeAuthProvider>
       </body>
     </html>

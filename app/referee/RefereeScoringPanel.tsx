@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { useRefereeAuth } from "@/contexts/RefereeAuthContext";
-import { useMatches } from "@/contexts/MatchesContext";
-import { teamName, teamPlayersLabel } from "@/lib/tournament/data";
+import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
+import { useLiveMatches } from "@/lib/supabase/useLiveMatches";
+import { teamName, teamPlayersLabel, type IMatch, type TMatchState } from "@/lib/tournament/data";
 
 const STATE_LABEL: Record<string, { label: string; color: string }> = {
   done: { label: "KẾT THÚC", color: "#8AA39C" },
@@ -15,24 +16,34 @@ function firstDefaultMatchId(matches: { id: string; state: string }[]): string {
   return matches.find((m) => m.state === "live")?.id ?? matches.find((m) => m.state === "next")?.id ?? matches[0]?.id ?? "";
 }
 
+interface IRefereeScoringPanelProps {
+  initialMatches: IMatch[];
+  pairIdToTeamId: Record<string, number>;
+}
+
 /**
  * Only ever rendered server-side after `getOrganizerSession()` confirms `isOrganizer === true`
- * (see app/referee/page.tsx) — the actual write-authorization boundary is the DB RLS policy, not
- * this render check.
+ * (see app/referee/page.tsx) — the actual write-authorization boundary is the DB RLS policy
+ * (`organizers can update/insert matches`, gated by `is_organizer()`), not this render check. If a
+ * write is somehow attempted by a non-organizer session, Postgres rejects it and `commit()` below
+ * surfaces the error instead of silently succeeding.
  *
- * TODO(Phase 4): `updateScore` (from MatchesContext) is still a local-only mock mutation. Phase 4
- * replaces it with an `UPDATE matches ...` Supabase call (RLS-guarded by is_organizer(), already
- * in place) plus realtime propagation to public pages.
+ * Concurrency (v1, documented per plan): writes are whole-row UPDATEs keyed by match `code`, with
+ * no optimistic-concurrency check (no version column, no "claimed by" lock). If two organizers
+ * edit the same match around the same time, the later UPDATE simply overwrites the earlier one —
+ * last-write-wins on the whole score/state row. A per-match lock/claim is an explicitly deferred
+ * follow-up, not this phase.
  */
-export function RefereeScoringPanel() {
+export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IRefereeScoringPanelProps) {
   const { signOut } = useRefereeAuth();
-  const { matches, updateScore } = useMatches();
+  const [matches, setMatches] = useLiveMatches(initialMatches, pairIdToTeamId);
 
   const [activeId, setActiveId] = useState<string>(() => firstDefaultMatchId(matches));
   const activeMatch = useMemo(() => matches.find((m) => m.id === activeId) ?? matches[0], [matches, activeId]);
   const [draftA, setDraftA] = useState<number>(() => activeMatch?.sa ?? 0);
   const [draftB, setDraftB] = useState<number>(() => activeMatch?.sb ?? 0);
   const [savedMsg, setSavedMsg] = useState<string>("Mọi thay đổi hiển thị ngay trên trang chủ.");
+  const [saving, setSaving] = useState(false);
 
   function selectMatch(id: string) {
     const m = matches.find((x) => x.id === id);
@@ -48,14 +59,50 @@ export function RefereeScoringPanel() {
     else setDraftB((v) => Math.max(0, v + delta));
   }
 
-  function commit(state: "live" | "done") {
-    if (!activeMatch) return;
-    updateScore(activeMatch.id, draftA, draftB, state);
-    setSavedMsg(
-      state === "done"
-        ? `Đã kết thúc ${activeMatch.id} · ${draftA}–${draftB}`
-        : `Đã lưu ${activeMatch.id} lúc ${new Date().toLocaleTimeString("vi-VN")}`,
-    );
+  /**
+   * Persists the draft score to `public.matches` via the authenticated browser client — the same
+   * client used for the Google sign-in session (`createBrowserSupabaseClient`), so the request
+   * carries the organizer's JWT and RLS's `is_organizer()` check passes. Matched by `code` (the
+   * human-readable id like "M5") rather than the row's uuid, since that's all the app's `IMatch`
+   * shape carries — `code` is unique.
+   */
+  async function commit(state: TMatchState) {
+    if (!activeMatch || saving) return;
+    setSaving(true);
+    try {
+      const supabase = createBrowserSupabaseClient();
+      // `.select()` here is load-bearing, not decorative: RLS's `using()` clause on the update
+      // policy silently filters out rows a non-organizer isn't allowed to touch — PostgREST then
+      // reports zero rows updated with NO `error`, not a permission-denied. Without `.select()` we
+      // can't tell "0 rows matched" from "1 row updated" and would show a false "saved" message.
+      const { data, error } = await supabase
+        .from("matches")
+        .update({ score_a: draftA, score_b: draftB, state })
+        .eq("code", activeMatch.id)
+        .select();
+
+      if (error) {
+        setSavedMsg(`Lỗi khi lưu ${activeMatch.id}: ${error.message}`);
+        return;
+      }
+      if (!data || data.length === 0) {
+        setSavedMsg(`Không thể lưu ${activeMatch.id}: tài khoản này không có quyền trọng tài.`);
+        return;
+      }
+
+      // Optimistic local patch ahead of the realtime echo, so the "CHỌN TRẬN" list and state
+      // badge update instantly even if the realtime round-trip lags.
+      setMatches((prev) => prev.map((m) => (m.id === activeMatch.id ? { ...m, sa: draftA, sb: draftB, state } : m)));
+      setSavedMsg(
+        state === "done"
+          ? `Đã kết thúc ${activeMatch.id} · ${draftA}–${draftB}`
+          : `Đã lưu ${activeMatch.id} lúc ${new Date().toLocaleTimeString("vi-VN")}`,
+      );
+    } catch (err) {
+      setSavedMsg(`Lỗi khi lưu ${activeMatch.id}: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (!activeMatch) return null;
@@ -260,7 +307,10 @@ export function RefereeScoringPanel() {
           <div style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap" }}>
             <button
               type="button"
-              onClick={() => commit("live")}
+              disabled={saving}
+              onClick={() => {
+                void commit("live");
+              }}
               style={{
                 flex: 1,
                 minWidth: 150,
@@ -271,7 +321,8 @@ export function RefereeScoringPanel() {
                 color: "#FFFDF7",
                 fontSize: 14,
                 fontWeight: 700,
-                cursor: "pointer",
+                cursor: saving ? "not-allowed" : "pointer",
+                opacity: saving ? 0.6 : 1,
                 fontFamily: "var(--font-archivo), sans-serif",
               }}
             >
@@ -279,7 +330,10 @@ export function RefereeScoringPanel() {
             </button>
             <button
               type="button"
-              onClick={() => commit("done")}
+              disabled={saving}
+              onClick={() => {
+                void commit("done");
+              }}
               style={{
                 flex: 1,
                 minWidth: 150,
@@ -290,7 +344,8 @@ export function RefereeScoringPanel() {
                 color: "#052D22",
                 fontSize: 14,
                 fontWeight: 800,
-                cursor: "pointer",
+                cursor: saving ? "not-allowed" : "pointer",
+                opacity: saving ? 0.6 : 1,
                 fontFamily: "var(--font-archivo), sans-serif",
               }}
             >
