@@ -1,6 +1,7 @@
 # Plan — Badminton Championship Website (Next.js + Supabase)
 
-**Status:** Approved 2026-08-03 — executing Phase 0–1
+**Status:** All phases (0–4) complete 2026-08-03. Public site + realtime referee scoring on Supabase.
+Remaining: user applies `supabase/cloud-phase4.sql` + confirms end-to-end sign-in; deferred follow-ups below.
 **Spec:** `.planning/specs/badminton-championship.md`
 **Design reference:** `.design-reference/Giai Cau Long CLB.dc.html` (Claude Design `.dc` prototype — local-state mockup)
 **Date:** 2026-08-03
