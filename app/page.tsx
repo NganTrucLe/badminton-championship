@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { Countdown } from "@/components/Countdown";
 import { HomeLiveSection } from "@/app/HomeLiveSection";
+import { HomeLiveSkeleton } from "@/app/HomeLiveSkeleton";
 import { getMatches, getPairIdToTeamId } from "@/lib/supabase/tournament";
 
 const EVENT_START = "2026-08-15T09:00:00+07:00";
@@ -9,9 +11,12 @@ const EVENT_START = "2026-08-15T09:00:00+07:00";
 // Supabase Realtime, so scores update without a reload after the initial SSR.
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
+async function HomeLiveData() {
   const [matches, pairIdToTeamId] = await Promise.all([getMatches(), getPairIdToTeamId()]);
+  return <HomeLiveSection initialMatches={matches} pairIdToTeamId={pairIdToTeamId} />;
+}
 
+export default function HomePage() {
   return (
     <div>
       {/* Hero */}
@@ -230,7 +235,9 @@ export default async function HomePage() {
           gap: 16,
         }}
       >
-        <HomeLiveSection initialMatches={matches} pairIdToTeamId={pairIdToTeamId} />
+        <Suspense fallback={<HomeLiveSkeleton />}>
+          <HomeLiveData />
+        </Suspense>
 
         <div style={{ background: "#FFFDF7", border: "1px solid rgba(10,31,26,.12)", borderRadius: 22, padding: 26 }}>
           <div
