@@ -131,3 +131,22 @@ export async function getMatches(): Promise<IMatch[]> {
 function letterToTeamId(letter: string): number {
   return letter.trim().toUpperCase().charCodeAt(0) - "A".charCodeAt(0) + 1;
 }
+
+/**
+ * Maps a pair's DB uuid to its numeric Swiss team id (see letterToTeamId). Realtime
+ * `postgres_changes` payloads on `matches` only carry `pair_a_id`/`pair_b_id` (uuids), not the
+ * pair's letter code — client islands (Phase 4) need this map to translate a raw realtime row
+ * back into the app's `IMatch` shape without an extra round-trip per event.
+ */
+export async function getPairIdToTeamId(): Promise<Record<string, number>> {
+  const supabase = createServerSupabaseClient();
+  const { data, error } = await supabase.from("pairs").select("id, code").is("deleted_at", null);
+  if (error) {
+    throw new Error(`Failed to load pairs: ${error.message}`);
+  }
+  const map: Record<string, number> = {};
+  (data ?? []).forEach((p: { id: string; code: string }) => {
+    map[p.id] = letterToTeamId(p.code);
+  });
+  return map;
+}
