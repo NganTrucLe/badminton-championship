@@ -1,56 +1,15 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useMatches } from "@/contexts/MatchesContext";
+import { Countdown } from "@/components/Countdown";
+import { getMatches } from "@/lib/supabase/tournament";
 import { computeLiveMatch, computeRecentResults } from "@/lib/tournament/standings";
 
 const EVENT_START = "2026-08-15T09:00:00+07:00";
 
-function pad2(n: number): string {
-  return String(n).padStart(2, "0");
-}
+// Read fresh from Supabase on every request rather than baking scores into the static build —
+// this is a read-only DB-backed page (Phase 2); realtime push comes in Phase 4.
+export const dynamic = "force-dynamic";
 
-function useCountdown(target: string) {
-  const [mounted, setMounted] = useState(false);
-  const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, [mounted]);
-
-  if (!mounted) {
-    return [
-      { v: "00", l: "NGÀY" },
-      { v: "00", l: "GIỜ" },
-      { v: "00", l: "PHÚT" },
-      { v: "00", l: "GIÂY" },
-    ];
-  }
-
-  const diff = Math.max(0, new Date(target).getTime() - now);
-  const days = Math.floor(diff / 864e5);
-  const hrs = Math.floor(diff / 36e5) % 24;
-  const mins = Math.floor(diff / 6e4) % 60;
-  const secs = Math.floor(diff / 1e3) % 60;
-
-  return [
-    { v: pad2(days), l: "NGÀY" },
-    { v: pad2(hrs), l: "GIỜ" },
-    { v: pad2(mins), l: "PHÚT" },
-    { v: pad2(secs), l: "GIÂY" },
-  ];
-}
-
-export default function HomePage() {
-  const { matches } = useMatches();
-  const countdown = useCountdown(EVENT_START);
+export default async function HomePage() {
+  const matches = await getMatches();
   const live = computeLiveMatch(matches);
   const recent = computeRecentResults(matches);
 
@@ -212,44 +171,7 @@ export default function HomePage() {
               >
                 TRẬN ĐẤU SẼ BẮT ĐẦU SAU
               </div>
-              <div style={{ display: "flex", gap: 10 }}>
-                {countdown.map((c) => (
-                  <div
-                    key={c.l}
-                    style={{
-                      background: "rgba(255,253,247,.1)",
-                      border: "1px solid rgba(255,255,255,.18)",
-                      borderRadius: 12,
-                      padding: "10px 14px",
-                      minWidth: 72,
-                      textAlign: "center",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontFamily: "var(--font-jetbrains), monospace",
-                        fontWeight: 700,
-                        fontSize: "clamp(24px,3.4vw,34px)",
-                        color: "#FFFDF7",
-                        lineHeight: 1,
-                      }}
-                    >
-                      {c.v}
-                    </div>
-                    <div
-                      style={{
-                        fontFamily: "var(--font-jetbrains), monospace",
-                        fontSize: 9,
-                        letterSpacing: ".14em",
-                        color: "#8FBCB0",
-                        marginTop: 6,
-                      }}
-                    >
-                      {c.l}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <Countdown target={EVENT_START} />
             </div>
             <div style={{ borderLeft: "1px solid rgba(255,255,255,.2)", paddingLeft: 26 }}>
               <div

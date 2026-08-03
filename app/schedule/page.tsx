@@ -1,7 +1,5 @@
-"use client";
-
 import { PlayerAvatar } from "@/components/PlayerAvatar";
-import { useMatches } from "@/contexts/MatchesContext";
+import { getMatches } from "@/lib/supabase/tournament";
 import { getTeam } from "@/lib/tournament/data";
 import {
   buildTeamRecords,
@@ -125,8 +123,12 @@ function EliminatedChip({ chip }: { chip: ITeamChip }) {
   );
 }
 
-export default function SchedulePage() {
-  const { matches } = useMatches();
+// Read fresh from Supabase on every request rather than baking scores into the static build —
+// this is a read-only DB-backed page (Phase 2); realtime push comes in Phase 4.
+export const dynamic = "force-dynamic";
+
+export default async function SchedulePage() {
+  const matches = await getMatches();
   const records = buildTeamRecords(matches);
   const swissCols = computeSwissColumns(matches, records);
   const qualified = computeQualified(records);

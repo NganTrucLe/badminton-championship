@@ -1,9 +1,15 @@
 import { PlayerAvatar } from "@/components/PlayerAvatar";
-import { TEAMS, TIER, type TTier } from "@/lib/tournament/data";
+import { getTeams } from "@/lib/supabase/tournament";
+import { TIER, type TTier } from "@/lib/tournament/data";
 
 const TIER_ORDER: TTier[] = [1, 2, 3, 4];
 
-export default function TeamsPage() {
+// Read fresh from Supabase on every request rather than baking data into the static build.
+export const dynamic = "force-dynamic";
+
+export default async function TeamsPage() {
+  const teams = await getTeams();
+
   return (
     <div style={{ maxWidth: 1240, margin: "0 auto", padding: "34px 20px 60px" }}>
       <h2
@@ -66,7 +72,7 @@ export default function TeamsPage() {
           gap: 16,
         }}
       >
-        {TEAMS.map((t) => (
+        {teams.map((t) => (
           <div
             key={t.id}
             style={{
