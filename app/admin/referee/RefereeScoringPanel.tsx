@@ -5,16 +5,13 @@ import { useRefereeAuth } from "@/contexts/RefereeAuthContext";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
 import { useLiveMatches } from "@/lib/supabase/useLiveMatches";
 import { teamName, teamPlayersLabel, type IMatch, type TMatchState } from "@/lib/tournament/data";
+import { isSelectable, primaryAction, showScoreControls } from "./refereeControls";
 
 const STATE_LABEL: Record<string, { label: string; color: string }> = {
   done: { label: "KẾT THÚC", color: "#8AA39C" },
   live: { label: "ĐANG ĐẤU", color: "#FF5A47" },
   next: { label: "SẮP DIỄN RA", color: "#0B5D4E" },
 };
-
-function firstDefaultMatchId(matches: { id: string; state: string }[]): string {
-  return matches.find((m) => m.state === "live")?.id ?? matches.find((m) => m.state === "next")?.id ?? matches[0]?.id ?? "";
-}
 
 interface IRefereeScoringPanelProps {
   initialMatches: IMatch[];
@@ -38,19 +35,38 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
   const { signOut } = useRefereeAuth();
   const [matches, setMatches] = useLiveMatches(initialMatches, pairIdToTeamId);
 
-  const [activeId, setActiveId] = useState<string>(() => firstDefaultMatchId(matches));
-  const activeMatch = useMemo(() => matches.find((m) => m.id === activeId) ?? matches[0], [matches, activeId]);
+  const liveMatch = useMemo(() => matches.find((m) => m.state === "live"), [matches]);
+  const [selectedId, setSelectedId] = useState<string>("");
+  const [confirmingReset, setConfirmingReset] = useState(false);
+
+  // When a match is live, the referee is locked to it. Otherwise, the selected 'next' match (if any).
+  const activeMatch = useMemo(() => {
+    if (liveMatch) return liveMatch;
+    return matches.find((m) => m.id === selectedId && m.state === "next");
+  }, [liveMatch, matches, selectedId]);
+
   const [draftA, setDraftA] = useState<number>(() => activeMatch?.sa ?? 0);
   const [draftB, setDraftB] = useState<number>(() => activeMatch?.sb ?? 0);
   const [savedMsg, setSavedMsg] = useState<string>("Mọi thay đổi hiển thị ngay trên trang chủ.");
   const [saving, setSaving] = useState(false);
 
+  // Sync drafts from the active match only when the active match ID changes — not on every
+  // realtime tick — so in-progress ± taps aren't clobbered by echoed score updates. Adjusted
+  // during render (React's documented pattern for "state derived from a changed prop/value")
+  // rather than in a useEffect, to avoid the extra render pass a post-commit effect would cause.
+  const [syncedMatchId, setSyncedMatchId] = useState<string | undefined>(activeMatch?.id);
+  if (activeMatch?.id !== syncedMatchId) {
+    setSyncedMatchId(activeMatch?.id);
+    setDraftA(activeMatch?.sa ?? 0);
+    setDraftB(activeMatch?.sb ?? 0);
+  }
+
   function selectMatch(id: string) {
+    if (liveMatch) return; // locked to the live match
     const m = matches.find((x) => x.id === id);
-    if (!m) return;
-    setActiveId(id);
-    setDraftA(m.sa);
-    setDraftB(m.sb);
+    if (!m || !isSelectable(m, liveMatch)) return;
+    setSelectedId(id);
+    setConfirmingReset(false);
     setSavedMsg(`Đang chỉnh ${id}.`);
   }
 
@@ -160,7 +176,37 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
     }
   }
 
-  if (!activeMatch) return null;
+  /**
+   * Corrective per-match reset: returns the active (live) match to `next` with score 0.
+   * Reuses the same `matches` UPDATE RLS policy as `commit`/`commitLive` (organizer + live
+   * state) — no new policy needed. Two-step in-panel confirm, no `window.confirm`.
+   */
+  async function resetMatch() {
+    if (!activeMatch || saving) return;
+    setSaving(true);
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const { data, error } = await supabase
+        .from("matches")
+        .update({ score_a: 0, score_b: 0, state: "next" })
+        .eq("code", activeMatch.id)
+        .select();
+      if (error) {
+        setSavedMsg(`Lỗi khi đặt lại: ${error.message}`);
+        return;
+      }
+      if (!data || data.length === 0) {
+        setSavedMsg("Không thể đặt lại: tài khoản này không có quyền, hoặc giải chưa bắt đầu.");
+        return;
+      }
+      setMatches((prev) => prev.map((m) => (m.id === activeMatch.id ? { ...m, sa: 0, sb: 0, state: "next" } : m)));
+      setConfirmingReset(false);
+      setSelectedId("");
+      setSavedMsg("Đã đặt lại trận.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div>
@@ -213,12 +259,14 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
           </div>
           <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
             {matches.map((m) => {
-              const selected = m.id === activeId;
+              const selected = m.id === activeMatch?.id;
+              const locked = !isSelectable(m, liveMatch);
               const meta = STATE_LABEL[m.state];
               return (
                 <button
                   key={m.id}
                   type="button"
+                  disabled={locked}
                   onClick={() => selectMatch(m.id)}
                   style={{
                     textAlign: "left",
@@ -227,17 +275,14 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
                     background: selected ? "rgba(11,93,78,.08)" : "transparent",
                     borderRadius: 12,
                     padding: "12px 14px",
-                    cursor: "pointer",
+                    cursor: locked ? "not-allowed" : "pointer",
+                    opacity: locked ? 0.5 : 1,
                     fontFamily: "var(--font-archivo), sans-serif",
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 10, color: "#8AA39C" }}>
-                      {m.id} · {m.time}
-                    </span>
                     <span
                       style={{
-                        marginLeft: "auto",
                         fontFamily: "var(--font-jetbrains), monospace",
                         fontSize: 9,
                         letterSpacing: ".1em",
@@ -257,9 +302,15 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
         </div>
 
         <div style={{ gridColumn: "span 1", background: "#0A1F1A", borderRadius: 20, padding: "clamp(20px,3vw,30px)", color: "#FFFDF7" }}>
+          {!activeMatch ? (
+            <div style={{ padding: "40px 10px", textAlign: "center", color: "#8FBCB0", fontFamily: "var(--font-archivo), sans-serif", fontSize: 15, fontWeight: 700 }}>
+              Chọn một trận để bắt đầu
+            </div>
+          ) : (
+            <>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 10, letterSpacing: ".16em", color: "#8FBCB0" }}>
-              {activeMatch.id} · SÂN {activeMatch.court}
+              SÂN {activeMatch.court}
             </span>
             <span style={{ marginLeft: "auto", fontFamily: "var(--font-jetbrains), monospace", fontSize: 10, letterSpacing: ".12em", color: "#F2B544" }}>
               {STATE_LABEL[activeMatch.state].label}
@@ -273,44 +324,46 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
               <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontWeight: 700, fontSize: "clamp(46px,9vw,68px)", lineHeight: 1, margin: "14px 0" }}>
                 {draftA}
               </div>
-              <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-                <button
-                  type="button"
-                  onClick={() => bump("a", -1)}
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 12,
-                    border: "1px solid rgba(255,255,255,.2)",
-                    background: "transparent",
-                    color: "#FFFDF7",
-                    fontSize: 22,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    fontFamily: "var(--font-archivo), sans-serif",
-                  }}
-                >
-                  −
-                </button>
-                <button
-                  type="button"
-                  onClick={() => bump("a", 1)}
-                  style={{
-                    flex: 1,
-                    height: 48,
-                    borderRadius: 12,
-                    border: "none",
-                    background: "#F2B544",
-                    color: "#08241E",
-                    fontSize: 22,
-                    fontWeight: 800,
-                    cursor: "pointer",
-                    fontFamily: "var(--font-archivo), sans-serif",
-                  }}
-                >
-                  +
-                </button>
-              </div>
+              {showScoreControls(activeMatch.state) && (
+                <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                  <button
+                    type="button"
+                    onClick={() => bump("a", -1)}
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 12,
+                      border: "1px solid rgba(255,255,255,.2)",
+                      background: "transparent",
+                      color: "#FFFDF7",
+                      fontSize: 22,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      fontFamily: "var(--font-archivo), sans-serif",
+                    }}
+                  >
+                    −
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => bump("a", 1)}
+                    style={{
+                      flex: 1,
+                      height: 48,
+                      borderRadius: 12,
+                      border: "none",
+                      background: "#F2B544",
+                      color: "#08241E",
+                      fontSize: 22,
+                      fontWeight: 800,
+                      cursor: "pointer",
+                      fontFamily: "var(--font-archivo), sans-serif",
+                    }}
+                  >
+                    +
+                  </button>
+                </div>
+              )}
             </div>
             <div style={{ background: "rgba(255,253,247,.07)", border: "1px solid rgba(255,255,255,.14)", borderRadius: 16, padding: 18, textAlign: "center" }}>
               <div style={{ fontSize: 14, fontWeight: 800, color: "#8FBCB0" }}>{teamName(activeMatch.b)}</div>
@@ -318,98 +371,177 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
               <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontWeight: 700, fontSize: "clamp(46px,9vw,68px)", lineHeight: 1, margin: "14px 0" }}>
                 {draftB}
               </div>
-              <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-                <button
-                  type="button"
-                  onClick={() => bump("b", -1)}
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 12,
-                    border: "1px solid rgba(255,255,255,.2)",
-                    background: "transparent",
-                    color: "#FFFDF7",
-                    fontSize: 22,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    fontFamily: "var(--font-archivo), sans-serif",
-                  }}
-                >
-                  −
-                </button>
-                <button
-                  type="button"
-                  onClick={() => bump("b", 1)}
-                  style={{
-                    flex: 1,
-                    height: 48,
-                    borderRadius: 12,
-                    border: "none",
-                    background: "#F2B544",
-                    color: "#08241E",
-                    fontSize: 22,
-                    fontWeight: 800,
-                    cursor: "pointer",
-                    fontFamily: "var(--font-archivo), sans-serif",
-                  }}
-                >
-                  +
-                </button>
-              </div>
+              {showScoreControls(activeMatch.state) && (
+                <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                  <button
+                    type="button"
+                    onClick={() => bump("b", -1)}
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 12,
+                      border: "1px solid rgba(255,255,255,.2)",
+                      background: "transparent",
+                      color: "#FFFDF7",
+                      fontSize: 22,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      fontFamily: "var(--font-archivo), sans-serif",
+                    }}
+                  >
+                    −
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => bump("b", 1)}
+                    style={{
+                      flex: 1,
+                      height: 48,
+                      borderRadius: 12,
+                      border: "none",
+                      background: "#F2B544",
+                      color: "#08241E",
+                      fontSize: 22,
+                      fontWeight: 800,
+                      cursor: "pointer",
+                      fontFamily: "var(--font-archivo), sans-serif",
+                    }}
+                  >
+                    +
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
-          <div style={{ marginTop: 16, display: "flex", gap: 10 }}>
-            <button
-              type="button"
-              disabled={saving || activeMatch.state === "live" || activeMatch.state === "done"}
-              onClick={() => {
-                void commit("live");
-              }}
-              style={{
-                flex: 1,
-                minWidth: 150,
-                height: 50,
-                borderRadius: 12,
-                border: "1px solid #0B5D4E",
-                background: "transparent",
-                color: "#0B5D4E",
-                fontSize: 14,
-                fontWeight: 800,
-                cursor: saving || activeMatch.state !== "next" ? "not-allowed" : "pointer",
-                opacity: activeMatch.state !== "next" ? 0.5 : 1,
-                fontFamily: "var(--font-archivo), sans-serif",
-              }}
-            >
-              Bắt đầu trận
-            </button>
-            <button
-              type="button"
-              disabled={saving}
-              onClick={() => {
-                void commit("done");
-              }}
-              style={{
-                flex: 1,
-                minWidth: 150,
-                height: 50,
-                borderRadius: 12,
-                border: "none",
-                background: "#3FBF8F",
-                color: "#052D22",
-                fontSize: 14,
-                fontWeight: 800,
-                cursor: saving ? "not-allowed" : "pointer",
-                opacity: saving ? 0.6 : 1,
-                fontFamily: "var(--font-archivo), sans-serif",
-              }}
-            >
-              Kết thúc trận
-            </button>
+          <div style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {primaryAction(activeMatch.state) === "start" && (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => {
+                  void commit("live");
+                }}
+                style={{
+                  flex: 1,
+                  minWidth: 150,
+                  height: 50,
+                  borderRadius: 12,
+                  border: "1px solid #0B5D4E",
+                  background: "transparent",
+                  color: "#0B5D4E",
+                  fontSize: 14,
+                  fontWeight: 800,
+                  cursor: saving ? "not-allowed" : "pointer",
+                  opacity: saving ? 0.6 : 1,
+                  fontFamily: "var(--font-archivo), sans-serif",
+                }}
+              >
+                Bắt đầu trận
+              </button>
+            )}
+            {primaryAction(activeMatch.state) === "end" && (
+              <>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => {
+                    void commit("done");
+                  }}
+                  style={{
+                    flex: 1,
+                    minWidth: 150,
+                    height: 50,
+                    borderRadius: 12,
+                    border: "none",
+                    background: "#3FBF8F",
+                    color: "#052D22",
+                    fontSize: 14,
+                    fontWeight: 800,
+                    cursor: saving ? "not-allowed" : "pointer",
+                    opacity: saving ? 0.6 : 1,
+                    fontFamily: "var(--font-archivo), sans-serif",
+                  }}
+                >
+                  Kết thúc trận
+                </button>
+                {!confirmingReset ? (
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => setConfirmingReset(true)}
+                    style={{
+                      minWidth: 130,
+                      height: 50,
+                      borderRadius: 12,
+                      border: "1px solid #B0435F",
+                      background: "transparent",
+                      color: "#B0435F",
+                      fontSize: 14,
+                      fontWeight: 800,
+                      cursor: saving ? "not-allowed" : "pointer",
+                      opacity: saving ? 0.6 : 1,
+                      fontFamily: "var(--font-archivo), sans-serif",
+                    }}
+                  >
+                    Đặt lại trận
+                  </button>
+                ) : (
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <span style={{ fontFamily: "var(--font-archivo), sans-serif", fontSize: 12, color: "#B0435F", fontWeight: 700 }}>
+                      Chắc chắn?
+                    </span>
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => {
+                        void resetMatch();
+                      }}
+                      style={{
+                        height: 50,
+                        padding: "0 16px",
+                        borderRadius: 12,
+                        border: "none",
+                        background: "#B0435F",
+                        color: "#FFFDF7",
+                        fontSize: 13,
+                        fontWeight: 800,
+                        cursor: saving ? "not-allowed" : "pointer",
+                        opacity: saving ? 0.6 : 1,
+                        fontFamily: "var(--font-archivo), sans-serif",
+                      }}
+                    >
+                      Xác nhận đặt lại
+                    </button>
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => setConfirmingReset(false)}
+                      style={{
+                        height: 50,
+                        padding: "0 14px",
+                        borderRadius: 12,
+                        border: "1px solid rgba(255,255,255,.2)",
+                        background: "transparent",
+                        color: "#FFFDF7",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: saving ? "not-allowed" : "pointer",
+                        fontFamily: "var(--font-archivo), sans-serif",
+                      }}
+                    >
+                      Hủy
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
           <div style={{ marginTop: 12, fontFamily: "var(--font-jetbrains), monospace", fontSize: 10, color: "#5F817A" }}>
             {savedMsg}
           </div>
+            </>
+          )}
         </div>
       </div>
     </div>
