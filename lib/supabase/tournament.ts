@@ -163,3 +163,21 @@ export async function getPairIdToTeamId(): Promise<Record<string, number>> {
   });
   return map;
 }
+
+/**
+ * Maps a pair's letter code to its DB uuid — the inverse of getPairIdToTeamId's key direction.
+ * Used by round generation to turn Swiss numeric team ids (via teamIdToLetter) back into the pair
+ * uuids that `matches.pair_a_id`/`pair_b_id` require for insertion.
+ */
+export async function getPairCodeToId(): Promise<Record<string, string>> {
+  const supabase = createServerSupabaseClient();
+  const { data, error } = await supabase.from("pairs").select("id, code").is("deleted_at", null);
+  if (error) {
+    throw new Error(`Failed to load pairs: ${error.message}`);
+  }
+  const map: Record<string, string> = {};
+  (data ?? []).forEach((p: { id: string; code: string }) => {
+    map[p.code] = p.id;
+  });
+  return map;
+}

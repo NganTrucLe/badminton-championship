@@ -184,6 +184,11 @@ export const ROUND_META: IRoundMeta[] = [
   { n: 5, title: "Round 5", time: "11:10 – 11:25", sub: "Chốt suất cuối" },
 ];
 
+/** 1 -> 'A', 2 -> 'B', ... 8 -> 'H'. Inverse of the letter->id mapping in lib/supabase/tournament.ts. */
+export function teamIdToLetter(id: number): string {
+  return String.fromCharCode(64 + id);
+}
+
 export function getTeam(id: number): ITeam {
   const team = TEAMS.find((t) => t.id === id);
   if (!team) {
