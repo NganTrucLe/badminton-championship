@@ -8,7 +8,6 @@ const ADMIN_NAV = [
   { href: "/admin/referee", label: "Trọng tài" },
   { href: "/admin/players", label: "Vận động viên" },
   { href: "/admin/pairs", label: "Cặp đấu" },
-  { href: "/admin/rewards", label: "Phần thưởng" },
 ];
 
 export function AdminNav() {
