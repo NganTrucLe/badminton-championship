@@ -7,9 +7,10 @@ interface IAvatarUploadProps {
   playerId: string;
   currentUrl: string | null;
   onUploaded: (publicUrl: string) => void;
+  disabled?: boolean;
 }
 
-export function AvatarUpload({ playerId, currentUrl, onUploaded }: IAvatarUploadProps) {
+export function AvatarUpload({ playerId, currentUrl, onUploaded, disabled }: IAvatarUploadProps) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
@@ -53,9 +54,15 @@ export function AvatarUpload({ playerId, currentUrl, onUploaded }: IAvatarUpload
       ) : (
         <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#C9D6D2" }} />
       )}
-      <label style={{ fontSize: 12, fontWeight: 700, color: "#0B5D4E", cursor: busy ? "wait" : "pointer" }}>
+      <label style={{ fontSize: 12, fontWeight: 700, color: "#0B5D4E", cursor: busy ? "wait" : disabled ? "not-allowed" : "pointer" }}>
         {busy ? "Đang tải…" : "Tải ảnh"}
-        <input type="file" accept="image/*" onChange={(e) => void handleFile(e)} disabled={busy} style={{ display: "none" }} />
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => void handleFile(e)}
+          disabled={busy || disabled}
+          style={{ display: "none" }}
+        />
       </label>
       {err && <span style={{ fontSize: 11, color: "#B0435F" }}>{err}</span>}
     </div>

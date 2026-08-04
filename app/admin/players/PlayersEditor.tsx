@@ -44,6 +44,7 @@ export function PlayersEditor({ initialPlayers, editable }: { initialPlayers: IA
               playerId={p.id}
               currentUrl={p.avatarUrl ?? (p.avatarKey ? `/avatars/${p.avatarKey}.jpg` : null)}
               onUploaded={(url) => void patch(p.id, { avatar_url: url })}
+              disabled={!editable}
             />
             <input
               defaultValue={p.name}

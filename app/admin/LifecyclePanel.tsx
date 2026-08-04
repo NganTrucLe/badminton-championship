@@ -10,7 +10,13 @@ const STATUS_LABEL: Record<string, string> = {
   done: "ĐÃ KẾT THÚC",
 };
 
-export function LifecyclePanel({ initialStatus }: { initialStatus: "setup" | "live" | "done" }) {
+export function LifecyclePanel({
+  initialStatus,
+  rosterError,
+}: {
+  initialStatus: "setup" | "live" | "done";
+  rosterError?: string | null;
+}) {
   const router = useRouter();
   const [status, setStatus] = useState(initialStatus);
   const [busy, setBusy] = useState(false);
@@ -71,7 +77,7 @@ export function LifecyclePanel({ initialStatus }: { initialStatus: "setup" | "li
       </p>
       <button
         type="button"
-        disabled={busy || status !== "setup"}
+        disabled={busy || status !== "setup" || !!rosterError}
         onClick={() => void start()}
         style={{
           marginTop: 8,
@@ -79,16 +85,21 @@ export function LifecyclePanel({ initialStatus }: { initialStatus: "setup" | "li
           padding: "0 24px",
           borderRadius: 12,
           border: "none",
-          background: status === "setup" ? "#3FBF8F" : "rgba(10,31,26,.12)",
-          color: status === "setup" ? "#052D22" : "#8AA39C",
+          background: status === "setup" && !rosterError ? "#3FBF8F" : "rgba(10,31,26,.12)",
+          color: status === "setup" && !rosterError ? "#052D22" : "#8AA39C",
           fontWeight: 800,
           fontSize: 14,
-          cursor: busy || status !== "setup" ? "not-allowed" : "pointer",
+          cursor: busy || status !== "setup" || !!rosterError ? "not-allowed" : "pointer",
           fontFamily: "var(--font-archivo), sans-serif",
         }}
       >
         Gửi đội hình & bắt đầu giải
       </button>
+      {status === "setup" && rosterError && (
+        <div style={{ marginTop: 12, fontFamily: "var(--font-jetbrains), monospace", fontSize: 11, color: "#B0435F" }}>
+          {rosterError}
+        </div>
+      )}
       {msg && <div style={{ marginTop: 12, fontFamily: "var(--font-jetbrains), monospace", fontSize: 11, color: "#5F817A" }}>{msg}</div>}
       <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid rgba(10,31,26,.1)" }}>
         <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 10, letterSpacing: ".16em", color: "#B0435F" }}>

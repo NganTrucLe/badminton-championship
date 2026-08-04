@@ -103,6 +103,15 @@ begin
   ) then
     raise exception 'roster invalid: each pair needs two distinct players';
   end if;
+  if (
+    select count(distinct pid) from (
+      select player1_id as pid from public.pairs where deleted_at is null
+      union all
+      select player2_id from public.pairs where deleted_at is null
+    ) s
+  ) <> 16 then
+    raise exception 'roster invalid: 16 distinct players required (a player is assigned to more than one pair, or some are unassigned)';
+  end if;
   update public.tournament set status = 'live', updated_at = now() where id = true;
 end;
 $$;
