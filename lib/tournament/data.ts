@@ -20,6 +20,8 @@ export interface IPlayer {
    * fall back to a colored initials avatar (see lib/tournament/avatar.ts).
    */
   avatarKey?: string;
+  /** Full public URL of an uploaded avatar (Supabase Storage). Takes precedence over avatarKey. */
+  avatarUrl?: string;
 }
 
 export interface ITeam {
@@ -202,6 +204,7 @@ export function teamPlayersLabel(id: number): string {
 
 /** Resolves a player's avatar photo path, or undefined when there is no photo. */
 export function avatarPhotoPath(player: IPlayer): string | undefined {
+  if (player.avatarUrl) return player.avatarUrl;
   return player.avatarKey ? `/avatars/${player.avatarKey}.jpg` : undefined;
 }
 

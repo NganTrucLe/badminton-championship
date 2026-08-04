@@ -3,7 +3,7 @@ import { createServerSupabaseClient } from "./client";
 import type { Database } from "./database.types";
 import type { IMatch, IPlayer, IRoundMeta, ITeam, TMatchState, TTier } from "@/lib/tournament/data";
 
-type TPlayerRow = Pick<Database["public"]["Tables"]["players"]["Row"], "id" | "name" | "tier" | "avatar_key">;
+type TPlayerRow = Pick<Database["public"]["Tables"]["players"]["Row"], "id" | "name" | "tier" | "avatar_key" | "avatar_url">;
 type TPairRow = Pick<
   Database["public"]["Tables"]["pairs"]["Row"],
   "id" | "code" | "name" | "player1_id" | "player2_id"
@@ -19,6 +19,7 @@ function toPlayer(row: TPlayerRow): IPlayer {
     name: row.name,
     tier: row.tier as TTier,
     avatarKey: row.avatar_key ?? undefined,
+    avatarUrl: row.avatar_url ?? undefined,
   };
 }
 
@@ -42,7 +43,7 @@ export async function getTeams(): Promise<ITeam[]> {
 
   const { data: players, error: playersError } = await supabase
     .from("players")
-    .select("id, name, tier, avatar_key")
+    .select("id, name, tier, avatar_key, avatar_url")
     .is("deleted_at", null);
   if (playersError) {
     throw new Error(`Failed to load players: ${playersError.message}`);
