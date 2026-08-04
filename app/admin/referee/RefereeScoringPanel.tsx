@@ -5,7 +5,7 @@ import { useRefereeAuth } from "@/contexts/RefereeAuthContext";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
 import { useLiveMatches } from "@/lib/supabase/useLiveMatches";
 import { teamName, teamPlayersLabel, type IMatch, type TMatchState } from "@/lib/tournament/data";
-import { isSelectable, primaryAction, showScoreControls } from "./refereeControls";
+import { isSelectable, matchWinnerSide, primaryAction, showScoreControls } from "./refereeControls";
 
 const STATE_LABEL: Record<string, { label: string; color: string }> = {
   done: { label: "KẾT THÚC", color: "#8AA39C" },
@@ -42,8 +42,10 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
   // When a match is live, the referee is locked to it. Otherwise, the selected 'next' match (if any).
   const activeMatch = useMemo(() => {
     if (liveMatch) return liveMatch;
-    return matches.find((m) => m.id === selectedId && m.state === "next");
+    return matches.find((m) => m.id === selectedId);
   }, [liveMatch, matches, selectedId]);
+
+  const activeWinner = activeMatch ? matchWinnerSide(activeMatch.state, activeMatch.sa, activeMatch.sb) : null;
 
   const [draftA, setDraftA] = useState<number>(() => activeMatch?.sa ?? 0);
   const [draftB, setDraftB] = useState<number>(() => activeMatch?.sb ?? 0);
@@ -164,6 +166,11 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
       // Optimistic local patch ahead of the realtime echo, so the "CHỌN TRẬN" list and state
       // badge update instantly even if the realtime round-trip lags.
       setMatches((prev) => prev.map((m) => (m.id === activeMatch.id ? { ...m, sa: draftA, sb: draftB, state } : m)));
+      if (state === "done") {
+        // Keep the just-ended match selected so the scoreboard stays showing its
+        // final score (read-only) instead of falling back to the empty prompt.
+        setSelectedId(activeMatch.id);
+      }
       setSavedMsg(
         state === "done"
           ? `Đã kết thúc ${teamName(activeMatch.a)} vs ${teamName(activeMatch.b)} · ${draftA}–${draftB}`
@@ -262,6 +269,7 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
               const selected = m.id === activeMatch?.id;
               const locked = !isSelectable(m, liveMatch);
               const meta = STATE_LABEL[m.state];
+              const winner = matchWinnerSide(m.state, m.sa, m.sb);
               return (
                 <button
                   key={m.id}
@@ -295,6 +303,25 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
                   <div style={{ marginTop: 6, fontSize: 14, fontWeight: 700, color: "#0A1F1A" }}>
                     {teamName(m.a)} vs {teamName(m.b)}
                   </div>
+                  {m.state === "done" && (
+                    <div
+                      style={{
+                        marginTop: 4,
+                        fontFamily: "var(--font-jetbrains), monospace",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: "#3C5A53",
+                      }}
+                    >
+                      <span style={{ fontWeight: winner === "a" ? 900 : 400, color: winner === "a" ? "#0B5D4E" : "#3C5A53" }}>
+                        {m.sa}
+                      </span>
+                      {" – "}
+                      <span style={{ fontWeight: winner === "b" ? 900 : 400, color: winner === "b" ? "#0B5D4E" : "#3C5A53" }}>
+                        {m.sb}
+                      </span>
+                    </div>
+                  )}
                 </button>
               );
             })}
@@ -318,10 +345,29 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
           </div>
 
           <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            <div style={{ background: "rgba(255,253,247,.07)", border: "1px solid rgba(255,255,255,.14)", borderRadius: 16, padding: 18, textAlign: "center" }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: "#8FBCB0" }}>{teamName(activeMatch.a)}</div>
+            <div
+              style={{
+                background: activeWinner === "a" ? "rgba(63,191,143,.14)" : "rgba(255,253,247,.07)",
+                border: activeWinner === "a" ? "1px solid #3FBF8F" : "1px solid rgba(255,255,255,.14)",
+                borderRadius: 16,
+                padding: 18,
+                textAlign: "center",
+              }}
+            >
+              <div style={{ fontSize: 14, fontWeight: activeWinner === "a" ? 900 : 800, color: activeWinner === "a" ? "#FFFDF7" : "#8FBCB0" }}>
+                {teamName(activeMatch.a)}
+              </div>
               <div style={{ fontSize: 11, color: "#5F817A", marginTop: 3 }}>{teamPlayersLabel(activeMatch.a)}</div>
-              <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontWeight: 700, fontSize: "clamp(46px,9vw,68px)", lineHeight: 1, margin: "14px 0" }}>
+              <div
+                style={{
+                  fontFamily: "var(--font-jetbrains), monospace",
+                  fontWeight: activeWinner === "a" ? 900 : 700,
+                  fontSize: "clamp(46px,9vw,68px)",
+                  lineHeight: 1,
+                  margin: "14px 0",
+                  color: activeWinner === "a" ? "#3FBF8F" : "#FFFDF7",
+                }}
+              >
                 {draftA}
               </div>
               {showScoreControls(activeMatch.state) && (
@@ -365,10 +411,29 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
                 </div>
               )}
             </div>
-            <div style={{ background: "rgba(255,253,247,.07)", border: "1px solid rgba(255,255,255,.14)", borderRadius: 16, padding: 18, textAlign: "center" }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: "#8FBCB0" }}>{teamName(activeMatch.b)}</div>
+            <div
+              style={{
+                background: activeWinner === "b" ? "rgba(63,191,143,.14)" : "rgba(255,253,247,.07)",
+                border: activeWinner === "b" ? "1px solid #3FBF8F" : "1px solid rgba(255,255,255,.14)",
+                borderRadius: 16,
+                padding: 18,
+                textAlign: "center",
+              }}
+            >
+              <div style={{ fontSize: 14, fontWeight: activeWinner === "b" ? 900 : 800, color: activeWinner === "b" ? "#FFFDF7" : "#8FBCB0" }}>
+                {teamName(activeMatch.b)}
+              </div>
               <div style={{ fontSize: 11, color: "#5F817A", marginTop: 3 }}>{teamPlayersLabel(activeMatch.b)}</div>
-              <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontWeight: 700, fontSize: "clamp(46px,9vw,68px)", lineHeight: 1, margin: "14px 0" }}>
+              <div
+                style={{
+                  fontFamily: "var(--font-jetbrains), monospace",
+                  fontWeight: activeWinner === "b" ? 900 : 700,
+                  fontSize: "clamp(46px,9vw,68px)",
+                  lineHeight: 1,
+                  margin: "14px 0",
+                  color: activeWinner === "b" ? "#3FBF8F" : "#FFFDF7",
+                }}
+              >
                 {draftB}
               </div>
               {showScoreControls(activeMatch.state) && (
@@ -535,6 +600,11 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
                   </div>
                 )}
               </>
+            )}
+            {activeMatch.state === "done" && (
+              <div style={{ fontFamily: "var(--font-archivo), sans-serif", fontSize: 13, color: "#8FBCB0" }}>
+                Chọn trận tiếp theo để tiếp tục
+              </div>
             )}
           </div>
           <div style={{ marginTop: 12, fontFamily: "var(--font-jetbrains), monospace", fontSize: 10, color: "#5F817A" }}>

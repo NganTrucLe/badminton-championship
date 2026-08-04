@@ -35,3 +35,11 @@ export function isSelectable(match: { id: string; state: TMatchState }, liveMatc
 export function showScoreControls(state: TMatchState): boolean {
   return state === "live";
 }
+
+/** Which side won a finished match; null for non-done or a tie. */
+export function matchWinnerSide(state: string, sa: number, sb: number): "a" | "b" | null {
+  if (state !== "done") return null;
+  if (sa > sb) return "a";
+  if (sb > sa) return "b";
+  return null;
+}
