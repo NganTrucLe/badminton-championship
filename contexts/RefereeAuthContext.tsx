@@ -61,7 +61,7 @@ export function RefereeAuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       loading,
-      signInWithGoogle: async (next = "/referee") => {
+      signInWithGoogle: async (next = "/admin/referee") => {
         const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "google",

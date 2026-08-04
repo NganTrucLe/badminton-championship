@@ -23,7 +23,7 @@ interface IRefereeScoringPanelProps {
 
 /**
  * Only ever rendered server-side after `getOrganizerSession()` confirms `isOrganizer === true`
- * (see app/referee/page.tsx) — the actual write-authorization boundary is the DB RLS policy
+ * (see app/admin/referee/page.tsx) — the actual write-authorization boundary is the DB RLS policy
  * (`organizers can update/insert matches`, gated by `is_organizer()`), not this render check. If a
  * write is somehow attempted by a non-organizer session, Postgres rejects it and `commit()` below
  * surfaces the error instead of silently succeeding.
