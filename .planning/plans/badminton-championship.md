@@ -103,6 +103,11 @@ Each phase is independently reviewable and ends with lint/build/tests green.
   via seed/SQL for now — consistent with the spec.
 - Self-service organizer management UI, player/pair CRUD, i18n (app is Vietnamese-only), notifications.
 
+**Delivered in admin-dashboard plan (2026-08-04):** player/pair editing, tournament lifecycle
+(start/reset via `start_tournament()`/`reset_tournament()`), reward editing, and an explicit
+start-match control were built by `.planning/plans/2026-08-04-admin-dashboard.md`. Self-service
+organizer management UI and i18n remain out of scope.
+
 ---
 
 ## Test strategy
