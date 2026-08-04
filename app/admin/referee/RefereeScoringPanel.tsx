@@ -5,7 +5,9 @@ import { useRefereeAuth } from "@/contexts/RefereeAuthContext";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
 import { useLiveMatches } from "@/lib/supabase/useLiveMatches";
 import { teamName, teamPlayersLabel, type IMatch, type TMatchState } from "@/lib/tournament/data";
+import { ensureNextRound } from "./ensureNextRound";
 import { isSelectable, matchWinnerSide, primaryAction, showScoreControls } from "./refereeControls";
+import { RefereeSwissPicker } from "./RefereeSwissPicker";
 
 const STATE_LABEL: Record<string, { label: string; color: string }> = {
   done: { label: "KẾT THÚC", color: "#8AA39C" },
@@ -170,6 +172,10 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
         // Keep the just-ended match selected so the scoreboard stays showing its
         // final score (read-only) instead of falling back to the empty prompt.
         setSelectedId(activeMatch.id);
+        // Fire-and-forget: don't block the UI. Supabase Realtime delivers the
+        // generated round (if this was the round's last match) to all viewers,
+        // including this panel via useLiveMatches.
+        void ensureNextRound();
       }
       setSavedMsg(
         state === "done"
@@ -264,67 +270,13 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
           <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 10, letterSpacing: ".16em", color: "#5B7A72" }}>
             CHỌN TRẬN
           </div>
-          <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-            {matches.map((m) => {
-              const selected = m.id === activeMatch?.id;
-              const locked = !isSelectable(m, liveMatch);
-              const meta = STATE_LABEL[m.state];
-              const winner = matchWinnerSide(m.state, m.sa, m.sb);
-              return (
-                <button
-                  key={m.id}
-                  type="button"
-                  disabled={locked}
-                  onClick={() => selectMatch(m.id)}
-                  style={{
-                    textAlign: "left",
-                    width: "100%",
-                    border: `1px solid ${selected ? "#0B5D4E" : "rgba(10,31,26,.12)"}`,
-                    background: selected ? "rgba(11,93,78,.08)" : "transparent",
-                    borderRadius: 12,
-                    padding: "12px 14px",
-                    cursor: locked ? "not-allowed" : "pointer",
-                    opacity: locked ? 0.5 : 1,
-                    fontFamily: "var(--font-archivo), sans-serif",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span
-                      style={{
-                        fontFamily: "var(--font-jetbrains), monospace",
-                        fontSize: 9,
-                        letterSpacing: ".1em",
-                        color: meta.color,
-                      }}
-                    >
-                      {meta.label}
-                    </span>
-                  </div>
-                  <div style={{ marginTop: 6, fontSize: 14, fontWeight: 700, color: "#0A1F1A" }}>
-                    {teamName(m.a)} vs {teamName(m.b)}
-                  </div>
-                  {m.state === "done" && (
-                    <div
-                      style={{
-                        marginTop: 4,
-                        fontFamily: "var(--font-jetbrains), monospace",
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: "#3C5A53",
-                      }}
-                    >
-                      <span style={{ fontWeight: winner === "a" ? 900 : 400, color: winner === "a" ? "#0B5D4E" : "#3C5A53" }}>
-                        {m.sa}
-                      </span>
-                      {" – "}
-                      <span style={{ fontWeight: winner === "b" ? 900 : 400, color: winner === "b" ? "#0B5D4E" : "#3C5A53" }}>
-                        {m.sb}
-                      </span>
-                    </div>
-                  )}
-                </button>
-              );
-            })}
+          <div style={{ marginTop: 12 }}>
+            <RefereeSwissPicker
+              matches={matches}
+              activeId={activeMatch?.id ?? ""}
+              liveMatchId={liveMatch?.id ?? null}
+              onSelect={selectMatch}
+            />
           </div>
         </div>
 
