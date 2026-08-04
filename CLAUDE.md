@@ -73,6 +73,19 @@ from them. Prefer a **database view or computed query** for standings over stori
 - Null-safety: data from Supabase is `T | null` — handle the null/empty/loading states explicitly in the UI.
 - Keep components presentational; put data fetching and mutations in the data layer / server actions.
 - New screens get a short design pass before components are written — don't design in JSX.
+- **Stream per-section, never block the whole page on data.** Wrap each data-driven section in its own
+  `<Suspense>` boundary with a skeleton `fallback` that mirrors the section's final layout (same rough
+  dimensions/shape) — the static shell (nav, headings, layout chrome) must render immediately while each
+  section streams in independently. Never make a route-level `page.tsx` `await` its data before returning any
+  markup; push the `await` down into the suspended child (or use `loading.tsx` for route-transition
+  skeletons). This mirrors the home/admin streaming pattern already in the codebase.
+  - **Route transitions:** every route with meaningful data gets a `loading.tsx` skeleton screen so
+    navigation shows an instant loading state instead of a blank/frozen page.
+  - **Mutations:** every mutation trigger (submit/save/delete buttons, etc.) shows a pending state — a
+    spinner/loading icon on the button plus a disabled state while the action is in flight (`useFormStatus`
+    / `useTransition` / an `isPending` flag). Never leave a mutation button looking idle mid-request.
+  - **Skeletons match the content** they replace (list rows, cards, table shape) — a generic full-page
+    spinner is a last resort, not the default.
 
 ## Testing
 
