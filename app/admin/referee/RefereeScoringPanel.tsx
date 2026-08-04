@@ -67,7 +67,7 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
     if (!m || !isSelectable(m, liveMatch)) return;
     setSelectedId(id);
     setConfirmingReset(false);
-    setSavedMsg(`Đang chỉnh ${id}.`);
+    setSavedMsg("Đang chỉnh trận đã chọn.");
   }
 
   /**
@@ -106,13 +106,13 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
         .select();
 
       if (error) {
-        setSavedMsg(`Lỗi khi lưu ${activeMatch.id}: ${error.message}`);
+        setSavedMsg(`Lỗi khi lưu: ${error.message}`);
         setDraftA(activeMatch.sa);
         setDraftB(activeMatch.sb);
         return;
       }
       if (!data || data.length === 0) {
-        setSavedMsg(`Không thể lưu ${activeMatch.id}: tài khoản này không có quyền trọng tài.`);
+        setSavedMsg("Không thể lưu: tài khoản này không có quyền trọng tài.");
         setDraftA(activeMatch.sa);
         setDraftB(activeMatch.sb);
         return;
@@ -120,9 +120,9 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
 
       // Optimistic local patch ahead of the realtime echo
       setMatches((prev) => prev.map((m) => (m.id === activeMatch.id ? { ...m, sa: scoreA, sb: scoreB, state: "live" } : m)));
-      setSavedMsg(`Đã lưu ${activeMatch.id} lúc ${new Date().toLocaleTimeString("vi-VN")}`);
+      setSavedMsg(`Đã lưu lúc ${new Date().toLocaleTimeString("vi-VN")}`);
     } catch (err) {
-      setSavedMsg(`Lỗi khi lưu ${activeMatch.id}: ${err instanceof Error ? err.message : String(err)}`);
+      setSavedMsg(`Lỗi khi lưu: ${err instanceof Error ? err.message : String(err)}`);
       setDraftA(activeMatch.sa);
       setDraftB(activeMatch.sb);
     } finally {
@@ -153,11 +153,11 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
         .select();
 
       if (error) {
-        setSavedMsg(`Lỗi khi lưu ${activeMatch.id}: ${error.message}`);
+        setSavedMsg(`Lỗi khi lưu: ${error.message}`);
         return;
       }
       if (!data || data.length === 0) {
-        setSavedMsg(`Không thể lưu ${activeMatch.id}: tài khoản này không có quyền trọng tài.`);
+        setSavedMsg("Không thể lưu: tài khoản này không có quyền trọng tài.");
         return;
       }
 
@@ -166,11 +166,11 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
       setMatches((prev) => prev.map((m) => (m.id === activeMatch.id ? { ...m, sa: draftA, sb: draftB, state } : m)));
       setSavedMsg(
         state === "done"
-          ? `Đã kết thúc ${activeMatch.id} · ${draftA}–${draftB}`
-          : `Đã lưu ${activeMatch.id} lúc ${new Date().toLocaleTimeString("vi-VN")}`,
+          ? `Đã kết thúc ${teamName(activeMatch.a)} vs ${teamName(activeMatch.b)} · ${draftA}–${draftB}`
+          : `Đã lưu lúc ${new Date().toLocaleTimeString("vi-VN")}`,
       );
     } catch (err) {
-      setSavedMsg(`Lỗi khi lưu ${activeMatch.id}: ${err instanceof Error ? err.message : String(err)}`);
+      setSavedMsg(`Lỗi khi lưu: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setSaving(false);
     }
