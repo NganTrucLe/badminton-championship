@@ -33,8 +33,9 @@ function initialsOf(name: string): string {
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const { user, signInWithGoogle } = useRefereeAuth();
+  const { user, signInWithGoogle, signOut } = useRefereeAuth();
   const [isOrg, setIsOrg] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -181,32 +182,80 @@ export function SiteHeader() {
 
         {user ? (
           <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 9,
-              padding: "5px 12px 5px 5px",
-              borderRadius: 999,
-              background: "#0B5D4E",
-            }}
+            style={{ position: "relative" }}
+            onMouseEnter={() => setMenuOpen(true)}
+            onMouseLeave={() => setMenuOpen(false)}
           >
-            <div
+            <button
+              type="button"
+              onClick={() => setMenuOpen((o) => !o)}
               style={{
-                width: 24,
-                height: 24,
-                borderRadius: "50%",
-                background: "#F2B544",
-                color: "#08241E",
-                fontSize: 11,
-                fontWeight: 900,
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
+                gap: 9,
+                padding: "5px 12px 5px 5px",
+                borderRadius: 999,
+                background: "#0B5D4E",
+                border: "none",
+                cursor: "pointer",
               }}
             >
-              {initialsOf(displayName(user))}
-            </div>
-            <span style={{ color: "#EAF3F0", fontSize: 12, fontWeight: 600 }}>{displayName(user)}</span>
+              <div
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: "50%",
+                  background: "#F2B544",
+                  color: "#08241E",
+                  fontSize: 11,
+                  fontWeight: 900,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {initialsOf(displayName(user))}
+              </div>
+              <span style={{ color: "#EAF3F0", fontSize: 12, fontWeight: 600 }}>{displayName(user)}</span>
+            </button>
+            {menuOpen && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "calc(100% + 6px)",
+                  right: 0,
+                  background: "#FFFDF7",
+                  border: "1px solid rgba(10,31,26,.12)",
+                  borderRadius: 12,
+                  boxShadow: "0 8px 24px rgba(10,31,26,.14)",
+                  padding: 6,
+                  minWidth: 160,
+                  zIndex: 60,
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    void signOut();
+                  }}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    background: "transparent",
+                    border: "none",
+                    padding: "9px 12px",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    fontFamily: "var(--font-archivo), sans-serif",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: "#B0435F",
+                  }}
+                >
+                  Đăng xuất
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <button

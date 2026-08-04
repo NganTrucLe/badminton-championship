@@ -72,9 +72,6 @@ function RefereeSwissMatchCard({ m, active, selectable, onSelect }: IRefereeSwis
           background: "rgba(10,31,26,.035)",
         }}
       >
-        <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 8.5, color: "#8AA39C" }}>
-          {m.meta}
-        </span>
         <span
           style={{
             marginLeft: "auto",

@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRefereeAuth } from "@/contexts/RefereeAuthContext";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
 import { useLiveMatches } from "@/lib/supabase/useLiveMatches";
-import { teamName, teamPlayersLabel, type IMatch, type TMatchState } from "@/lib/tournament/data";
+import { teamName, type IMatch, type TMatchState } from "@/lib/tournament/data";
 import { ensureNextRound } from "./ensureNextRound";
 import { isSelectable, matchWinnerSide, primaryAction, showScoreControls } from "./refereeControls";
 import { RefereeSwissPicker } from "./RefereeSwissPicker";
@@ -34,7 +33,6 @@ interface IRefereeScoringPanelProps {
  * follow-up, not this phase.
  */
 export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IRefereeScoringPanelProps) {
-  const { signOut } = useRefereeAuth();
   const [matches, setMatches] = useLiveMatches(initialMatches, pairIdToTeamId);
 
   const liveMatch = useMemo(() => matches.find((m) => m.state === "live"), [matches]);
@@ -235,33 +233,13 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
         >
           Cập nhật tỉ số
         </h2>
-        <button
-          type="button"
-          onClick={() => {
-            void signOut();
-          }}
-          style={{
-            marginLeft: "auto",
-            border: "1px solid rgba(10,31,26,.18)",
-            background: "transparent",
-            padding: "8px 14px",
-            borderRadius: 999,
-            cursor: "pointer",
-            fontFamily: "var(--font-archivo), sans-serif",
-            fontSize: 12,
-            fontWeight: 700,
-            color: "#3C5A53",
-          }}
-        >
-          Đăng xuất
-        </button>
       </div>
 
       <div
         style={{
           marginTop: 22,
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))",
+          gridTemplateColumns: "1fr",
           gap: 16,
           alignItems: "start",
         }}
@@ -288,15 +266,12 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
           ) : (
             <>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 10, letterSpacing: ".16em", color: "#8FBCB0" }}>
-              SÂN {activeMatch.court}
-            </span>
             <span style={{ marginLeft: "auto", fontFamily: "var(--font-jetbrains), monospace", fontSize: 10, letterSpacing: ".12em", color: "#F2B544" }}>
               {STATE_LABEL[activeMatch.state].label}
             </span>
           </div>
 
-          <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: "1fr", gap: 14 }}>
             <div
               style={{
                 background: activeWinner === "a" ? "rgba(63,191,143,.14)" : "rgba(255,253,247,.07)",
@@ -309,7 +284,6 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
               <div style={{ fontSize: 14, fontWeight: activeWinner === "a" ? 900 : 800, color: activeWinner === "a" ? "#FFFDF7" : "#8FBCB0" }}>
                 {teamName(activeMatch.a)}
               </div>
-              <div style={{ fontSize: 11, color: "#5F817A", marginTop: 3 }}>{teamPlayersLabel(activeMatch.a)}</div>
               <div
                 style={{
                   fontFamily: "var(--font-jetbrains), monospace",
@@ -375,7 +349,6 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
               <div style={{ fontSize: 14, fontWeight: activeWinner === "b" ? 900 : 800, color: activeWinner === "b" ? "#FFFDF7" : "#8FBCB0" }}>
                 {teamName(activeMatch.b)}
               </div>
-              <div style={{ fontSize: 11, color: "#5F817A", marginTop: 3 }}>{teamPlayersLabel(activeMatch.b)}</div>
               <div
                 style={{
                   fontFamily: "var(--font-jetbrains), monospace",
@@ -444,9 +417,9 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
                   minWidth: 150,
                   height: 50,
                   borderRadius: 12,
-                  border: "1px solid #0B5D4E",
-                  background: "transparent",
-                  color: "#0B5D4E",
+                  border: "none",
+                  background: "#0B5D4E",
+                  color: "#FFFDF7",
                   fontSize: 14,
                   fontWeight: 800,
                   cursor: saving ? "not-allowed" : "pointer",
