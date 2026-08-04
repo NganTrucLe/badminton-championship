@@ -278,14 +278,8 @@ export function SiteHeader() {
               color: "#0A1F1A",
             }}
           >
-            <span
-              style={{
-                width: 14,
-                height: 14,
-                borderRadius: "50%",
-                background: "conic-gradient(#EA4335 0 25%,#FBBC05 0 50%,#34A853 0 75%,#4285F4 0)",
-              }}
-            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/google-g.svg" alt="" width={16} height={16} style={{ display: "block" }} />
             Đăng nhập Google
           </button>
         )}
