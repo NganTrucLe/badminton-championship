@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useRefereeAuth } from "@/contexts/RefereeAuthContext";
+import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
 
 const NAV_ITEMS: { href: string; label: string }[] = [
   { href: "/", label: "Trang chủ" },
@@ -33,6 +35,22 @@ function initialsOf(name: string): string {
 export function SiteHeader() {
   const pathname = usePathname();
   const { user, signInWithGoogle } = useRefereeAuth();
+  const [isOrg, setIsOrg] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const check = user
+      ? createBrowserSupabaseClient()
+          .rpc("is_organizer")
+          .then(({ data }) => data === true)
+      : Promise.resolve(false);
+    check.then((result) => {
+      if (active) setIsOrg(result);
+    });
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   return (
     <div
@@ -125,6 +143,41 @@ export function SiteHeader() {
               </Link>
             );
           })}
+          {isOrg && (
+            <Link
+              href="/admin"
+              style={{
+                border: "none",
+                cursor: "pointer",
+                fontFamily: "var(--font-archivo), sans-serif",
+                fontWeight: 700,
+                fontSize: 13,
+                padding: "8px 15px",
+                borderRadius: 999,
+                background: "transparent",
+                position: "relative",
+              }}
+            >
+              {pathname.startsWith("/admin") && (
+                <span
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "#0B5D4E",
+                    borderRadius: 999,
+                  }}
+                />
+              )}
+              <span
+                style={{
+                  position: "relative",
+                  color: pathname.startsWith("/admin") ? "#FFFDF7" : "#3C5A53",
+                }}
+              >
+                Quản trị
+              </span>
+            </Link>
+          )}
         </nav>
 
         {user ? (

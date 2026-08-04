@@ -53,6 +53,17 @@ The intended shape — a single Next.js app with a clear public/admin split:
   Supabase client ad hoc from components. Keep queries in one place so schema changes have one blast radius.
 - **Authorization is enforced in the database (RLS), not just the UI.** Hiding an admin button is not
   security — every write must be protected by a Postgres policy that checks the caller is an organizer.
+- **`/admin`** — gated area (delivered in the admin-dashboard plan, 2026-08-04) for organizers to edit
+  players/pairs, tournament rewards, and drive the tournament lifecycle. `/referee` remains the live scoring
+  UI.
+- **`tournament`** — singleton table (`id = true`) holding `status` (`setup` → `live` → `done`) and `rewards`.
+  `start_tournament()`/`reset_tournament()` RPCs (organizer-only, `SECURITY DEFINER`) drive the transitions;
+  `reset_tournament()` also zeroes all match scores/state back to `next`.
+- **Write-phase gates:** RLS on `players`/`pairs` only allows organizer updates while `status='setup'`
+  (roster locked once live); RLS on `matches` only allows organizer score updates while `status='live'`
+  (scoring locked during setup). Both proven against local Postgres, not just the UI.
+- **`avatars` storage bucket** — public-read, organizer-write (insert/update), used by the admin players
+  editor for uploaded avatar photos.
 
 Likely core tables: `players`, `matches`, `match_sets` (or `points`), and a `results`/standings view derived
 from them. Prefer a **database view or computed query** for standings over storing a denormalized copy.

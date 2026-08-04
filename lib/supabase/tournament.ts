@@ -2,8 +2,9 @@ import "server-only";
 import { createServerSupabaseClient } from "./client";
 import type { Database } from "./database.types";
 import type { IMatch, IPlayer, IRoundMeta, ITeam, TMatchState, TTier } from "@/lib/tournament/data";
+import { parseRewards, type IReward } from "@/lib/tournament/reward";
 
-type TPlayerRow = Pick<Database["public"]["Tables"]["players"]["Row"], "id" | "name" | "tier" | "avatar_key">;
+type TPlayerRow = Pick<Database["public"]["Tables"]["players"]["Row"], "id" | "name" | "tier" | "avatar_key" | "avatar_url">;
 type TPairRow = Pick<
   Database["public"]["Tables"]["pairs"]["Row"],
   "id" | "code" | "name" | "player1_id" | "player2_id"
@@ -19,6 +20,7 @@ function toPlayer(row: TPlayerRow): IPlayer {
     name: row.name,
     tier: row.tier as TTier,
     avatarKey: row.avatar_key ?? undefined,
+    avatarUrl: row.avatar_url ?? undefined,
   };
 }
 
@@ -42,7 +44,7 @@ export async function getTeams(): Promise<ITeam[]> {
 
   const { data: players, error: playersError } = await supabase
     .from("players")
-    .select("id, name, tier, avatar_key")
+    .select("id, name, tier, avatar_key, avatar_url")
     .is("deleted_at", null);
   if (playersError) {
     throw new Error(`Failed to load players: ${playersError.message}`);
@@ -125,6 +127,17 @@ export async function getMatches(): Promise<IMatch[]> {
       state: m.state as TMatchState,
     };
   });
+}
+
+/** Reads the tournament's current status + reward config. Status/rewards are public, so this uses the anon server client. */
+export async function getTournament(): Promise<{ status: "setup" | "live" | "done"; rewards: IReward[] }> {
+  const supabase = createServerSupabaseClient();
+  const { data, error } = await supabase.from("tournament").select("status, rewards").eq("id", true).maybeSingle();
+  if (error) {
+    throw new Error(`Failed to load tournament: ${error.message}`);
+  }
+  const status = (data?.status ?? "setup") as "setup" | "live" | "done";
+  return { status, rewards: parseRewards(data?.rewards) };
 }
 
 /** 'A' -> 1, 'B' -> 2, ... matching the existing TEAMS[].id ordering in lib/tournament/data.ts. */

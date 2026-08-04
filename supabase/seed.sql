@@ -60,3 +60,14 @@ insert into public.matches (code, round_n, court, time_label, pair_a_id, pair_b_
 insert into public.organizers (email) values
   ('ngantruc2003@gmail.com')
 on conflict do nothing;
+
+-- Tournament singleton: live status + reward podium (mirrors the design's Phần thưởng section).
+insert into public.tournament (id, status, rewards) values (
+  true,
+  'live',
+  '[
+    {"place":1,"medal":"🏆","title":"Cúp vô địch + phần thưởng chính","detail":"Sẽ công bố 🎉"},
+    {"place":2,"medal":"🥈","title":"Huy chương bạc + phần thưởng","detail":"Sẽ công bố 🎉"},
+    {"place":3,"medal":"🥉","title":"Huy chương đồng + phần thưởng","detail":"Sẽ công bố 🎉"}
+  ]'::jsonb
+) on conflict (id) do nothing;
