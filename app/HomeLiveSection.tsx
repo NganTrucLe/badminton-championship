@@ -148,17 +148,6 @@ export function HomeLiveSection({ initialMatches, pairIdToTeamId }: IHomeLiveSec
                 borderBottom: "1px solid rgba(10,31,26,.08)",
               }}
             >
-              <span
-                style={{
-                  fontFamily: "var(--font-jetbrains), monospace",
-                  fontSize: 10,
-                  color: "#8AA39C",
-                  width: 26,
-                  flex: "none",
-                }}
-              >
-                {m.code}
-              </span>
               <span style={{ fontSize: 14, fontWeight: 700, flex: 1, minWidth: 0 }}>{m.aName}</span>
               <span
                 style={{

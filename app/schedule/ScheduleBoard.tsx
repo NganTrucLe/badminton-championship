@@ -168,10 +168,7 @@ export function ScheduleBoard({ initialMatches, pairIdToTeamId }: IScheduleBoard
                 <div style={{ background: "#0B5D4E", color: "#FFFDF7", borderRadius: 9, padding: 8, textAlign: "center", fontSize: 12, fontWeight: 800 }}>
                   {col.title}
                 </div>
-                <div style={{ textAlign: "center", fontFamily: "var(--font-jetbrains), monospace", fontSize: 9, color: "#8AA39C", margin: "6px 0 2px" }}>
-                  {col.time}
-                </div>
-                <div style={{ textAlign: "center", fontFamily: "var(--font-jetbrains), monospace", fontSize: 9, letterSpacing: ".1em", color: col.statusColor, marginBottom: 10 }}>
+                <div style={{ textAlign: "center", fontFamily: "var(--font-jetbrains), monospace", fontSize: 9, letterSpacing: ".1em", color: col.statusColor, marginTop: 6, marginBottom: 10 }}>
                   {col.status}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -248,7 +245,7 @@ export function ScheduleBoard({ initialMatches, pairIdToTeamId }: IScheduleBoard
             {semis.map((m) => (
               <div key={m.code} style={{ background: "rgba(255,253,247,.08)", border: "1px solid rgba(255,255,255,.18)", borderRadius: 12, overflow: "hidden" }}>
                 <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 9.5, letterSpacing: ".1em", color: "#8FBCB0", padding: "7px 12px", background: "rgba(0,0,0,.18)" }}>
-                  {m.code} · {m.time}
+                  {m.code}
                 </div>
                 <div style={{ padding: "10px 12px", fontSize: 14, fontWeight: 700, color: "#FFFDF7" }}>{m.aName}</div>
                 <div style={{ padding: "10px 12px", fontSize: 14, fontWeight: 700, color: "#FFFDF7", borderTop: "1px solid rgba(255,255,255,.14)" }}>
@@ -261,14 +258,14 @@ export function ScheduleBoard({ initialMatches, pairIdToTeamId }: IScheduleBoard
           <div style={{ display: "flex", flexDirection: "column", gap: 14, justifyContent: "center", paddingLeft: 16 }}>
             <div style={{ background: "#F2B544", borderRadius: 12, padding: 16, color: "#08241E" }}>
               <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 9.5, letterSpacing: ".14em" }}>
-                CHUNG KẾT · 12:00 · SÂN 1
+                CHUNG KẾT · SÂN 1
               </div>
               <div style={{ marginTop: 10, fontSize: 16, fontWeight: 800 }}>Thắng Bán kết 1</div>
               <div style={{ marginTop: 7, fontSize: 16, fontWeight: 800 }}>Thắng Bán kết 2</div>
             </div>
             <div style={{ background: "rgba(255,253,247,.08)", border: "1px solid rgba(255,255,255,.18)", borderRadius: 12, padding: 16, color: "#DCEDE7" }}>
               <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 9.5, letterSpacing: ".14em", color: "#8FBCB0" }}>
-                TRANH HẠNG 3 · 12:00 · SÂN 2
+                TRANH HẠNG 3 · SÂN 2
               </div>
               <div style={{ marginTop: 10, fontSize: 16, fontWeight: 800 }}>Thua Bán kết 1</div>
               <div style={{ marginTop: 7, fontSize: 16, fontWeight: 800 }}>Thua Bán kết 2</div>

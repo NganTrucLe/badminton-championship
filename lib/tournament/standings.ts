@@ -285,7 +285,7 @@ function matchDisplay(m: IMatch): ISwissMatchDisplay {
 
   return {
     code: m.id,
-    meta: `${m.time} · Sân ${m.court}`,
+    meta: `Sân ${m.court}`,
     state: meta.label,
     stateColor: meta.color,
     aTeamId: m.a,
