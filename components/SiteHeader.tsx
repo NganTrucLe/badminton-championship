@@ -10,7 +10,6 @@ const NAV_ITEMS: { href: string; label: string }[] = [
   { href: "/", label: "Trang chủ" },
   { href: "/teams", label: "Các cặp" },
   { href: "/schedule", label: "Lịch & Bảng đấu" },
-  { href: "/referee", label: "Trọng tài" },
   { href: "/rules", label: "Quy tắc" },
 ];
 
@@ -213,7 +212,7 @@ export function SiteHeader() {
           <button
             type="button"
             onClick={() => {
-              void signInWithGoogle("/referee");
+              void signInWithGoogle("/admin/referee");
             }}
             style={{
               display: "flex",

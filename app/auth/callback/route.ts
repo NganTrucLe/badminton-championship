@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAuthServerClient } from "@/lib/supabase/serverClient";
 
-const DEFAULT_NEXT = "/referee";
+const DEFAULT_NEXT = "/admin/referee";
 
 /**
  * Google OAuth callback. Supabase redirects here with a `code` query param after the user
@@ -21,7 +21,7 @@ export async function GET(request: Request): Promise<Response> {
     }
   }
 
-  return NextResponse.redirect(`${origin}/referee?auth_error=1`);
+  return NextResponse.redirect(`${origin}/admin/referee?auth_error=1`);
 }
 
 /** Only allow same-app relative paths — never redirect off-site based on a query param. */

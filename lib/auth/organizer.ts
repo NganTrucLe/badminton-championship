@@ -20,8 +20,9 @@ export interface IOrganizerSession {
 
 /**
  * Reads the current session (if any) and, when signed in, calls the `is_organizer()` RPC to
- * determine organizer status. Used to gate `/referee`: signed-out and signed-in-but-not-organizer
- * both render a denied/signed-out panel; only organizers see the scoring UI.
+ * determine organizer status. Used to gate `/admin` (including `/admin/referee`):
+ * signed-out and signed-in-but-not-organizer both render a denied/signed-out panel; only
+ * organizers see the admin UI.
  */
 export async function getOrganizerSession(): Promise<IOrganizerSession> {
   const supabase = await createAuthServerClient();
