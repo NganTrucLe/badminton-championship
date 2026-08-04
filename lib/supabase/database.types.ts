@@ -157,6 +157,7 @@ export type Database = {
       players: {
         Row: {
           avatar_key: string | null
+          avatar_url: string | null
           created_at: string
           deleted_at: string | null
           id: string
@@ -165,6 +166,7 @@ export type Database = {
         }
         Insert: {
           avatar_key?: string | null
+          avatar_url?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
@@ -173,6 +175,7 @@ export type Database = {
         }
         Update: {
           avatar_key?: string | null
+          avatar_url?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
@@ -211,12 +214,21 @@ export type Database = {
         }
         Relationships: []
       }
+      tournament: {
+        Row: { id: boolean; status: string; rewards: Json; updated_at: string }
+        Insert: { id?: boolean; status?: string; rewards?: Json; updated_at?: string }
+        Update: { id?: boolean; status?: string; rewards?: Json; updated_at?: string }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       is_organizer: { Args: never; Returns: boolean }
+      is_setup_phase: { Args: never; Returns: boolean }
+      start_tournament: { Args: never; Returns: undefined }
+      reset_tournament: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
