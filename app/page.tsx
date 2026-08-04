@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { Countdown } from "@/components/Countdown";
 import { HomeLiveSection } from "@/app/HomeLiveSection";
 import { HomeLiveSkeleton } from "@/app/HomeLiveSkeleton";
+import { RewardsPodium } from "@/app/RewardsPodium";
 import { getMatches, getPairIdToTeamId } from "@/lib/supabase/tournament";
 
 const EVENT_START = "2026-08-15T09:00:00+07:00";
@@ -368,159 +369,9 @@ export default function HomePage() {
             TOP 3 · CHI TIẾT SẼ CÔNG BỐ TRƯỚC NGÀY THI ĐẤU
           </span>
         </div>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "center",
-            gap: 16,
-            flexWrap: "wrap",
-            padding: "20px 0 8px",
-          }}
-        >
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, width: 220 }}>
-            <div
-              style={{
-                width: 76,
-                height: 76,
-                borderRadius: "50%",
-                background: "#C9D6D2",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 30,
-                fontWeight: 900,
-                color: "#08241E",
-                boxShadow: "0 6px 0 rgba(10,31,26,.18)",
-              }}
-            >
-              🥈
-            </div>
-            <div style={{ fontSize: 19, fontWeight: 800, lineHeight: 1.3, textAlign: "center" }}>
-              Huy chương bạc + phần thưởng
-            </div>
-            <div
-              style={{
-                background: "#FFFDF7",
-                border: "1px solid rgba(10,31,26,.14)",
-                borderRadius: "20px 20px 10px 10px",
-                width: "100%",
-                height: 150,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: "var(--font-jetbrains), monospace",
-                  fontSize: 11,
-                  letterSpacing: ".18em",
-                  color: "#5B7A72",
-                }}
-              >
-                HẠNG NHÌ
-              </div>
-              <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: "-.05em", color: "#0B5D4E" }}>02</div>
-              <div style={{ fontSize: 13, color: "#8AA39C" }}>Sẽ công bố 🎉</div>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, width: 240 }}>
-            <div
-              style={{
-                width: 96,
-                height: 96,
-                borderRadius: "50%",
-                background: "#F2B544",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 40,
-                fontWeight: 900,
-                color: "#08241E",
-                boxShadow: "0 8px 0 rgba(10,31,26,.2)",
-              }}
-            >
-              🏆
-            </div>
-            <div style={{ fontSize: 21, fontWeight: 900, lineHeight: 1.3, textAlign: "center" }}>
-              Cúp vô địch + phần thưởng chính
-            </div>
-            <div
-              style={{
-                background: "#F2B544",
-                borderRadius: "24px 24px 10px 10px",
-                width: "100%",
-                height: 200,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                color: "#08241E",
-              }}
-            >
-              <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 11, letterSpacing: ".18em" }}>
-                HẠNG NHẤT
-              </div>
-              <div style={{ fontSize: 56, fontWeight: 900, letterSpacing: "-.05em" }}>01</div>
-              <div style={{ fontSize: 14, opacity: 0.75 }}>Sẽ công bố 🥳</div>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, width: 220 }}>
-            <div
-              style={{
-                width: 76,
-                height: 76,
-                borderRadius: "50%",
-                background: "#E0A672",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 30,
-                fontWeight: 900,
-                color: "#08241E",
-                boxShadow: "0 6px 0 rgba(10,31,26,.18)",
-              }}
-            >
-              🥉
-            </div>
-            <div style={{ fontSize: 19, fontWeight: 800, lineHeight: 1.3, textAlign: "center" }}>
-              Huy chương đồng + phần thưởng
-            </div>
-            <div
-              style={{
-                background: "#FFFDF7",
-                border: "1px solid rgba(10,31,26,.14)",
-                borderRadius: "20px 20px 10px 10px",
-                width: "100%",
-                height: 130,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: "var(--font-jetbrains), monospace",
-                  fontSize: 11,
-                  letterSpacing: ".18em",
-                  color: "#5B7A72",
-                }}
-              >
-                HẠNG BA
-              </div>
-              <div style={{ fontSize: 40, fontWeight: 900, letterSpacing: "-.05em", color: "#0B5D4E" }}>03</div>
-              <div style={{ fontSize: 13, color: "#8AA39C" }}>Sẽ công bố 🎊</div>
-            </div>
-          </div>
-        </div>
+        <Suspense fallback={<div style={{ height: 260 }} />}>
+          <RewardsPodium />
+        </Suspense>
       </div>
     </div>
   );
