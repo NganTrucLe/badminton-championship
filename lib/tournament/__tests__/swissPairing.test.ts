@@ -181,9 +181,10 @@ describe("generateNextRound — R3→R4 odd-group float + cross-pair (worked exa
     expect(res.pairs).toHaveLength(3);
     expect(res.bye).toBeNull();
 
-    // {2-1} group standing order: wins desc, pf-pa desc, id asc among {2,3,7}
-    // The lowest-standing {2-1} pair floats down into {1-2} group {4,5,6}.
-    // Verify rematch-freedom for the whole round.
+    // {2-1} group standing order: wins desc, pf-pa desc, id asc among {2,3,7}. All three tie on
+    // wins (2) and pf-pa (+6), so the tie-break is id asc -> standing order is [2, 3, 7], and the
+    // LOWEST-standing pair (highest id among the tie, team 7) is the one that floats down into
+    // the {1-2} group {4,5,6} per rule 5. Verify rematch-freedom for the whole round.
     const prior = priorOpponents(matches);
     for (const p of res.pairs) {
       expect(prior.get(p.aTeamId)?.has(p.bTeamId)).not.toBe(true);
@@ -192,6 +193,19 @@ describe("generateNextRound — R3→R4 odd-group float + cross-pair (worked exa
     // Every alive team appears exactly once across the pairs.
     const paired = res.pairs.flatMap((p) => [p.aTeamId, p.bTeamId]).sort((x, y) => x - y);
     expect(paired).toEqual([2, 3, 4, 5, 6, 7]);
+
+    // The specific float: team 2 and team 3 (the two NON-floating {2-1} members) must be
+    // paired directly with each other, and team 7 (the floated pair) must land in the
+    // 4-team cross-pair group with one of {4,5,6} — not with 2 or 3.
+    const findPair = (x: number, y: number) =>
+      res.pairs.find(
+        (p) => (p.aTeamId === x && p.bTeamId === y) || (p.aTeamId === y && p.bTeamId === x),
+      );
+    expect(findPair(2, 3)).toBeDefined();
+    const team7Pair = res.pairs.find((p) => p.aTeamId === 7 || p.bTeamId === 7);
+    expect(team7Pair).toBeDefined();
+    const team7Opponent = team7Pair!.aTeamId === 7 ? team7Pair!.bTeamId : team7Pair!.aTeamId;
+    expect([4, 5, 6]).toContain(team7Opponent);
   });
 });
 
@@ -233,36 +247,65 @@ describe("generateNextRound — rematch avoidance", () => {
 });
 
 describe("generateNextRound — forced-rematch fallback", () => {
-  it("sets forcedRematches non-empty and still pairs all teams when no rematch-free matching exists", () => {
-    // Construct a 4-team alive group where every possible pairing has already occurred
-    // except we only need "no perfect matching without a rematch" — i.e. every one of the
-    // 3 possible perfect matchings on {a,b,c,d} contains at least one prior-played pair.
-    // Perfect matchings on 4 elements [a,b,c,d]: (ab,cd), (ac,bd), (ad,bc).
-    // To block all three we need pairs from each matching to have been played:
-    // block ab, and cd -> blocks matching1; block ac -> blocks matching2 (bd may be new);
-    // block ad -> blocks matching3 (bc may be new). That leaves bd and bc unplayed but each
-    // matching still has one blocked edge, so all 3 matchings are blocked.
+  it("forces the true MINIMUM number of rematches when no rematch-free matching exists", () => {
+    // Alive group {1,2,3,4} all finish at record (2,1) — but team 1 has already played
+    // EVERY other member of that group (1v2, 1v3, 1v4), while 2, 3, and 4 have never played
+    // each other. Every one of the 3 possible perfect matchings on {1,2,3,4} must pair team 1
+    // with someone it already faced ({1-2,3-4}, {1-3,2-4}, {1-4,2-3} each contain exactly one
+    // prior-played edge involving team 1), so a rematch is UNAVOIDABLE — but never more than
+    // one, since the other pair in any matching is always two teams that never met. True
+    // minimum = 1, not 2 (a naive fold could double up).
     const matches: IMatch[] = [
-      // R1 fixed draw, resolves teams into an alive group {1,2,3,4} with prior games
-      // that saturate rematches beyond what a single round could realistically produce,
-      // but the pure algorithm only cares about the prior-opponents map, not round realism.
-      done("R1-1", 1, 1, 2, 21, 15), // a-b played
-      done("R1-2", 1, 3, 4, 21, 15), // c-d played
-      done("R1-3", 1, 1, 3, 21, 15), // wait: id reuse issue below fixed by unique match ids
-      done("R1-4", 1, 5, 6, 21, 15),
-      done("R2-1", 2, 1, 4, 21, 15), // a-d played
-      done("R2-2", 2, 7, 8, 21, 15),
+      done("R1-1", 1, 1, 2, 21, 15), // 1 beats 2 -> 1: 1-0, 2: 0-1
+      done("R1-2", 2, 1, 3, 21, 15), // 1 beats 3 -> 1: 2-0, 3: 0-1
+      done("R1-3", 3, 1, 4, 15, 21), // 4 beats 1 -> 1: 2-1, 4: 1-0
+      done("R1-4", 4, 2, 5, 21, 15), // 2 beats 5 -> 2: 1-1, 5: 0-1
+      done("R1-5", 5, 2, 6, 21, 15), // 2 beats 6 -> 2: 2-1, 6: 0-1
+      done("R1-6", 6, 3, 7, 21, 15), // 3 beats 7 -> 3: 1-1, 7: 0-1
+      done("R1-7", 7, 3, 8, 21, 15), // 3 beats 8 -> 3: 2-1, 8: 0-1
+      done("R1-8", 8, 4, 7, 21, 15), // 4 beats 7 -> 4: 2-0, 7: 0-2
+      done("R1-9", 9, 4, 8, 15, 21), // 8 beats 4 -> 4: 2-1, 8: 1-1
     ];
+    // Final records: 1:(2,1) 2:(2,1) 3:(2,1) 4:(2,1) — all alive, all same group.
+    // 5:(0,1) 6:(0,1) 7:(0,2) 8:(1,1) — also alive, none of them have played each other,
+    // so their own groups pair up trivially with zero forced rematches.
 
     const res = generateNextRound(matches)!;
     expect(res).not.toBeNull();
-    // all alive teams from this fixture must be paired (or byed) — nobody is dropped.
-    const totalTeams = 8;
-    const consideredTeamIds = res.pairs.flatMap((p) => [p.aTeamId, p.bTeamId]).concat(
-      res.bye !== null ? [res.bye] : [],
+    expect(res.round).toBe(10); // latestRound(matches) === 9 (each match uses its own round number)
+    // 8 alive teams -> 4 pairs, no bye.
+    expect(res.pairs).toHaveLength(4);
+    expect(res.bye).toBeNull();
+
+    // Every team appears exactly once — nobody dropped or duplicated.
+    const paired = res.pairs.flatMap((p) => [p.aTeamId, p.bTeamId]).sort((x, y) => x - y);
+    expect(paired).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+
+    // The true minimum for this fixture is exactly 1 forced rematch (from the {1,2,3,4}
+    // group); the other groups (strangers to each other) contribute zero.
+    expect(res.forcedRematches).toHaveLength(1);
+
+    // The single forced rematch must be team 1 paired with one of 2/3/4 (the only prior
+    // edges that exist), and it must be reflected in res.pairs too.
+    const [fx, fy] = res.forcedRematches[0];
+    expect([fx, fy]).toContain(1);
+    const forcedPairInResult = res.pairs.find(
+      (p) => (p.aTeamId === fx && p.bTeamId === fy) || (p.aTeamId === fy && p.bTeamId === fx),
     );
-    expect(new Set(consideredTeamIds).size).toBeLessThanOrEqual(totalTeams);
-    expect(res.forcedRematches.length).toBeGreaterThanOrEqual(0);
+    expect(forcedPairInResult).toBeDefined();
+
+    // Team 1's pairing partner within {1,2,3,4} is necessarily a rematch (verified above);
+    // confirm the OTHER pair among the remaining two of {2,3,4} is rematch-free.
+    const prior = priorOpponents(matches);
+    const groupOnePair = res.pairs.find(
+      (p) =>
+        [1, 2, 3, 4].includes(p.aTeamId) &&
+        [1, 2, 3, 4].includes(p.bTeamId) &&
+        p.aTeamId !== 1 &&
+        p.bTeamId !== 1,
+    );
+    expect(groupOnePair).toBeDefined();
+    expect(prior.get(groupOnePair!.aTeamId)?.has(groupOnePair!.bTeamId)).not.toBe(true);
   });
 });
 

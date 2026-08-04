@@ -60,48 +60,69 @@ function standingOrder(ids: number[], records: TTeamRecords): number[] {
   });
 }
 
-/** Fold-pair an even list, avoiding rematches; returns pairs (+ any forced rematches). */
+/**
+ * Fold-pair an even list, finding the perfect matching with the MINIMUM number of rematches
+ * (0 rematches = a fully rematch-free matching, per rule 6). The group is small (<=8), so we
+ * exhaustively enumerate perfect matchings via backtracking, branch-and-bound on the running
+ * violation count, and keep the best (fewest rematches) matching found.
+ *
+ * Tie-break: at each step, the fold partner (i, i + n/2) is tried FIRST, so among matchings
+ * with equal violation count the fold-order matching wins — matching the doc's "default is fold
+ * pairing" framing while still guaranteeing a global minimum.
+ */
 function foldPair(
   order: number[],
   prior: Map<number, Set<number>>,
   forced: Array<[number, number]>,
 ): IGeneratedPair[] {
-  // Try a rematch-free perfect matching via backtracking over `order`; fall back to fold with
-  // minimum forced rematches. (order is small — <=8 — so backtracking is trivial.)
   const n = order.length;
+  const mid = n / 2;
   const used = new Array(n).fill(false);
-  const result: IGeneratedPair[] = [];
   const played = (a: number, b: number) => prior.get(a)?.has(b) === true;
 
-  function backtrack(): boolean {
-    const i = used.indexOf(false);
-    if (i === -1) return true;
-    used[i] = true;
+  const current: IGeneratedPair[] = [];
+  const currentViolations: Array<[number, number]> = [];
+  let best: { pairs: IGeneratedPair[]; violations: Array<[number, number]> } | null = null;
+  let bestCount = Infinity;
+
+  function partnerOrder(i: number): number[] {
+    const foldPartner = i + mid < n ? i + mid : -1;
+    const rest: number[] = [];
     for (let j = i + 1; j < n; j++) {
-      if (used[j] || played(order[i], order[j])) continue;
+      if (j !== foldPartner) rest.push(j);
+    }
+    return foldPartner > i ? [foldPartner, ...rest] : rest;
+  }
+
+  function backtrack(violCount: number): void {
+    if (violCount >= bestCount) return; // can only get worse (or tie) from here — prune
+    const i = used.indexOf(false);
+    if (i === -1) {
+      best = { pairs: [...current], violations: [...currentViolations] };
+      bestCount = violCount;
+      return;
+    }
+    used[i] = true;
+    for (const j of partnerOrder(i)) {
+      if (used[j]) continue;
+      const isRematch = played(order[i], order[j]);
       used[j] = true;
-      result.push({ aTeamId: order[i], bTeamId: order[j] });
-      if (backtrack()) return true;
-      result.pop();
+      current.push({ aTeamId: order[i], bTeamId: order[j] });
+      if (isRematch) currentViolations.push([order[i], order[j]]);
+      backtrack(violCount + (isRematch ? 1 : 0));
+      if (isRematch) currentViolations.pop();
+      current.pop();
       used[j] = false;
     }
     used[i] = false;
-    return false;
   }
 
-  if (backtrack()) return result;
+  backtrack(0);
 
-  // No rematch-free matching exists -> fold pair and record forced rematches.
-  used.fill(false);
-  result.length = 0;
-  const mid = n / 2;
-  for (let i = 0; i < mid; i++) {
-    const a = order[i];
-    const b = order[i + mid];
-    result.push({ aTeamId: a, bTeamId: b });
-    if (played(a, b)) forced.push([a, b]);
-  }
-  return result;
+  const winner = best as { pairs: IGeneratedPair[]; violations: Array<[number, number]> } | null;
+  if (!winner) return []; // unreachable for a non-empty even list — matchings always exist
+  forced.push(...winner.violations);
+  return winner.pairs;
 }
 
 export function generateNextRound(matches: IMatch[]): IGenerationResult | null {
