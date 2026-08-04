@@ -362,6 +362,29 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
           <div style={{ marginTop: 16, display: "flex", gap: 10 }}>
             <button
               type="button"
+              disabled={saving || activeMatch.state === "live" || activeMatch.state === "done"}
+              onClick={() => {
+                void commit("live");
+              }}
+              style={{
+                flex: 1,
+                minWidth: 150,
+                height: 50,
+                borderRadius: 12,
+                border: "1px solid #0B5D4E",
+                background: "transparent",
+                color: "#0B5D4E",
+                fontSize: 14,
+                fontWeight: 800,
+                cursor: saving || activeMatch.state !== "next" ? "not-allowed" : "pointer",
+                opacity: activeMatch.state !== "next" ? 0.5 : 1,
+                fontFamily: "var(--font-archivo), sans-serif",
+              }}
+            >
+              Bắt đầu trận
+            </button>
+            <button
+              type="button"
               disabled={saving}
               onClick={() => {
                 void commit("done");
