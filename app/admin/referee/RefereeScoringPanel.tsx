@@ -5,6 +5,7 @@ import { useRefereeAuth } from "@/contexts/RefereeAuthContext";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
 import { useLiveMatches } from "@/lib/supabase/useLiveMatches";
 import { teamName, teamPlayersLabel, type IMatch, type TMatchState } from "@/lib/tournament/data";
+import { ensureNextRound } from "./ensureNextRound";
 import { isSelectable, matchWinnerSide, primaryAction, showScoreControls } from "./refereeControls";
 
 const STATE_LABEL: Record<string, { label: string; color: string }> = {
@@ -170,6 +171,10 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
         // Keep the just-ended match selected so the scoreboard stays showing its
         // final score (read-only) instead of falling back to the empty prompt.
         setSelectedId(activeMatch.id);
+        // Fire-and-forget: don't block the UI. Supabase Realtime delivers the
+        // generated round (if this was the round's last match) to all viewers,
+        // including this panel via useLiveMatches.
+        void ensureNextRound();
       }
       setSavedMsg(
         state === "done"
