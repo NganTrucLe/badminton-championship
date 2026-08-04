@@ -15,6 +15,7 @@ export function LifecyclePanel({ initialStatus }: { initialStatus: "setup" | "li
   const [status, setStatus] = useState(initialStatus);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [confirming, setConfirming] = useState(false);
 
   async function start() {
     if (busy) return;
@@ -29,6 +30,26 @@ export function LifecyclePanel({ initialStatus }: { initialStatus: "setup" | "li
       }
       setStatus("live");
       setMsg("Đã khoá đội hình và bắt đầu giải đấu.");
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function reset() {
+    if (busy) return;
+    setBusy(true);
+    setMsg("");
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const { error } = await supabase.rpc("reset_tournament");
+      if (error) {
+        setMsg(`Không thể đặt lại: ${error.message}`);
+        return;
+      }
+      setStatus("setup");
+      setConfirming(false);
+      setMsg("Đã đặt lại toàn bộ tỉ số. Giải trở về trạng thái thiết lập.");
       router.refresh();
     } finally {
       setBusy(false);
@@ -69,6 +90,43 @@ export function LifecyclePanel({ initialStatus }: { initialStatus: "setup" | "li
         Gửi đội hình & bắt đầu giải
       </button>
       {msg && <div style={{ marginTop: 12, fontFamily: "var(--font-jetbrains), monospace", fontSize: 11, color: "#5F817A" }}>{msg}</div>}
+      <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid rgba(10,31,26,.1)" }}>
+        <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 10, letterSpacing: ".16em", color: "#B0435F" }}>
+          VÙNG NGUY HIỂM
+        </div>
+        <p style={{ color: "#5B7A72", fontSize: 13, marginTop: 8 }}>
+          Đặt lại sẽ xoá toàn bộ tỉ số và đưa mọi trận về “sắp diễn ra”. Vận động viên và cặp đấu được giữ nguyên.
+        </p>
+        {!confirming ? (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => setConfirming(true)}
+            style={{ marginTop: 8, height: 44, padding: "0 20px", borderRadius: 12, border: "1px solid #B0435F", background: "transparent", color: "#B0435F", fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "var(--font-archivo), sans-serif" }}
+          >
+            Đặt lại giải đấu…
+          </button>
+        ) : (
+          <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void reset()}
+              style={{ height: 44, padding: "0 20px", borderRadius: 12, border: "none", background: "#B0435F", color: "#FFFDF7", fontWeight: 800, fontSize: 13, cursor: busy ? "not-allowed" : "pointer", fontFamily: "var(--font-archivo), sans-serif" }}
+            >
+              Xác nhận đặt lại — không thể hoàn tác
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setConfirming(false)}
+              style={{ height: 44, padding: "0 20px", borderRadius: 12, border: "1px solid rgba(10,31,26,.18)", background: "transparent", color: "#3C5A53", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "var(--font-archivo), sans-serif" }}
+            >
+              Huỷ
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
