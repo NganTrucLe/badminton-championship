@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
 import { useLiveMatches } from "@/lib/supabase/useLiveMatches";
-import { teamName, type IMatch, type TMatchState } from "@/lib/tournament/data";
+import { getTeam, teamName, type IMatch, type TMatchState } from "@/lib/tournament/data";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { ensureNextRound } from "./ensureNextRound";
 import { isSelectable, matchWinnerSide, primaryAction, showScoreControls } from "./refereeControls";
 import { RefereeSwissPicker } from "./RefereeSwissPicker";
@@ -271,7 +272,7 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
             </span>
           </div>
 
-          <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: "1fr", gap: 14 }}>
+          <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <div
               style={{
                 background: activeWinner === "a" ? "rgba(63,191,143,.14)" : "rgba(255,253,247,.07)",
@@ -281,6 +282,11 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
                 textAlign: "center",
               }}
             >
+              <div style={{ display: "flex", justifyContent: "center", gap: 4, marginBottom: 8 }}>
+                {getTeam(activeMatch.a).players.map((p) => (
+                  <PlayerAvatar key={p.name} player={p} size={30} />
+                ))}
+              </div>
               <div style={{ fontSize: 14, fontWeight: activeWinner === "a" ? 900 : 800, color: activeWinner === "a" ? "#FFFDF7" : "#8FBCB0" }}>
                 {teamName(activeMatch.a)}
               </div>
@@ -346,6 +352,11 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
                 textAlign: "center",
               }}
             >
+              <div style={{ display: "flex", justifyContent: "center", gap: 4, marginBottom: 8 }}>
+                {getTeam(activeMatch.b).players.map((p) => (
+                  <PlayerAvatar key={p.name} player={p} size={30} />
+                ))}
+              </div>
               <div style={{ fontSize: 14, fontWeight: activeWinner === "b" ? 900 : 800, color: activeWinner === "b" ? "#FFFDF7" : "#8FBCB0" }}>
                 {teamName(activeMatch.b)}
               </div>
