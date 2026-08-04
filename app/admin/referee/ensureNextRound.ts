@@ -44,6 +44,7 @@ export async function ensureNextRound(): Promise<{ generated: boolean; round?: n
   const { error } = await supabase.from("matches").insert(rows).select();
   if (error) {
     // RLS rejection (non-organizer) or constraint error — surface false, let caller retry later.
+    console.error(`[ensureNextRound] failed to insert round ${result.round}:`, error.message);
     return { generated: false };
   }
 
