@@ -5,6 +5,7 @@ import { Loader2, Upload } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
+import { cn } from "@/lib/utils";
 
 interface IAvatarUploadProps {
   playerId: string;
@@ -58,8 +59,14 @@ export function AvatarUpload({ playerId, currentUrl, onUploaded, disabled }: IAv
           <AvatarFallback style={{ backgroundColor: "#C9D6D2" }} />
         )}
       </Avatar>
-      <Button asChild variant="outline" size="sm" disabled={busy || disabled}>
-        <label style={{ cursor: busy ? "wait" : disabled ? "not-allowed" : "pointer" }}>
+      <Button asChild variant="outline" size="sm">
+        <label
+          aria-disabled={busy || disabled}
+          className={cn(
+            (busy || disabled) && "pointer-events-none opacity-50",
+            busy ? "cursor-wait" : disabled ? "cursor-not-allowed" : "cursor-pointer"
+          )}
+        >
           {busy ? (
             <>
               <Loader2 className="animate-spin" />

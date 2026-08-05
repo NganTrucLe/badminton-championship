@@ -39,9 +39,7 @@ describe("AvatarUpload (characterization)", () => {
     expect(input).toBeTruthy();
 
     const file = new File(["x"], "a.png", { type: "image/png" });
-    await waitFor(() => {
-      fireEvent.change(input, { target: { files: [file] } });
-    });
+    fireEvent.change(input, { target: { files: [file] } });
 
     await waitFor(() => expect(onUploaded).toHaveBeenCalled());
 
@@ -62,9 +60,7 @@ describe("AvatarUpload (characterization)", () => {
     const input = container.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File(["x"], "a.txt", { type: "text/plain" });
 
-    await waitFor(() => {
-      fireEvent.change(input, { target: { files: [file] } });
-    });
+    fireEvent.change(input, { target: { files: [file] } });
 
     await waitFor(() => expect(screen.getByText("Chỉ chấp nhận tệp ảnh.")).toBeInTheDocument());
 
