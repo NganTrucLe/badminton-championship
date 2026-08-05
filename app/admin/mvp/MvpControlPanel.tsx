@@ -71,10 +71,27 @@ export function MvpControlPanel({ initial }: { initial: IMvpStatus }) {
       <Card className="gap-4 p-6">
         <h2 className="font-[family-name:var(--font-bricolage)] text-xl">Bình chọn đã kết thúc</h2>
         <p className="text-muted-foreground">Kết quả đã hiển thị công khai trên trang chủ.</p>
-        <Button variant="outline" disabled={busy} className="w-fit"
-          onClick={() => void run(resetMvpVote)}>
-          {busy ? <Loader2 className="animate-spin" /> : <RotateCcw />} Đặt lại để bình chọn mới
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="dangerOutline" disabled={busy} className="w-fit">
+              {busy ? <Loader2 className="animate-spin" /> : <RotateCcw />} Đặt lại để bình chọn mới
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Đặt lại bình chọn MVP?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Kết quả hiện tại sẽ bị xóa và không thể khôi phục. Một đợt bình chọn mới sẽ bắt đầu từ đầu.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Hủy</AlertDialogCancel>
+              <AlertDialogAction asChild>
+                <Button variant="danger" onClick={() => void run(resetMvpVote)}>Đặt lại</Button>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         {msg && <p className="text-sm text-destructive">{msg}</p>}
       </Card>
     );
@@ -89,7 +106,7 @@ export function MvpControlPanel({ initial }: { initial: IMvpStatus }) {
       </p>
       <div className="flex flex-col gap-1">
         <Label htmlFor="mvp-minutes">Thời gian (phút)</Label>
-        <Input id="mvp-minutes" type="number" min={1} value={minutes}
+        <Input id="mvp-minutes" type="number" min={1} value={minutes} disabled={busy}
           onChange={(e) => setMinutes(Number(e.target.value))} className="h-10 w-32" />
       </div>
       <Button variant="success" disabled={busy || minutes < 1} className="w-fit"
