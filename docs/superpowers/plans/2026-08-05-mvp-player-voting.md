@@ -503,6 +503,14 @@ end;
 $$;
 revoke all on function public.reset_tournament() from public;
 grant execute on function public.reset_tournament() to authenticated;
+
+-- Hardening (from Task 1 ERD/review): TRUNCATE bypasses RLS, and the cluster default ACL grants
+-- TRUNCATE/REFERENCES/TRIGGER to anon/authenticated on every new public table. Revoke them from
+-- the new voting tables so no non-organizer session can wipe votes/turnout. Scoped to these tables
+-- (not schema-wide) to avoid changing behavior of the rest of the schema.
+revoke truncate, references, trigger on
+  public.mvp_vote, public.mvp_voter_allowlist, public.mvp_receipts, public.mvp_ballots
+  from anon, authenticated;
 ```
 
 - [ ] **Step 2: Apply locally**
@@ -549,6 +557,12 @@ select status from public.mvp_vote;                               -- idle
 select count(*) from public.mvp_receipts;                         -- 0
 select count(*) from public.mvp_ballots;                          -- 0
 select count(*) from public.mvp_voter_allowlist;                  -- unchanged (allow-list kept)
+
+-- hardening: Data-API roles have no TRUNCATE/REFERENCES/TRIGGER on the voting tables
+select count(*) from information_schema.role_table_grants
+  where grantee in ('anon','authenticated')
+    and table_name in ('mvp_vote','mvp_voter_allowlist','mvp_receipts','mvp_ballots')
+    and privilege_type in ('TRUNCATE','REFERENCES','TRIGGER'); -- 0
 ```
 Expected: each assertion matches the comment; `cast_mvp_vote` from a non-allow-listed email (or while the vote is not open) raises `42501`.
 
