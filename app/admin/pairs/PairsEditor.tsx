@@ -4,6 +4,11 @@ import { useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
 import { validatePairAssignment } from "@/lib/tournament/adminValidation";
 import type { IAdminPair, IAdminPlayer } from "@/lib/supabase/admin";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function PairsEditor({
   initialPairs,
@@ -40,43 +45,57 @@ export function PairsEditor({
 
   return (
     <div>
-      <h2 style={{ fontFamily: "var(--font-bricolage), sans-serif", fontSize: 28, fontWeight: 900, margin: "0 0 16px" }}>
-        Cặp đấu
-      </h2>
+      <h2 className="m-0 mb-4 font-[family-name:var(--font-bricolage)] text-[28px] font-black">Cặp đấu</h2>
       {!editable && (
-        <div style={{ background: "rgba(242,181,68,.16)", border: "1px solid #F2B544", borderRadius: 12, padding: "10px 14px", fontSize: 13, marginBottom: 16 }}>
-          Giải đang diễn ra — đội hình đã khoá. Đặt lại giải để chỉnh sửa.
-        </div>
+        <Alert className="mb-4 border-[#F2B544] bg-[rgba(242,181,68,.16)]">
+          <AlertDescription className="text-[13px] text-inherit">
+            Giải đang diễn ra — đội hình đã khoá. Đặt lại giải để chỉnh sửa.
+          </AlertDescription>
+        </Alert>
       )}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div className="flex flex-col gap-2.5">
         {pairs.map((pair) => (
-          <div key={pair.id} style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", background: "#FFFDF7", border: "1px solid rgba(10,31,26,.12)", borderRadius: 14, padding: 14 }}>
-            <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontWeight: 700, width: 24, color: "#0B5D4E" }}>{pair.code}</span>
+          <Card
+            key={pair.id}
+            className="flex-row flex-wrap items-center gap-3 rounded-[14px] border-[rgba(10,31,26,.12)] bg-[#FFFDF7] p-3.5 py-3.5 gap-y-3"
+          >
+            <Badge
+              variant="outline"
+              className="w-6 justify-center rounded-none border-none bg-transparent p-0 font-[family-name:var(--font-jetbrains)] font-bold text-[#0B5D4E]"
+            >
+              {pair.code}
+            </Badge>
             {(["player1Id", "player2Id"] as const).map((slot) => (
-              <select
+              <Select
                 key={slot}
                 defaultValue={pair[slot]}
+                onValueChange={(value) => void savePair(pair, { [slot]: value } as Partial<IAdminPair>)}
                 disabled={!editable}
-                onChange={(e) => void savePair(pair, { [slot]: e.target.value } as Partial<IAdminPair>)}
-                style={{ height: 40, borderRadius: 10, border: "1px solid rgba(10,31,26,.18)", padding: "0 12px", minWidth: 150 }}
               >
-                {players.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
+                <SelectTrigger className="h-10 min-w-[150px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {players.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             ))}
-            <input
+            <Input
               defaultValue={pair.name}
               disabled={!editable}
               onBlur={(e) => {
                 if (e.target.value.trim() !== pair.name) void savePair(pair, { name: e.target.value.trim() });
               }}
-              style={{ flex: 1, minWidth: 160, height: 40, borderRadius: 10, border: "1px solid rgba(10,31,26,.18)", padding: "0 12px" }}
+              className="h-10 min-w-[160px] flex-1"
             />
-          </div>
+          </Card>
         ))}
       </div>
-      {msg && <div style={{ marginTop: 14, fontFamily: "var(--font-jetbrains), monospace", fontSize: 11, color: "#5F817A" }}>{msg}</div>}
+      {msg && <div className="mt-3.5 font-[family-name:var(--font-jetbrains)] text-[11px] text-[#5F817A]">{msg}</div>}
     </div>
   );
 }
