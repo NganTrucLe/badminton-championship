@@ -1,85 +1,39 @@
 "use client";
 
 import { useRefereeAuth } from "@/contexts/RefereeAuthContext";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { GoogleIcon } from "@/components/brand/GoogleIcon";
 
 /** Shown when there is no signed-in session at all. */
 export function AdminSignedOut() {
   const { signInWithGoogle } = useRefereeAuth();
 
   return (
-    <div
-      style={{
-        maxWidth: 420,
-        margin: "6vh auto",
-        background: "#FFFDF7",
-        border: "1px solid rgba(10,31,26,.12)",
-        borderRadius: 24,
-        padding: 36,
-        textAlign: "center",
-      }}
-    >
-      <div
-        style={{
-          width: 48,
-          height: 48,
-          margin: "0 auto",
-          borderRadius: "50%",
-          background: "#0B5D4E",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <div style={{ width: 16, height: 16, borderRadius: "50%", background: "#F4F1E6" }} />
-      </div>
-      <h2
-        style={{
-          margin: "20px 0 0",
-          fontFamily: "var(--font-bricolage), Archivo, sans-serif",
-          fontSize: 26,
-          fontWeight: 900,
-          letterSpacing: "-.03em",
-        }}
-      >
-        Khu vực quản trị
-      </h2>
-      <p style={{ margin: "10px 0 0", fontSize: 14, lineHeight: 1.6, color: "#5B7A72" }}>
-        Chỉ tài khoản được cấp quyền mới truy cập được khu vực quản trị. Đăng nhập bằng Google của
-        bạn.
-      </p>
-      <button
-        type="button"
-        onClick={() => {
-          void signInWithGoogle("/admin");
-        }}
-        style={{
-          marginTop: 24,
-          width: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 10,
-          border: "1px solid rgba(10,31,26,.2)",
-          background: "#fff",
-          padding: 14,
-          borderRadius: 12,
-          cursor: "pointer",
-          fontFamily: "var(--font-archivo), sans-serif",
-          fontSize: 15,
-          fontWeight: 700,
-          color: "#0A1F1A",
-        }}
-      >
-        <span
-          style={{
-            width: 18,
-            height: 18,
-            borderRadius: "50%",
-            background: "conic-gradient(#EA4335 0 25%,#FBBC05 0 50%,#34A853 0 75%,#4285F4 0)",
+    <Card className="max-w-[420px] mx-auto my-[6vh] rounded-[24px] p-9 text-center gap-0">
+      <CardContent className="p-0">
+        <div className="w-12 h-12 mx-auto rounded-full bg-primary flex items-center justify-center">
+          <div className="w-4 h-4 rounded-full bg-background" />
+        </div>
+        <h2 className="mt-5 font-[family-name:var(--font-bricolage)] text-[26px] font-black tracking-[-.03em]">
+          Khu vực quản trị
+        </h2>
+        <p className="mt-2.5 text-sm leading-relaxed text-text-muted">
+          Chỉ tài khoản được cấp quyền mới truy cập được khu vực quản trị. Đăng nhập bằng Google của
+          bạn.
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          className="mt-6 w-full"
+          onClick={() => {
+            void signInWithGoogle("/admin");
           }}
-        />
-        Đăng nhập với Google
-      </button>
-    </div>
+        >
+          <GoogleIcon size={18} />
+          Đăng nhập với Google
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
