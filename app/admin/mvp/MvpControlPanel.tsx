@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Loader2, Play, RotateCcw, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -39,7 +40,17 @@ export function MvpControlPanel({ initial }: { initial: IMvpStatus }) {
           {votedCount} / {totalEligible}{" "}
           <span className="text-base font-normal text-muted-foreground">đã bình chọn</span>
         </p>
-        {initial.deadline && <Countdown target={initial.deadline} />}
+        {initial.deadline && (
+          <div className="w-fit rounded-2xl bg-primary p-4">
+            <Countdown target={initial.deadline} />
+          </div>
+        )}
+        <Link
+          href="/vote"
+          className="w-fit text-sm font-semibold text-primary underline underline-offset-2"
+        >
+          Bỏ phiếu của bạn tại trang bình chọn →
+        </Link>
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="dangerOutline" disabled={busy} className="w-fit">
