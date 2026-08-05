@@ -35,6 +35,7 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
+      suppressHydrationWarning
       className={`${archivo.variable} ${bricolageGrotesque.variable} ${jetBrainsMono.variable}`}
     >
       <body className="min-h-screen bg-[var(--color-bg)] font-[family-name:var(--font-archivo)] text-[var(--color-text)]">

@@ -9,12 +9,16 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 export function PlayersEditor({ initialPlayers, editable }: { initialPlayers: IAdminPlayer[]; editable: boolean }) {
   const [players, setPlayers] = useState(initialPlayers);
   const [msg, setMsg] = useState("");
 
-  async function patch(id: string, patch: Partial<{ name: string; tier: number; avatar_url: string }>) {
+  async function patch(
+    id: string,
+    patch: Partial<{ name: string; tier: number; gender: "male" | "female" | null; avatar_url: string }>,
+  ) {
     const supabase = createBrowserSupabaseClient();
     const { data, error } = await supabase.from("players").update(patch).eq("id", id).select();
     if (error) return setMsg(`Lỗi: ${error.message}`);
@@ -23,10 +27,13 @@ export function PlayersEditor({ initialPlayers, editable }: { initialPlayers: IA
     setMsg("Đã lưu.");
   }
 
-  function toLocal(patch: Partial<{ name: string; tier: number; avatar_url: string }>): Partial<IAdminPlayer> {
+  function toLocal(
+    patch: Partial<{ name: string; tier: number; gender: "male" | "female" | null; avatar_url: string }>,
+  ): Partial<IAdminPlayer> {
     return {
       ...(patch.name !== undefined ? { name: patch.name } : {}),
       ...(patch.tier !== undefined ? { tier: patch.tier as IAdminPlayer["tier"] } : {}),
+      ...(patch.gender !== undefined ? { gender: patch.gender } : {}),
       ...(patch.avatar_url !== undefined ? { avatarUrl: patch.avatar_url } : {}),
     };
   }
@@ -82,6 +89,23 @@ export function PlayersEditor({ initialPlayers, editable }: { initialPlayers: IA
                 ))}
               </SelectContent>
             </Select>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-muted-foreground">Giới tính</Label>
+              <Select
+                value={p.gender ?? "none"}
+                disabled={!editable}
+                onValueChange={(v) => void patch(p.id, { gender: v === "none" ? null : (v as "male" | "female") })}
+              >
+                <SelectTrigger className="h-10 min-w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Chưa chọn</SelectItem>
+                  <SelectItem value="male">Nam</SelectItem>
+                  <SelectItem value="female">Nữ</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </Card>
         ))}
       </div>

@@ -94,6 +94,86 @@ export type Database = {
           },
         ]
       }
+      mvp_ballots: {
+        Row: {
+          candidate_id: string
+          gender: string
+          id: string
+          voter_email: string | null
+        }
+        Insert: {
+          candidate_id: string
+          gender: string
+          id?: string
+          voter_email?: string | null
+        }
+        Update: {
+          candidate_id?: string
+          gender?: string
+          id?: string
+          voter_email?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mvp_ballots_candidate_id_gender_fkey"
+            columns: ["candidate_id", "gender"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id", "gender"]
+          },
+        ]
+      }
+      mvp_receipts: {
+        Row: {
+          email: string
+        }
+        Insert: {
+          email: string
+        }
+        Update: {
+          email?: string
+        }
+        Relationships: []
+      }
+      mvp_vote: {
+        Row: {
+          deadline: string | null
+          id: boolean
+          opened_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          deadline?: string | null
+          id?: boolean
+          opened_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          deadline?: string | null
+          id?: boolean
+          opened_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      mvp_voter_allowlist: {
+        Row: {
+          created_at: string
+          email: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+        }
+        Relationships: []
+      }
       organizers: {
         Row: {
           created_at: string
@@ -160,6 +240,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           deleted_at: string | null
+          gender: string | null
           id: string
           name: string
           tier: number
@@ -169,6 +250,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           deleted_at?: string | null
+          gender?: string | null
           id?: string
           name: string
           tier: number
@@ -178,6 +260,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           deleted_at?: string | null
+          gender?: string | null
           id?: string
           name?: string
           tier?: number
@@ -215,9 +298,24 @@ export type Database = {
         Relationships: []
       }
       tournament: {
-        Row: { id: boolean; status: string; rewards: Json; updated_at: string }
-        Insert: { id?: boolean; status?: string; rewards?: Json; updated_at?: string }
-        Update: { id?: boolean; status?: string; rewards?: Json; updated_at?: string }
+        Row: {
+          id: boolean
+          rewards: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          id?: boolean
+          rewards?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: boolean
+          rewards?: Json
+          status?: string
+          updated_at?: string
+        }
         Relationships: []
       }
     }
@@ -225,10 +323,44 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cast_mvp_vote: {
+        Args: { p_female_id: string; p_male_id: string }
+        Returns: undefined
+      }
+      close_mvp_vote: { Args: never; Returns: undefined }
+      get_mvp_results: {
+        Args: never
+        Returns: {
+          candidate_id: string
+          gender: string
+          votes: number
+        }[]
+      }
+      get_mvp_status: { Args: never; Returns: Json }
+      get_my_mvp_vote: {
+        Args: never
+        Returns: {
+          candidate_id: string
+          gender: string
+        }[]
+      }
+      is_mvp_open: { Args: never; Returns: boolean }
+      is_mvp_voter: { Args: never; Returns: boolean }
       is_organizer: { Args: never; Returns: boolean }
       is_setup_phase: { Args: never; Returns: boolean }
-      start_tournament: { Args: never; Returns: undefined }
+      list_system_users: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          email: string
+          id: string
+          name: string
+        }[]
+      }
+      open_mvp_vote: { Args: { p_minutes: number }; Returns: undefined }
+      reset_mvp_vote: { Args: never; Returns: undefined }
       reset_tournament: { Args: never; Returns: undefined }
+      start_tournament: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
