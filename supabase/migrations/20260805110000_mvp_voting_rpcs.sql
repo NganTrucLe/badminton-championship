@@ -134,8 +134,8 @@ begin
     raise exception 'no female candidates' using errcode = '22023';
   end if;
 
-  delete from public.mvp_ballots;
-  delete from public.mvp_receipts;
+  delete from public.mvp_ballots where true;
+  delete from public.mvp_receipts where true;
   update public.mvp_vote
     set status = 'open',
         opened_at = now(), deadline = now() + make_interval(mins => p_minutes),
@@ -168,8 +168,8 @@ begin
   if not public.is_organizer() then
     raise exception 'not authorized' using errcode = '42501';
   end if;
-  delete from public.mvp_ballots;
-  delete from public.mvp_receipts;
+  delete from public.mvp_ballots where true;
+  delete from public.mvp_receipts where true;
   update public.mvp_vote
     set status = 'idle', opened_at = null, deadline = null,
         updated_at = now()

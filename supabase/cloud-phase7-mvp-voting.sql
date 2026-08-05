@@ -100,6 +100,7 @@ grant select on public.mvp_vote to authenticated;                              -
 
 -- Realtime: referee turnout subscribes to receipt inserts (organizer has SELECT).
 alter publication supabase_realtime add table public.mvp_receipts;
+
 -- MVP voting: RPC surface. All SECURITY DEFINER, search_path pinned.
 
 -- Is the current auth email on the allow-list?
@@ -236,8 +237,8 @@ begin
     raise exception 'no female candidates' using errcode = '22023';
   end if;
 
-  delete from public.mvp_ballots;
-  delete from public.mvp_receipts;
+  delete from public.mvp_ballots where true;
+  delete from public.mvp_receipts where true;
   update public.mvp_vote
     set status = 'open',
         opened_at = now(), deadline = now() + make_interval(mins => p_minutes),
@@ -270,8 +271,8 @@ begin
   if not public.is_organizer() then
     raise exception 'not authorized' using errcode = '42501';
   end if;
-  delete from public.mvp_ballots;
-  delete from public.mvp_receipts;
+  delete from public.mvp_ballots where true;
+  delete from public.mvp_receipts where true;
   update public.mvp_vote
     set status = 'idle', opened_at = null, deadline = null,
         updated_at = now()
