@@ -1,10 +1,26 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Loader2, Minus, Plus, Play, Square } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
 import { useLiveMatches } from "@/lib/supabase/useLiveMatches";
 import { getTeam, teamName, type IMatch, type TMatchState } from "@/lib/tournament/data";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { ensureNextRound } from "./ensureNextRound";
 import { isSelectable, matchWinnerSide, primaryAction, showScoreControls } from "./refereeControls";
 import { RefereeSwissPicker } from "./RefereeSwissPicker";
@@ -222,34 +238,18 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
-        <h2
-          style={{
-            margin: 0,
-            fontFamily: "var(--font-bricolage), Archivo, sans-serif",
-            fontSize: "clamp(28px,4vw,44px)",
-            fontWeight: 900,
-            letterSpacing: "-.035em",
-          }}
-        >
+      <div className="flex flex-wrap items-baseline gap-[14px]">
+        <h2 className="m-0 font-[family-name:var(--font-bricolage)] text-[clamp(28px,4vw,44px)] font-black tracking-[-.035em]">
           Cập nhật tỉ số
         </h2>
       </div>
 
-      <div
-        style={{
-          marginTop: 22,
-          display: "grid",
-          gridTemplateColumns: "1fr",
-          gap: 16,
-          alignItems: "start",
-        }}
-      >
-        <div style={{ background: "#FFFDF7", border: "1px solid rgba(10,31,26,.12)", borderRadius: 20, padding: 20 }}>
-          <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 10, letterSpacing: ".16em", color: "#5B7A72" }}>
+      <div className="mt-[22px] grid grid-cols-1 items-start gap-4">
+        <Card className="gap-0 rounded-[20px] border-[rgba(10,31,26,.12)] bg-[#FFFDF7] p-5">
+          <div className="font-[family-name:var(--font-jetbrains)] text-[10px] tracking-[.16em] text-[#5B7A72]">
             CHỌN TRẬN
           </div>
-          <div style={{ marginTop: 12 }}>
+          <div className="mt-3">
             <RefereeSwissPicker
               matches={matches}
               activeId={activeMatch?.id ?? ""}
@@ -257,298 +257,198 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
               onSelect={selectMatch}
             />
           </div>
-        </div>
+        </Card>
 
-        <div style={{ gridColumn: "span 1", background: "#0A1F1A", borderRadius: 20, padding: "clamp(20px,3vw,30px)", color: "#FFFDF7" }}>
+        <Card className="col-span-1 gap-0 rounded-[20px] border-0 bg-[#0A1F1A] p-[clamp(20px,3vw,30px)] text-[#FFFDF7]">
           {!activeMatch ? (
-            <div style={{ padding: "40px 10px", textAlign: "center", color: "#8FBCB0", fontFamily: "var(--font-archivo), sans-serif", fontSize: 15, fontWeight: 700 }}>
+            <div className="px-[10px] py-10 text-center font-[family-name:var(--font-archivo)] text-[15px] font-bold text-[#8FBCB0]">
               Chọn một trận để bắt đầu
             </div>
           ) : (
             <>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ marginLeft: "auto", fontFamily: "var(--font-jetbrains), monospace", fontSize: 10, letterSpacing: ".12em", color: "#F2B544" }}>
-              {STATE_LABEL[activeMatch.state].label}
-            </span>
-          </div>
+              <div className="flex items-center gap-[10px]">
+                <Badge
+                  className="ml-auto rounded-full bg-[#F2B544]/15 font-[family-name:var(--font-jetbrains)] text-[10px] tracking-[.12em] text-[#F2B544]"
+                >
+                  {STATE_LABEL[activeMatch.state].label}
+                </Badge>
+              </div>
 
-          <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            <div
-              style={{
-                background: activeWinner === "a" ? "rgba(63,191,143,.14)" : "rgba(255,253,247,.07)",
-                border: activeWinner === "a" ? "1px solid #3FBF8F" : "1px solid rgba(255,255,255,.14)",
-                borderRadius: 16,
-                padding: 18,
-                textAlign: "center",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "center", gap: 4, marginBottom: 8 }}>
-                {getTeam(activeMatch.a).players.map((p) => (
-                  <PlayerAvatar key={p.name} player={p} size={30} />
-                ))}
-              </div>
-              <div style={{ fontSize: 14, fontWeight: activeWinner === "a" ? 900 : 800, color: activeWinner === "a" ? "#FFFDF7" : "#8FBCB0" }}>
-                {teamName(activeMatch.a)}
-              </div>
-              <div
-                style={{
-                  fontFamily: "var(--font-jetbrains), monospace",
-                  fontWeight: activeWinner === "a" ? 900 : 700,
-                  fontSize: "clamp(46px,9vw,68px)",
-                  lineHeight: 1,
-                  margin: "14px 0",
-                  color: activeWinner === "a" ? "#3FBF8F" : "#FFFDF7",
-                }}
-              >
-                {draftA}
-              </div>
-              {showScoreControls(activeMatch.state) && (
-                <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-                  <button
-                    type="button"
-                    onClick={() => bump("a", -1)}
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 12,
-                      border: "1px solid rgba(255,255,255,.2)",
-                      background: "transparent",
-                      color: "#FFFDF7",
-                      fontSize: 22,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      fontFamily: "var(--font-archivo), sans-serif",
-                    }}
-                  >
-                    −
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => bump("a", 1)}
-                    style={{
-                      flex: 1,
-                      height: 48,
-                      borderRadius: 12,
-                      border: "none",
-                      background: "#F2B544",
-                      color: "#08241E",
-                      fontSize: 22,
-                      fontWeight: 800,
-                      cursor: "pointer",
-                      fontFamily: "var(--font-archivo), sans-serif",
-                    }}
-                  >
-                    +
-                  </button>
-                </div>
-              )}
-            </div>
-            <div
-              style={{
-                background: activeWinner === "b" ? "rgba(63,191,143,.14)" : "rgba(255,253,247,.07)",
-                border: activeWinner === "b" ? "1px solid #3FBF8F" : "1px solid rgba(255,255,255,.14)",
-                borderRadius: 16,
-                padding: 18,
-                textAlign: "center",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "center", gap: 4, marginBottom: 8 }}>
-                {getTeam(activeMatch.b).players.map((p) => (
-                  <PlayerAvatar key={p.name} player={p} size={30} />
-                ))}
-              </div>
-              <div style={{ fontSize: 14, fontWeight: activeWinner === "b" ? 900 : 800, color: activeWinner === "b" ? "#FFFDF7" : "#8FBCB0" }}>
-                {teamName(activeMatch.b)}
-              </div>
-              <div
-                style={{
-                  fontFamily: "var(--font-jetbrains), monospace",
-                  fontWeight: activeWinner === "b" ? 900 : 700,
-                  fontSize: "clamp(46px,9vw,68px)",
-                  lineHeight: 1,
-                  margin: "14px 0",
-                  color: activeWinner === "b" ? "#3FBF8F" : "#FFFDF7",
-                }}
-              >
-                {draftB}
-              </div>
-              {showScoreControls(activeMatch.state) && (
-                <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-                  <button
-                    type="button"
-                    onClick={() => bump("b", -1)}
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 12,
-                      border: "1px solid rgba(255,255,255,.2)",
-                      background: "transparent",
-                      color: "#FFFDF7",
-                      fontSize: 22,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      fontFamily: "var(--font-archivo), sans-serif",
-                    }}
-                  >
-                    −
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => bump("b", 1)}
-                    style={{
-                      flex: 1,
-                      height: 48,
-                      borderRadius: 12,
-                      border: "none",
-                      background: "#F2B544",
-                      color: "#08241E",
-                      fontSize: 22,
-                      fontWeight: 800,
-                      cursor: "pointer",
-                      fontFamily: "var(--font-archivo), sans-serif",
-                    }}
-                  >
-                    +
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap" }}>
-            {primaryAction(activeMatch.state) === "start" && (
-              <button
-                type="button"
-                disabled={saving}
-                onClick={() => {
-                  void commit("live");
-                }}
-                style={{
-                  flex: 1,
-                  minWidth: 150,
-                  height: 50,
-                  borderRadius: 12,
-                  border: "none",
-                  background: "#0B5D4E",
-                  color: "#FFFDF7",
-                  fontSize: 14,
-                  fontWeight: 800,
-                  cursor: saving ? "not-allowed" : "pointer",
-                  opacity: saving ? 0.6 : 1,
-                  fontFamily: "var(--font-archivo), sans-serif",
-                }}
-              >
-                Bắt đầu trận
-              </button>
-            )}
-            {primaryAction(activeMatch.state) === "end" && (
-              <>
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => {
-                    void commit("done");
-                  }}
+              <div className="mt-[22px] grid grid-cols-2 gap-[14px]">
+                <div
+                  className="rounded-2xl p-[18px] text-center"
                   style={{
-                    flex: 1,
-                    minWidth: 150,
-                    height: 50,
-                    borderRadius: 12,
-                    border: "none",
-                    background: "#3FBF8F",
-                    color: "#052D22",
-                    fontSize: 14,
-                    fontWeight: 800,
-                    cursor: saving ? "not-allowed" : "pointer",
-                    opacity: saving ? 0.6 : 1,
-                    fontFamily: "var(--font-archivo), sans-serif",
+                    background: activeWinner === "a" ? "rgba(63,191,143,.14)" : "rgba(255,253,247,.07)",
+                    border: activeWinner === "a" ? "1px solid #3FBF8F" : "1px solid rgba(255,255,255,.14)",
                   }}
                 >
-                  Kết thúc trận
-                </button>
-                {!confirmingReset ? (
-                  <button
+                  <div className="mb-2 flex justify-center gap-1">
+                    {getTeam(activeMatch.a).players.map((p) => (
+                      <PlayerAvatar key={p.name} player={p} size={30} />
+                    ))}
+                  </div>
+                  <div
+                    className="text-[14px]"
+                    style={{ fontWeight: activeWinner === "a" ? 900 : 800, color: activeWinner === "a" ? "#FFFDF7" : "#8FBCB0" }}
+                  >
+                    {teamName(activeMatch.a)}
+                  </div>
+                  <div
+                    data-testid="ref-score-a"
+                    className="my-[14px] font-[family-name:var(--font-jetbrains)] text-[clamp(46px,9vw,68px)] leading-none"
+                    style={{ fontWeight: activeWinner === "a" ? 900 : 700, color: activeWinner === "a" ? "#3FBF8F" : "#FFFDF7" }}
+                  >
+                    {draftA}
+                  </div>
+                  {showScoreControls(activeMatch.state) && (
+                    <div className="flex justify-center gap-2">
+                      <Button
+                        type="button"
+                        size="icon"
+                        aria-label="Giảm điểm đội A"
+                        onClick={() => bump("a", -1)}
+                        className="size-12 rounded-xl border border-white/20 bg-transparent text-[#FFFDF7] hover:bg-white/10"
+                      >
+                        <Minus />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon"
+                        aria-label="Tăng điểm đội A"
+                        onClick={() => bump("a", 1)}
+                        className="size-12 rounded-xl bg-[#F2B544] text-[#08241E] hover:bg-[#F2B544]/90"
+                      >
+                        <Plus />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <div
+                  className="rounded-2xl p-[18px] text-center"
+                  style={{
+                    background: activeWinner === "b" ? "rgba(63,191,143,.14)" : "rgba(255,253,247,.07)",
+                    border: activeWinner === "b" ? "1px solid #3FBF8F" : "1px solid rgba(255,255,255,.14)",
+                  }}
+                >
+                  <div className="mb-2 flex justify-center gap-1">
+                    {getTeam(activeMatch.b).players.map((p) => (
+                      <PlayerAvatar key={p.name} player={p} size={30} />
+                    ))}
+                  </div>
+                  <div
+                    className="text-[14px]"
+                    style={{ fontWeight: activeWinner === "b" ? 900 : 800, color: activeWinner === "b" ? "#FFFDF7" : "#8FBCB0" }}
+                  >
+                    {teamName(activeMatch.b)}
+                  </div>
+                  <div
+                    data-testid="ref-score-b"
+                    className="my-[14px] font-[family-name:var(--font-jetbrains)] text-[clamp(46px,9vw,68px)] leading-none"
+                    style={{ fontWeight: activeWinner === "b" ? 900 : 700, color: activeWinner === "b" ? "#3FBF8F" : "#FFFDF7" }}
+                  >
+                    {draftB}
+                  </div>
+                  {showScoreControls(activeMatch.state) && (
+                    <div className="flex justify-center gap-2">
+                      <Button
+                        type="button"
+                        size="icon"
+                        aria-label="Giảm điểm đội B"
+                        onClick={() => bump("b", -1)}
+                        className="size-12 rounded-xl border border-white/20 bg-transparent text-[#FFFDF7] hover:bg-white/10"
+                      >
+                        <Minus />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon"
+                        aria-label="Tăng điểm đội B"
+                        onClick={() => bump("b", 1)}
+                        className="size-12 rounded-xl bg-[#F2B544] text-[#08241E] hover:bg-[#F2B544]/90"
+                      >
+                        <Plus />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-[10px]">
+                {primaryAction(activeMatch.state) === "start" && (
+                  <Button
                     type="button"
                     disabled={saving}
-                    onClick={() => setConfirmingReset(true)}
-                    style={{
-                      minWidth: 130,
-                      height: 50,
-                      borderRadius: 12,
-                      border: "1px solid #B0435F",
-                      background: "transparent",
-                      color: "#B0435F",
-                      fontSize: 14,
-                      fontWeight: 800,
-                      cursor: saving ? "not-allowed" : "pointer",
-                      opacity: saving ? 0.6 : 1,
-                      fontFamily: "var(--font-archivo), sans-serif",
+                    onClick={() => {
+                      void commit("live");
                     }}
+                    className="h-[50px] min-w-[150px] flex-1 rounded-xl bg-[#0B5D4E] font-[family-name:var(--font-archivo)] text-[14px] font-extrabold text-[#FFFDF7] hover:bg-[#0B5D4E]/90"
                   >
-                    Đặt lại trận
-                  </button>
-                ) : (
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <span style={{ fontFamily: "var(--font-archivo), sans-serif", fontSize: 12, color: "#B0435F", fontWeight: 700 }}>
-                      Chắc chắn?
-                    </span>
-                    <button
+                    {saving ? <Loader2 className="animate-spin" /> : <Play />}
+                    Bắt đầu trận
+                  </Button>
+                )}
+                {primaryAction(activeMatch.state) === "end" && (
+                  <>
+                    <Button
                       type="button"
                       disabled={saving}
                       onClick={() => {
-                        void resetMatch();
+                        void commit("done");
                       }}
-                      style={{
-                        height: 50,
-                        padding: "0 16px",
-                        borderRadius: 12,
-                        border: "none",
-                        background: "#B0435F",
-                        color: "#FFFDF7",
-                        fontSize: 13,
-                        fontWeight: 800,
-                        cursor: saving ? "not-allowed" : "pointer",
-                        opacity: saving ? 0.6 : 1,
-                        fontFamily: "var(--font-archivo), sans-serif",
-                      }}
+                      className="h-[50px] min-w-[150px] flex-1 rounded-xl bg-[#3FBF8F] font-[family-name:var(--font-archivo)] text-[14px] font-extrabold text-[#052D22] hover:bg-[#3FBF8F]/90"
                     >
-                      Xác nhận đặt lại
-                    </button>
-                    <button
-                      type="button"
-                      disabled={saving}
-                      onClick={() => setConfirmingReset(false)}
-                      style={{
-                        height: 50,
-                        padding: "0 14px",
-                        borderRadius: 12,
-                        border: "1px solid rgba(255,255,255,.2)",
-                        background: "transparent",
-                        color: "#FFFDF7",
-                        fontSize: 13,
-                        fontWeight: 700,
-                        cursor: saving ? "not-allowed" : "pointer",
-                        fontFamily: "var(--font-archivo), sans-serif",
-                      }}
-                    >
-                      Hủy
-                    </button>
+                      {saving ? <Loader2 className="animate-spin" /> : <Square />}
+                      Kết thúc trận
+                    </Button>
+                    <AlertDialog open={confirmingReset} onOpenChange={setConfirmingReset}>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={saving}
+                          className="h-[50px] min-w-[130px] rounded-xl border-[#B0435F] bg-transparent font-[family-name:var(--font-archivo)] text-[14px] font-extrabold text-[#B0435F] hover:bg-transparent hover:text-[#B0435F]"
+                        >
+                          Đặt lại trận
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Đặt lại trận?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Đưa trận về “sắp diễn ra” với tỉ số 0–0. Chỉ dùng để sửa lỗi.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel disabled={saving}>Hủy</AlertDialogCancel>
+                          <AlertDialogAction
+                            disabled={saving}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              void resetMatch();
+                            }}
+                            className="bg-[#B0435F] text-[#FFFDF7] hover:bg-[#B0435F]/90"
+                          >
+                            Xác nhận đặt lại
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </>
+                )}
+                {activeMatch.state === "done" && (
+                  <div className="font-[family-name:var(--font-archivo)] text-[13px] text-[#8FBCB0]">
+                    Chọn trận tiếp theo để tiếp tục
                   </div>
                 )}
-              </>
-            )}
-            {activeMatch.state === "done" && (
-              <div style={{ fontFamily: "var(--font-archivo), sans-serif", fontSize: 13, color: "#8FBCB0" }}>
-                Chọn trận tiếp theo để tiếp tục
               </div>
-            )}
-          </div>
-          <div style={{ marginTop: 12, fontFamily: "var(--font-jetbrains), monospace", fontSize: 10, color: "#5F817A" }}>
-            {savedMsg}
-          </div>
+              <Alert className="mt-3 border-white/10 bg-white/[.04] px-3 py-2">
+                <AlertDescription className="font-[family-name:var(--font-jetbrains)] text-[10px] text-[#5F817A]">
+                  {savedMsg}
+                </AlertDescription>
+              </Alert>
             </>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );
