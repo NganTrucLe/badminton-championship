@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getMvpResults, getMvpStatus } from "@/lib/supabase/mvp";
 import { isResultsVisible, type IMvpCandidate } from "@/lib/tournament/mvp";
@@ -51,7 +53,12 @@ export async function MvpPrizeSection() {
           <Winner title="MVP Nữ" winners={results.female.winners} />
         </div>
       ) : status.status === "open" ? (
-        <p className="mt-2 text-text-soft">Đang diễn ra bình chọn…</p>
+        <div className="mt-2 flex flex-col items-center gap-3">
+          <p className="text-text-soft">Đang diễn ra bình chọn…</p>
+          <Button asChild variant="success">
+            <Link href="/vote">Bỏ phiếu ngay →</Link>
+          </Button>
+        </div>
       ) : null}
     </Card>
   );
