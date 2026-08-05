@@ -99,16 +99,19 @@ export type Database = {
           candidate_id: string
           gender: string
           id: string
+          voter_email: string | null
         }
         Insert: {
           candidate_id: string
           gender: string
           id?: string
+          voter_email?: string | null
         }
         Update: {
           candidate_id?: string
           gender?: string
           id?: string
+          voter_email?: string | null
         }
         Relationships: [
           {
@@ -334,6 +337,13 @@ export type Database = {
         }[]
       }
       get_mvp_status: { Args: never; Returns: Json }
+      get_my_mvp_vote: {
+        Args: never
+        Returns: {
+          candidate_id: string
+          gender: string
+        }[]
+      }
       is_mvp_open: { Args: never; Returns: boolean }
       is_mvp_voter: { Args: never; Returns: boolean }
       is_organizer: { Args: never; Returns: boolean }

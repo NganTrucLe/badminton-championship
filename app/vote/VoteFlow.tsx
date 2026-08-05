@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GoogleIcon } from "@/components/brand/GoogleIcon";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { useRefereeAuth } from "@/contexts/RefereeAuthContext";
-import { castMvpVote } from "@/lib/supabase/mvpClient";
+import { castMvpVote, getMyMvpVote } from "@/lib/supabase/mvpClient";
 import { cn } from "@/lib/utils";
 import type { IMvpCandidate, IMvpStatus } from "@/lib/tournament/mvp";
 
@@ -65,12 +65,30 @@ export function VoteFlow({
   female: IMvpCandidate[];
 }) {
   const { user, loading, signInWithGoogle } = useRefereeAuth();
-  const [phase, setPhase] = useState<"pick" | "done">("pick");
   const [maleId, setMaleId] = useState<string | null>(null);
   const [femaleId, setFemaleId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [signingIn, setSigningIn] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+
+  const canVote = !!user && status.isEligible && status.status === "open";
+
+  // Pre-load the voter's current picks so they can edit instead of starting over.
+  useEffect(() => {
+    if (!canVote) return;
+    let active = true;
+    void getMyMvpVote()
+      .then((v) => {
+        if (!active) return;
+        if (v.maleId) setMaleId(v.maleId);
+        if (v.femaleId) setFemaleId(v.femaleId);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [canVote]);
 
   if (status.status === "idle")
     return <p className="text-muted-foreground">Chưa có đợt bình chọn nào.</p>;
@@ -121,8 +139,7 @@ export function VoteFlow({
       </p>
     );
 
-  if (status.hasVoted || phase === "done")
-    return <p className="text-lg font-semibold text-primary">Bạn đã bình chọn. Cảm ơn! 🏸</p>;
+  const alreadyVoted = status.hasVoted || saved;
 
   async function submit() {
     if (!maleId || !femaleId) {
@@ -134,7 +151,7 @@ export function VoteFlow({
     setMsg(null);
     try {
       await castMvpVote(maleId, femaleId);
-      setPhase("done");
+      setSaved(true);
     } catch (e) {
       setMsg(`Lỗi: ${(e as Error).message}`);
     } finally {
@@ -144,6 +161,11 @@ export function VoteFlow({
 
   return (
     <div className="flex flex-col gap-6">
+      {alreadyVoted && (
+        <p className="text-sm font-medium text-primary">
+          Bạn đã bình chọn 🏸 — có thể thay đổi lựa chọn bên dưới rồi bấm cập nhật.
+        </p>
+      )}
       <CandidateGrid list={male} sel={maleId} onSel={setMaleId} title="MVP Nam" />
       <CandidateGrid list={female} sel={femaleId} onSel={setFemaleId} title="MVP Nữ" />
       <Button
@@ -152,8 +174,10 @@ export function VoteFlow({
         disabled={busy || !maleId || !femaleId}
         onClick={() => void submit()}
       >
-        {busy ? <Loader2 className="animate-spin" /> : null} Gửi bình chọn
+        {busy ? <Loader2 className="animate-spin" /> : null}
+        {alreadyVoted ? "Cập nhật bình chọn" : "Gửi bình chọn"}
       </Button>
+      {saved && !msg && <p className="text-sm font-medium text-primary">Đã lưu bình chọn ✓</p>}
       {msg && <p className="text-sm text-destructive">{msg}</p>}
     </div>
   );

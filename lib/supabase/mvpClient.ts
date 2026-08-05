@@ -16,6 +16,18 @@ export async function listSystemUsers(): Promise<ISystemUser[]> {
   }));
 }
 
+// The caller's own current picks (or nulls), so the vote UI can pre-select them for editing.
+export async function getMyMvpVote(): Promise<{ maleId: string | null; femaleId: string | null }> {
+  const supabase = createBrowserSupabaseClient();
+  const { data, error } = await supabase.rpc("get_my_mvp_vote");
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as { gender: string; candidate_id: string }[];
+  return {
+    maleId: rows.find((r) => r.gender === "male")?.candidate_id ?? null,
+    femaleId: rows.find((r) => r.gender === "female")?.candidate_id ?? null,
+  };
+}
+
 export async function castMvpVote(maleId: string, femaleId: string): Promise<void> {
   const supabase = createBrowserSupabaseClient();
   const { error } = await supabase.rpc("cast_mvp_vote", {
