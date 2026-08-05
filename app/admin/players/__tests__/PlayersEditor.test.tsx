@@ -14,6 +14,7 @@ const player: IAdminPlayer = {
   id: "p1",
   name: "Old",
   tier: 1,
+  gender: null,
   avatarKey: null,
   avatarUrl: null,
 };
@@ -65,8 +66,9 @@ describe("PlayersEditor (characterization)", () => {
     const nameInput = screen.getByDisplayValue("Old");
     expect(nameInput).toBeDisabled();
 
-    const selectTrigger = screen.getByRole("combobox");
-    expect(selectTrigger).toBeDisabled();
+    const selectTriggers = screen.getAllByRole("combobox");
+    expect(selectTriggers).toHaveLength(2);
+    selectTriggers.forEach((cb) => expect(cb).toBeDisabled());
 
     await user.click(nameInput);
     await user.tab();
