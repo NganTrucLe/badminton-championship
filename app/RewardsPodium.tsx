@@ -35,7 +35,7 @@ export async function RewardsPodium() {
             🏆
           </div>
           <div className="text-[21px] font-black leading-[1.3] text-center">{first.title}</div>
-          <Card className="bg-[#F2B544] h-[200px] rounded-t-[24px] rounded-b-[10px] w-full flex flex-col items-center justify-center gap-2 p-0 text-[#08241E]">
+          <Card className="bg-[#F2B544] border-0 h-[200px] rounded-t-[24px] rounded-b-[10px] w-full flex flex-col items-center justify-center gap-2 p-0 text-[#08241E]">
             <div className="font-[family-name:var(--font-jetbrains)] text-[11px] tracking-[.18em]">HẠNG NHẤT</div>
             <div className="text-[56px] font-black tracking-[-.05em]">01</div>
             <div className="text-[14px] opacity-75">{first.detail}</div>
