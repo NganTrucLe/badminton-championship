@@ -10,7 +10,7 @@
 
 **Anonymity is access-control level, not information-theoretic** (be explicit in copy and threat model): no Data-API role (`anon`/`authenticated`) — and no application code path — can join a voter to their choice, because `mvp_ballots` holds no voter reference, has no SELECT grant and no RLS policy, and is read only via `get_mvp_results()`. It is **not** anonymous against a raw-database actor (`service_role`, `postgres`): ballots commit in stable pairs, so physical row order (`ctid`) still correlates with `mvp_receipts` insertion order. To blunt even that, `mvp_receipts` stores **no `created_at`** (turnout needs only `COUNT(*)`), removing the timestamp key that would make the correlation trivial. This is the right posture for a club prize; do not describe it as unbreakable.
 
-**Tech Stack:** Next.js 16 (App Router) · React 19 · TypeScript 5 · Tailwind v4 (inline-style + CSS-var tokens) · Supabase (`@supabase/ssr`, Postgres + RLS + Realtime + Google OAuth) · Vitest 4 + Testing Library.
+**Tech Stack:** Next.js 16 (App Router) · React 19 · TypeScript 5 · Tailwind v4 + shadcn/ui (`components/ui/*`, `radix-ui`, `motion/react`, `lucide-react`, CSS-var brand tokens) · Supabase (`@supabase/ssr`, Postgres + RLS + Realtime + Google OAuth) · Vitest 4 + Testing Library.
 
 ## Global Constraints
 
@@ -23,7 +23,8 @@
 - **Types:** `TEXT` not `VARCHAR`; `uuid` PKs via `gen_random_uuid()`; soft-delete via `deleted_at timestamptz` where a domain record can be removed. Singleton tables use `id boolean primary key default true check (id)`.
 - **snake_case ↔ camelCase conversion happens only in the data layer** (`lib/supabase/*.ts` mappers). Components consume camelCase interfaces; raw table writes use snake_case inline.
 - **Streaming:** any new landing-page section is wrapped in its own `<Suspense>` with a shape-matching skeleton; `page.tsx` never `await`s data before returning markup.
-- **Mutations show pending state**; buttons disable while in flight (existing `busy` flag pattern).
+- **UI stack is shadcn/ui (post-#12), not inline styles.** This branch is rebased on `origin/main` which merged the shadcn migration. Use the primitives in `components/ui/*` via `className` + `cn()` + Tailwind utilities and the brand tokens — **do not** write ad-hoc `style={{}}` objects (except for genuinely dynamic pixel values, as `PlayerAvatar`/`Skeleton` do). Key facts: primitives use the unified `radix-ui` package and `motion/react` (not framer-motion); icons are `lucide-react`; `Button` has on-brand variants `success` (teal), `danger`/`dangerOutline` (maroon) plus `default|outline|secondary|ghost|link`; **there is no `Checkbox` primitive** — compose toggles from `Button`. Confirmations use `AlertDialog` (see `LifecyclePanel`). Wrap landing sections in `<Reveal>` from `components/motion`. Brand utility classes: `bg-primary text-primary-foreground`, `bg-card`, `text-muted-foreground`, `border-border`, `text-gold`, `text-cream`, `text-text-soft/-muted`. Headings use `font-[family-name:var(--font-bricolage)]`, mono labels `font-[family-name:var(--font-jetbrains)]`. Light-mode only.
+- **Mutations show pending state**; buttons disable while in flight (`busy` flag + `<Loader2 className="animate-spin" />` inside the `Button`, mirroring `RewardsEditor`/`LifecyclePanel`). Detect RLS denial via the zero-row-returned convention (`if (!data || data.length === 0) …`).
 - **`npm run build`, `npm run lint`, and `npm run test` must all pass before every commit.**
 - **Regenerate/extend `lib/supabase/database.types.ts`** after each migration (hand-edit to match the existing style — the repo maintains this file by hand for `Functions`).
 - **Path alias:** `@/*` → repo root. Tests live in co-located `__tests__/` dirs, named `*.test.ts[x]`, run by `vitest run`.
@@ -1017,26 +1018,26 @@ In `lib/supabase/admin.ts`: add `gender: "male" | "female" | null` to `IAdminPla
 
 - [ ] **Step 2: Add the gender selector to the editor**
 
-In `app/admin/players/PlayersEditor.tsx`, next to the existing tier control for each player row, add a `<select>` bound to the player's gender, disabled when `!editable` (i.e. `status !== "setup"`), that calls the existing per-field `patch(id, { gender: value })` helper. Match the existing inline-style + Vietnamese-label convention. Values: `""` (Chưa chọn), `"male"` (Nam), `"female"` (Nữ). When the empty option is chosen, write `gender: null`.
+In `app/admin/players/PlayersEditor.tsx`, next to the existing **tier** `Select` for each player row (which already uses `onValueChange` + `patch(p.id, { tier })` + `disabled={!editable}`), add a **gender** `Select` following that exact pattern. Radix `Select` items cannot have an empty-string value, so use the sentinel `"none"` for "not chosen" and translate it to `null` on write. Import `Select, SelectContent, SelectItem, SelectTrigger, SelectValue` from `@/components/ui/select` and `Label` from `@/components/ui/label` (both already used elsewhere in the file/app).
 
 ```tsx
-<label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-  <span style={{ fontSize: 12, color: "#6b6b6b" }}>Giới tính</span>
-  <select
-    value={player.gender ?? ""}
-    disabled={!editable || busyId === player.id}
-    onChange={(e) =>
-      patch(player.id, { gender: e.target.value === "" ? null : (e.target.value as "male" | "female") })
-    }
-    style={{ padding: "6px 8px", borderRadius: 8, border: "1px solid #ddd" }}
+<div className="flex flex-col gap-1">
+  <Label className="text-xs text-muted-foreground">Giới tính</Label>
+  <Select
+    value={p.gender ?? "none"}
+    disabled={!editable}
+    onValueChange={(v) => void patch(p.id, { gender: v === "none" ? null : (v as "male" | "female") })}
   >
-    <option value="">Chưa chọn</option>
-    <option value="male">Nam</option>
-    <option value="female">Nữ</option>
-  </select>
-</label>
+    <SelectTrigger className="h-10 min-w-[140px]"><SelectValue /></SelectTrigger>
+    <SelectContent>
+      <SelectItem value="none">Chưa chọn</SelectItem>
+      <SelectItem value="male">Nam</SelectItem>
+      <SelectItem value="female">Nữ</SelectItem>
+    </SelectContent>
+  </Select>
+</div>
 ```
-(Match the existing `patch`/`busyId` names actually used in the file; if they differ, adapt to the real handler.)
+(Match the real per-row variable name and `patch` helper actually used in the file — the tier `Select` right above is the template.)
 
 - [ ] **Step 3: Verify build + manual check**
 
@@ -1062,7 +1063,7 @@ git commit -m "feat(mvp): add player gender selector to admin players editor"
 - Modify: `app/admin/AdminNav.tsx`
 
 **Interfaces:**
-- Consumes: `getMvpStatus` (Task 4, server), `openMvpVote`/`closeMvpVote`/`resetMvpVote`/`listSystemUsers`/`getMvpVoterAllowlist`/`addMvpVoter`/`removeMvpVoter` (Task 4, client), `PlayerAvatar`, the `AdminSectionSkeleton` fallback, and the `<Countdown target=.../>` component.
+- Consumes: `getMvpStatus` (Task 4, server), `openMvpVote`/`closeMvpVote`/`resetMvpVote`/`listSystemUsers`/`getMvpVoterAllowlist`/`addMvpVoter`/`removeMvpVoter` (Task 4, client), shadcn `Button`/`Card`/`Input`/`Label`/`Avatar`/`AlertDialog`, lucide icons, the `AdminSectionSkeleton title=…` fallback, and `<Countdown target={isoString} />` (note: `Countdown` takes an ISO **string**, not a `Date`).
 - Produces: the organizer surface for the whole feature.
 
 - [ ] **Step 1: Add the nav tab**
@@ -1120,6 +1121,15 @@ Create `app/admin/mvp/MvpControlPanel.tsx` (`"use client"`). It renders one of t
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2, Play, RotateCcw, Square } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Countdown } from "@/components/Countdown";
 import { useMvpTurnout } from "@/lib/supabase/useMvpTurnout";
 import { closeMvpVote, openMvpVote, resetMvpVote } from "@/lib/supabase/mvpClient";
@@ -1132,79 +1142,97 @@ export function MvpControlPanel({ initial }: { initial: IMvpStatus }) {
   const [minutes, setMinutes] = useState(10);
   const { votedCount, totalEligible } = useMvpTurnout(initial.votedCount, initial.totalEligible);
 
-  async function run(action: () => Promise<void>, ok: () => void) {
+  async function run(action: () => Promise<void>) {
+    if (busy) return;
     setBusy(true); setMsg(null);
-    try { await action(); ok(); router.refresh(); }
+    try { await action(); router.refresh(); }
     catch (e) { setMsg(`Lỗi: ${(e as Error).message}`); }
     finally { setBusy(false); }
   }
 
   if (initial.status === "open") {
     return (
-      <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <h2 style={{ fontFamily: "var(--font-bricolage)" }}>Đang bình chọn</h2>
-        <p style={{ fontFamily: "var(--font-jetbrains)", fontSize: 28 }}>
-          {votedCount} / {totalEligible} người đã bình chọn
+      <Card className="gap-4 p-6">
+        <h2 className="font-[family-name:var(--font-bricolage)] text-xl">Đang bình chọn</h2>
+        <p className="font-[family-name:var(--font-jetbrains)] text-3xl font-bold text-primary">
+          {votedCount} / {totalEligible}{" "}
+          <span className="text-base font-normal text-muted-foreground">đã bình chọn</span>
         </p>
-        {initial.deadline && <Countdown target={new Date(initial.deadline)} />}
-        <button disabled={busy}
-          onClick={() => run(closeMvpVote, () => setMsg("Đã kết thúc."))}
-          style={{ padding: "10px 16px", borderRadius: 10, background: "var(--color-live)", color: "#fff", border: "none" }}>
-          {busy ? "Đang xử lý…" : "Kết thúc bình chọn"}
-        </button>
-        {msg && <p>{msg}</p>}
-      </section>
+        {initial.deadline && <Countdown target={initial.deadline} />}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="dangerOutline" disabled={busy} className="w-fit">
+              {busy ? <Loader2 className="animate-spin" /> : <Square />} Kết thúc bình chọn
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Kết thúc bình chọn?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Kết quả sẽ hiển thị công khai ngay lập tức và không thể mở lại đợt này.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Hủy</AlertDialogCancel>
+              <AlertDialogAction asChild>
+                <Button variant="danger" onClick={() => void run(closeMvpVote)}>Kết thúc</Button>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        {msg && <p className="text-sm text-destructive">{msg}</p>}
+      </Card>
     );
   }
 
   if (initial.status === "closed") {
     return (
-      <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <h2 style={{ fontFamily: "var(--font-bricolage)" }}>Bình chọn đã kết thúc</h2>
-        <p>Kết quả đã hiển thị công khai trên trang chủ.</p>
-        <button disabled={busy}
-          onClick={() => run(resetMvpVote, () => setMsg("Đã đặt lại."))}
-          style={{ padding: "10px 16px", borderRadius: 10, border: "1px solid #ccc", background: "#fff" }}>
-          {busy ? "Đang xử lý…" : "Đặt lại để bình chọn mới"}
-        </button>
-        {msg && <p>{msg}</p>}
-      </section>
+      <Card className="gap-4 p-6">
+        <h2 className="font-[family-name:var(--font-bricolage)] text-xl">Bình chọn đã kết thúc</h2>
+        <p className="text-muted-foreground">Kết quả đã hiển thị công khai trên trang chủ.</p>
+        <Button variant="outline" disabled={busy} className="w-fit"
+          onClick={() => void run(resetMvpVote)}>
+          {busy ? <Loader2 className="animate-spin" /> : <RotateCcw />} Đặt lại để bình chọn mới
+        </Button>
+        {msg && <p className="text-sm text-destructive">{msg}</p>}
+      </Card>
     );
   }
 
   // idle
   return (
-    <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <h2 style={{ fontFamily: "var(--font-bricolage)" }}>Bắt đầu bình chọn MVP</h2>
-      <p style={{ fontSize: 13, color: "#6b6b6b" }}>
+    <Card className="gap-4 p-6">
+      <h2 className="font-[family-name:var(--font-bricolage)] text-xl">Bắt đầu bình chọn MVP</h2>
+      <p className="text-sm text-muted-foreground">
         Chỉ những người trong danh sách bên dưới mới có thể bình chọn.
       </p>
-      <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        <span>Thời gian (phút)</span>
-        <input type="number" min={1} value={minutes}
-          onChange={(e) => setMinutes(Number(e.target.value))}
-          style={{ padding: 8, borderRadius: 8, border: "1px solid #ddd", width: 120 }} />
-      </label>
-      <button disabled={busy || minutes < 1}
-        onClick={() => run(() => openMvpVote(minutes), () => {})}
-        style={{ padding: "10px 16px", borderRadius: 10, background: "var(--color-primary)", color: "#fff", border: "none" }}>
-        {busy ? "Đang mở…" : "Mở bình chọn"}
-      </button>
-      {msg && <p>{msg}</p>}
-    </section>
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="mvp-minutes">Thời gian (phút)</Label>
+        <Input id="mvp-minutes" type="number" min={1} value={minutes}
+          onChange={(e) => setMinutes(Number(e.target.value))} className="h-10 w-32" />
+      </div>
+      <Button variant="success" disabled={busy || minutes < 1} className="w-fit"
+        onClick={() => void run(() => openMvpVote(minutes))}>
+        {busy ? <Loader2 className="animate-spin" /> : <Play />} Mở bình chọn
+      </Button>
+      {msg && <p className="text-sm text-destructive">{msg}</p>}
+    </Card>
   );
 }
 ```
 
 - [ ] **Step 4: Voter picker (from all signed-in users)**
 
-Create `app/admin/mvp/MvpVoterAllowlistEditor.tsx` (`"use client"`): in one effect, load `listSystemUsers()` (everyone who has signed in) and `getMvpVoterAllowlist()` (current voter emails) in parallel; render every user as a row with avatar + name + email and a checkbox reflecting whether they are on the allow-list. Toggling **on** calls `addMvpVoter(email)`, **off** calls `removeMvpVoter(email)`, updating a local `Set` of selected emails. Handle `addMvpVoter` returning `"denied"` by showing "Không có quyền quản trị." Show a `X / 16` selected hint and a note that users appear only after signing in once. Disable all toggles when `status === "open"` (pass `disabled` prop). Follow the same inline-style + `busy` conventions as the control panel.
+Create `app/admin/mvp/MvpVoterAllowlistEditor.tsx` (`"use client"`): in one effect, load `listSystemUsers()` (everyone who has signed in) and `getMvpVoterAllowlist()` (current voter emails) in parallel; render every user as a `Card` row with a shadcn `Avatar` + name + email and a **toggle `Button`** reflecting whether they are on the allow-list (there is no `Checkbox` primitive — the button is `variant="success"` with a `Check` icon when selected, `variant="outline"` with a `Plus` icon otherwise). Toggling **on** calls `addMvpVoter(email)`, **off** calls `removeMvpVoter(email)`, updating a local `Set` of selected (lower-cased) emails. Handle `addMvpVoter` returning `"denied"` by showing "Không có quyền quản trị." Show a `X / 16` selected hint and a note that users appear only after signing in once. Disable all toggles when `status === "open"` (pass `disabled` prop). Use `ISystemUser`'s `avatarUrl` on `AvatarImage` (not `PlayerAvatar`, which needs an `IPlayer`).
 
 ```tsx
 "use client";
 
 import { useEffect, useState } from "react";
-import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { Check, Loader2, Plus } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   addMvpVoter, getMvpVoterAllowlist, listSystemUsers, removeMvpVoter,
 } from "@/lib/supabase/mvpClient";
@@ -1242,38 +1270,53 @@ export function MvpVoterAllowlistEditor({ disabled }: { disabled: boolean }) {
   }
 
   return (
-    <section style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <h3 style={{ fontFamily: "var(--font-bricolage)" }}>
-        Người bình chọn ({selected.size}/16)
-      </h3>
-      <p style={{ fontSize: 12, color: "#6b6b6b" }}>
+    <section className="flex flex-col gap-3">
+      <div className="flex items-baseline justify-between">
+        <h3 className="font-[family-name:var(--font-bricolage)] text-lg">Người bình chọn</h3>
+        <span className="font-[family-name:var(--font-jetbrains)] text-sm text-muted-foreground">
+          {selected.size}/16
+        </span>
+      </div>
+      <p className="text-xs text-muted-foreground">
         Người dùng chỉ hiện ở đây sau khi đã đăng nhập ít nhất một lần.
       </p>
-      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+      <ul className="flex flex-col gap-2">
         {users.map((u) => {
           const email = u.email.toLowerCase();      // allow-list stores lower-cased emails
           const on = selected.has(email);
+          const pending = busyEmail === email;
           return (
-            <li key={u.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 10px", background: on ? "var(--color-cream)" : "#fff", borderRadius: 8, border: "1px solid #eee" }}>
-              <input type="checkbox" checked={on} disabled={disabled || busyEmail === email}
-                onChange={(e) => toggle(email, e.target.checked)} />
-              <PlayerAvatar name={u.name ?? u.email} avatarKey={null} avatarUrl={u.avatarUrl} />
-              <span style={{ display: "flex", flexDirection: "column" }}>
-                <strong style={{ fontSize: 14 }}>{u.name ?? "(chưa có tên)"}</strong>
-                <span style={{ fontFamily: "var(--font-jetbrains)", fontSize: 12, color: "#6b6b6b" }}>{u.email}</span>
-              </span>
+            <li key={u.id}>
+              <Card className="flex-row items-center gap-3 rounded-[14px] p-3">
+                <Avatar>
+                  {u.avatarUrl && <AvatarImage src={u.avatarUrl} alt={u.name ?? email} />}
+                  <AvatarFallback>{(u.name ?? email).slice(0, 1).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <strong className="truncate text-sm">{u.name ?? "(chưa có tên)"}</strong>
+                  <span className="truncate font-[family-name:var(--font-jetbrains)] text-xs text-muted-foreground">
+                    {u.email}
+                  </span>
+                </div>
+                <Button size="sm" variant={on ? "success" : "outline"}
+                  disabled={disabled || pending} onClick={() => void toggle(email, !on)}>
+                  {pending ? <Loader2 className="animate-spin" /> : on ? <Check /> : <Plus />}
+                  {on ? "Đã chọn" : "Chọn"}
+                </Button>
+              </Card>
             </li>
           );
         })}
-        {users.length === 0 && <li style={{ color: "#6b6b6b" }}>Chưa có người dùng nào đăng nhập.</li>}
+        {users.length === 0 && (
+          <li className="text-sm text-muted-foreground">Chưa có người dùng nào đăng nhập.</li>
+        )}
       </ul>
-      {disabled && <p style={{ fontSize: 12, color: "#6b6b6b" }}>Không thể sửa khi đang bình chọn.</p>}
-      {msg && <p>{msg}</p>}
+      {disabled && <p className="text-xs text-muted-foreground">Không thể sửa khi đang bình chọn.</p>}
+      {msg && <p className="text-sm text-destructive">{msg}</p>}
     </section>
   );
 }
 ```
-(Confirm `PlayerAvatar`'s real prop names against `components/PlayerAvatar.tsx`; it accepts an uploaded `avatarUrl` and falls back to initials when `avatarKey`/`avatarUrl` are null.)
 
 - [ ] **Step 5: The page (server shell + Suspense)**
 
@@ -1291,7 +1334,7 @@ export const dynamic = "force-dynamic";
 async function MvpAdminData() {
   const status = await getMvpStatus();
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div className="flex flex-col gap-6">
       <MvpControlPanel initial={status} />
       <MvpVoterAllowlistEditor disabled={status.status === "open"} />
     </div>
@@ -1300,13 +1343,13 @@ async function MvpAdminData() {
 
 export default function MvpAdminPage() {
   return (
-    <Suspense fallback={<AdminSectionSkeleton />}>
+    <Suspense fallback={<AdminSectionSkeleton title="Bình chọn MVP" />}>
       <MvpAdminData />
     </Suspense>
   );
 }
 ```
-(Confirm the exact import path/name of `AdminSectionSkeleton` against the existing admin pages and match it.)
+(Confirm `AdminSectionSkeleton`'s import path and its `title` prop against the existing `app/admin/referee/page.tsx` / `app/admin/players/page.tsx` shells and match them.)
 
 - [ ] **Step 6: Verify build + manual walkthrough**
 
@@ -1330,7 +1373,7 @@ git commit -m "feat(mvp): add referee MVP control panel with live turnout and al
 - Create: `app/vote/loading.tsx`
 
 **Interfaces:**
-- Consumes: `getMvpStatus` + `getMvpCandidates` (Task 4, server); `castMvpVote` (Task 4, client); `RefereeAuthContext` (`user`, `loading`, `signInWithGoogle(next)`); `groupCandidatesByGender`, `PlayerAvatar`.
+- Consumes: `getMvpStatus` + `getMvpCandidates` (Task 4, server); `castMvpVote` (Task 4, client); `RefereeAuthContext` (`user`, `loading`, `signInWithGoogle(next)`); `groupCandidatesByGender`; shadcn `Button`, `PlayerAvatar` (needs `player: IPlayer`), `GoogleIcon`, `cn`, lucide `Loader2`.
 - Produces: the end-to-end voter experience.
 
 - [ ] **Step 1: Route-transition skeleton**
@@ -1358,16 +1401,16 @@ async function VoteData() {
 
 export default function VotePage() {
   return (
-    <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
-      <h1 style={{ fontFamily: "var(--font-bricolage)" }}>Bình chọn MVP</h1>
-      <Suspense fallback={<Skeleton style={{ height: 320 }} />}>
+    <main className="mx-auto max-w-3xl px-6 py-8">
+      <h1 className="mb-6 font-[family-name:var(--font-bricolage)] text-2xl">Bình chọn MVP</h1>
+      <Suspense fallback={<Skeleton height="320px" borderRadius="16px" />}>
         <VoteData />
       </Suspense>
     </main>
   );
 }
 ```
-(Match `Skeleton`'s real prop API — check `components/Skeleton.tsx`.)
+(`Skeleton` signature is `Skeleton({ width, height, borderRadius, className, style })` — pass `height`/`borderRadius` strings, not a `style` object.)
 
 - [ ] **Step 3: The client flow**
 
@@ -1386,9 +1429,13 @@ Create `app/vote/VoteFlow.tsx` (`"use client"`). It is a small state machine ove
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRefereeAuth } from "@/contexts/RefereeAuthContext";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { GoogleIcon } from "@/components/brand/GoogleIcon";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { useRefereeAuth } from "@/contexts/RefereeAuthContext";
 import { castMvpVote } from "@/lib/supabase/mvpClient";
+import { cn } from "@/lib/utils";
 import type { IMvpCandidate, IMvpStatus } from "@/lib/tournament/mvp";
 
 export function VoteFlow({
@@ -1401,23 +1448,30 @@ export function VoteFlow({
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  if (status.status === "idle") return <p>Chưa có đợt bình chọn nào.</p>;
+  if (status.status === "idle")
+    return <p className="text-muted-foreground">Chưa có đợt bình chọn nào.</p>;
   if (status.status === "closed")
-    return <p>Bình chọn đã kết thúc. <Link href="/">Xem kết quả</Link>.</p>;
+    return (
+      <p className="text-muted-foreground">
+        Bình chọn đã kết thúc. <Link href="/" className="text-primary underline">Xem kết quả</Link>.
+      </p>
+    );
 
-  if (loading) return <p>Đang tải…</p>;
+  if (loading) return <p className="text-muted-foreground">Đang tải…</p>;
   if (!user)
     return (
-      <button onClick={() => signInWithGoogle("/vote")}
-        style={{ padding: "12px 20px", borderRadius: 10, background: "var(--color-primary)", color: "#fff", border: "none" }}>
-        Đăng nhập bằng Google để bình chọn
-      </button>
+      <Button variant="outline" className="w-fit gap-2" onClick={() => void signInWithGoogle("/vote")}>
+        <GoogleIcon size={16} /> Đăng nhập bằng Google để bình chọn
+      </Button>
     );
-  if (!status.isEligible) return <p>Tài khoản của bạn không có trong danh sách bình chọn.</p>;
-  if (status.hasVoted || phase === "done") return <p>Bạn đã bình chọn. Cảm ơn! 🏸</p>;
+  if (!status.isEligible)
+    return <p className="text-muted-foreground">Tài khoản của bạn không có trong danh sách bình chọn.</p>;
+  if (status.hasVoted || phase === "done")
+    return <p className="text-lg font-semibold text-primary">Bạn đã bình chọn. Cảm ơn! 🏸</p>;
 
   async function submit() {
     if (!maleId || !femaleId) { setMsg("Hãy chọn 1 nam và 1 nữ."); return; }
+    if (busy) return;
     setBusy(true); setMsg(null);
     try { await castMvpVote(maleId, femaleId); setPhase("done"); }
     catch (e) { setMsg(`Lỗi: ${(e as Error).message}`); }
@@ -1427,16 +1481,17 @@ export function VoteFlow({
   const Grid = ({ list, sel, onSel, title }: {
     list: IMvpCandidate[]; sel: string | null; onSel: (id: string) => void; title: string;
   }) => (
-    <div>
-      <h3 style={{ fontFamily: "var(--font-bricolage)" }}>{title}</h3>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))", gap: 12 }}>
+    <div className="flex flex-col gap-3">
+      <h3 className="font-[family-name:var(--font-bricolage)] text-lg">{title}</h3>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-3">
         {list.map((c) => (
-          <button key={c.id} onClick={() => onSel(c.id)}
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: 8,
-              borderRadius: 12, border: sel === c.id ? "2px solid var(--color-primary)" : "1px solid #eee",
-              background: sel === c.id ? "var(--color-cream)" : "#fff", cursor: "pointer" }}>
-            <PlayerAvatar name={c.name} avatarKey={c.avatarKey} avatarUrl={c.avatarUrl} />
-            <span style={{ fontSize: 13 }}>{c.name}</span>
+          <button key={c.id} type="button" onClick={() => onSel(c.id)}
+            className={cn(
+              "flex flex-col items-center gap-2 rounded-xl border p-2 transition-transform hover:-translate-y-0.5",
+              sel === c.id ? "border-primary bg-cream ring-2 ring-primary" : "border-border bg-card",
+            )}>
+            <PlayerAvatar player={c} size={56} />
+            <span className="text-center text-sm">{c.name}</span>
           </button>
         ))}
       </div>
@@ -1444,19 +1499,19 @@ export function VoteFlow({
   );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div className="flex flex-col gap-6">
       <Grid list={male} sel={maleId} onSel={setMaleId} title="MVP Nam" />
       <Grid list={female} sel={femaleId} onSel={setFemaleId} title="MVP Nữ" />
-      <button disabled={busy || !maleId || !femaleId} onClick={submit}
-        style={{ padding: "12px 20px", borderRadius: 10, background: "var(--color-primary)", color: "#fff", border: "none" }}>
-        {busy ? "Đang gửi…" : "Gửi bình chọn"}
-      </button>
-      {msg && <p>{msg}</p>}
+      <Button variant="success" className="w-fit" disabled={busy || !maleId || !femaleId}
+        onClick={() => void submit()}>
+        {busy ? <Loader2 className="animate-spin" /> : null} Gửi bình chọn
+      </Button>
+      {msg && <p className="text-sm text-destructive">{msg}</p>}
     </div>
   );
 }
 ```
-(Match the real `useRefereeAuth` hook name/exports and `PlayerAvatar` prop names against their source files.)
+(`PlayerAvatar` takes `player: IPlayer` + `size` — `IMvpCandidate` is structurally an `IPlayer` (id/name/tier/avatarKey/avatarUrl); if `IPlayer` has extra required fields, map explicitly. Confirm `GoogleIcon`'s path/props against `components/brand/GoogleIcon.tsx`.)
 
 - [ ] **Step 4: Verify build + manual walkthrough**
 
@@ -1479,7 +1534,7 @@ git commit -m "feat(mvp): add public MVP voting flow with Google login and allow
 - Modify: `app/page.tsx`
 
 **Interfaces:**
-- Consumes: `getMvpStatus` + `getMvpResults` (Task 4); `isResultsVisible` (Task 3); `PlayerAvatar`.
+- Consumes: `getMvpStatus` + `getMvpResults` (Task 4); `isResultsVisible` (Task 3); `PlayerAvatar` (needs `player: IPlayer`); shadcn `Card`; `Reveal` from `components/motion`.
 - Produces: an always-visible prize blurb that reveals the two winners once the vote is closed.
 
 - [ ] **Step 1: The section component**
@@ -1488,6 +1543,7 @@ Create `app/MvpPrizeSection.tsx` (server component):
 
 ```tsx
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { Card } from "@/components/ui/card";
 import { getMvpResults, getMvpStatus } from "@/lib/supabase/mvp";
 import { isResultsVisible, type IMvpCandidate } from "@/lib/tournament/mvp";
 
@@ -1496,14 +1552,14 @@ export async function MvpPrizeSection() {
   const results = isResultsVisible(status.status) ? await getMvpResults() : null;
 
   const Winner = ({ title, winners }: { title: string; winners: IMvpCandidate[] }) => (
-    <div style={{ textAlign: "center" }}>
-      <h3 style={{ fontFamily: "var(--font-bricolage)" }}>{title}</h3>
+    <div className="flex flex-col items-center gap-2 text-center">
+      <h3 className="font-[family-name:var(--font-bricolage)] text-lg">{title}</h3>
       {winners.length === 0 ? (
-        <p style={{ color: "#6b6b6b" }}>Chưa có kết quả</p>
+        <p className="text-muted-foreground">Chưa có kết quả</p>
       ) : (
         winners.map((c) => (
-          <div key={c.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-            <PlayerAvatar name={c.name} avatarKey={c.avatarKey} avatarUrl={c.avatarUrl} />
+          <div key={c.id} className="flex flex-col items-center gap-1.5">
+            <PlayerAvatar player={c} size={72} />
             <strong>{c.name}</strong>
           </div>
         ))
@@ -1512,37 +1568,37 @@ export async function MvpPrizeSection() {
   );
 
   return (
-    <section style={{ padding: 24, background: "var(--color-cream)", borderRadius: 16, textAlign: "center" }}>
-      <h2 style={{ fontFamily: "var(--font-bricolage)", color: "var(--color-primary)" }}>
-        Giải MVP 🏸
-      </h2>
-      <p>
+    <Card className="items-center gap-3 border-none bg-cream p-6 text-center">
+      <h2 className="font-[family-name:var(--font-bricolage)] text-2xl text-primary">Giải MVP 🏸</h2>
+      <p className="text-text-soft">
         Cầu thủ xuất sắc nhất (1 nam &amp; 1 nữ) do 16 vận động viên bình chọn.
         Phần thưởng: <strong>áo thể thao</strong>.
       </p>
       {results ? (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginTop: 16 }}>
+        <div className="mt-4 grid w-full grid-cols-2 gap-6">
           <Winner title="MVP Nam" winners={results.male.winners} />
           <Winner title="MVP Nữ" winners={results.female.winners} />
         </div>
       ) : status.status === "open" ? (
-        <p style={{ marginTop: 12 }}>Đang diễn ra bình chọn…</p>
+        <p className="mt-2 text-text-soft">Đang diễn ra bình chọn…</p>
       ) : null}
-    </section>
+    </Card>
   );
 }
 ```
 
 - [ ] **Step 2: Wire it into the landing page**
 
-In `app/page.tsx`, add a new `<Suspense>` boundary (after the rewards podium section, matching the existing pattern) wrapping `<MvpPrizeSection/>` with a shape-matching fallback:
+In `app/page.tsx`, add a new section after the rewards podium, matching the existing `<Reveal>` + `<Suspense>` pattern (the rewards section uses `<Reveal delay={0.2}>` around a heading + `<Suspense fallback={<div className="h-[260px]" />}>`):
 
 ```tsx
-<Suspense fallback={<div style={{ height: 220 }} />}>
-  <MvpPrizeSection />
-</Suspense>
+<Reveal delay={0.2}>
+  <Suspense fallback={<div className="h-[220px]" />}>
+    <MvpPrizeSection />
+  </Suspense>
+</Reveal>
 ```
-Import `MvpPrizeSection` from `./MvpPrizeSection`. Do not add any `await` to `page.tsx` itself.
+Import `MvpPrizeSection` from `./MvpPrizeSection` and `Reveal` from `@/components/motion` (already imported in `page.tsx`). Do not add any `await` to `page.tsx` itself.
 
 - [ ] **Step 3: Verify build + manual check**
 
@@ -1575,7 +1631,9 @@ git commit -m "feat(mvp): add MVP prize and winners section to landing page"
 
 **2. Placeholder scan:** SQL, pure logic, data layer, and all four component files contain real code. Remaining "match the existing X" notes point at concrete files (`PlayerAvatar`, `Skeleton`, `Countdown`, `AdminSectionSkeleton`, `RefereeAuthContext`, the `patch`/`busyId` names in `PlayersEditor`) whose exact prop/handler names the implementer must confirm against source — these are verification instructions, not missing logic. No "TODO"/"add validation"/"similar to Task N" placeholders.
 
-**3. Type consistency:** `IMvpStatus`, `IMvpCandidate`, `IMvpResults`, `IMvpGenderResult`, `TGender`, `TMvpStatus` are defined once in Task 3 and consumed with the same field names in Tasks 4/6/7/8. RPC names match between Task 2 (SQL), Task 4 (`database.types.ts` + wrappers), and callers. `get_mvp_status` JSON keys (`voted_count`, `total_eligible`, `is_eligible`, `has_voted`) are mapped to camelCase in exactly one place (`getMvpStatus`) and the raw keys are reused consistently in `useMvpTurnout`.
+**3. Type consistency:** `IMvpStatus`, `IMvpCandidate`, `IMvpResults`, `IMvpGenderResult`, `TGender`, `TMvpStatus`, `ISystemUser` are defined once in Task 3 and consumed with the same field names in Tasks 4/6/7/8. RPC names match between Task 2 (SQL), Task 4 (`database.types.ts` + wrappers), and callers. `get_mvp_status` JSON keys (`voted_count`, `total_eligible`, `is_eligible`, `has_voted`) are mapped to camelCase in exactly one place (`getMvpStatus`) and the raw keys are reused consistently in `useMvpTurnout`.
+
+**4. UI stack (post-#12 shadcn/ui):** all UI tasks (5–8) use `components/ui/*` primitives via `className`, not inline styles. Corrections verified against the migrated codebase: `Countdown` takes an ISO **string**; `AdminSectionSkeleton` takes a `title` prop; `PlayerAvatar` takes `player: IPlayer` (candidates pass through as `IPlayer`-compatible; `ISystemUser` uses shadcn `Avatar` instead); there is **no `Checkbox`** so the voter picker uses a toggle `Button` (`success`/`outline`); confirmations use `AlertDialog`; landing section wraps in `<Reveal>`. Every referenced primitive (`Button`, `Card`, `Input`, `Label`, `Select`, `Avatar`, `AlertDialog`, `Skeleton`) exists in `components/ui/`; no new primitive needs installing.
 
 ## ERD review outcomes (be-architect)
 
