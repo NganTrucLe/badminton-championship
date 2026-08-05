@@ -1,5 +1,12 @@
 import { Suspense } from "react";
+import { ArrowUpRight, MapPin } from "lucide-react";
+
 import { Countdown } from "@/components/Countdown";
+import { LivePulse } from "@/components/brand/LivePulse";
+import { Reveal } from "@/components/motion";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { HomeLiveSection } from "@/app/HomeLiveSection";
 import { HomeLiveSkeleton } from "@/app/HomeLiveSkeleton";
 import { RewardsPodium } from "@/app/RewardsPodium";
@@ -21,358 +28,120 @@ export default function HomePage() {
   return (
     <div>
       {/* Hero */}
-      <div style={{ maxWidth: 1240, margin: "22px auto 0", padding: "0 20px" }}>
-        <div
-          style={{
-            position: "relative",
-            borderRadius: 26,
-            overflow: "hidden",
-            background: "#0B5D4E",
-            padding: "clamp(30px,5vw,64px)",
-            minHeight: "clamp(430px,60vw,560px)",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-          }}
-        >
-          <div style={{ position: "absolute", inset: 0, pointerEvents: "none", opacity: 0.5 }}>
-            <div
-              style={{
-                position: "absolute",
-                left: 0,
-                right: 0,
-                top: "26%",
-                height: 2,
-                background: "rgba(255,255,255,.5)",
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                left: 0,
-                right: 0,
-                bottom: "14%",
-                height: 2,
-                background: "rgba(255,255,255,.32)",
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                bottom: 0,
-                left: "50%",
-                width: 2,
-                background: "rgba(255,255,255,.28)",
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                left: "-14%",
-                right: "-14%",
-                top: "20%",
-                bottom: "-40%",
-                border: "2px solid rgba(255,255,255,.22)",
-                borderRadius: "50%",
-              }}
-            />
-          </div>
-          <div
-            style={{
-              position: "absolute",
-              right: -70,
-              top: -70,
-              width: 300,
-              height: 300,
-              borderRadius: "50%",
-              background: "radial-gradient(circle at 35% 35%,rgba(242,181,68,.5),transparent 62%)",
-              pointerEvents: "none",
-            }}
-          />
+      <div className="mx-auto mt-[22px] max-w-[1240px] px-5">
+        <Reveal>
+          <Card className="relative flex min-h-[clamp(430px,60vw,560px)] flex-col justify-between overflow-hidden rounded-[26px] border-none bg-primary p-[clamp(30px,5vw,64px)] text-cream">
+            {/* Decorative badminton-court line art */}
+            <div className="pointer-events-none absolute inset-0 opacity-50">
+              <div className="absolute inset-x-0 top-[26%] h-0.5 bg-white/50" />
+              <div className="absolute inset-x-0 bottom-[14%] h-0.5 bg-white/32" />
+              <div className="absolute inset-y-0 left-1/2 w-0.5 bg-white/28" />
+              <div className="absolute -left-[14%] -right-[14%] top-[20%] -bottom-[40%] rounded-full border-2 border-white/22" />
+            </div>
+            <div className="pointer-events-none absolute -top-[70px] -right-[70px] h-[300px] w-[300px] rounded-full bg-[radial-gradient(circle_at_35%_35%,rgba(242,181,68,.5),transparent_62%)]" />
 
-          <div style={{ position: "relative" }}>
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 9,
-                background: "rgba(255,255,255,.13)",
-                border: "1px solid rgba(255,255,255,.24)",
-                padding: "7px 14px",
-                borderRadius: 999,
-              }}
-            >
-              <span
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: "50%",
-                  background: "#F2B544",
-                  animation: "livePulse 1.6s ease-in-out infinite",
-                }}
-              />
-              <span
-                style={{
-                  fontFamily: "var(--font-jetbrains), monospace",
-                  fontSize: 11,
-                  letterSpacing: ".14em",
-                  color: "#DCEDE7",
-                }}
+            <div className="relative">
+              <Badge
+                variant="outline"
+                className="gap-[9px] rounded-full border-white/24 bg-white/[.13] px-3.5 py-[7px] font-[family-name:var(--font-jetbrains)] text-[11px] font-normal tracking-[.14em] text-[#DCEDE7]"
               >
+                <LivePulse className="bg-gold" />
                 MÙA GIẢI 2026 · 8 CẶP ĐÔI
-              </span>
+              </Badge>
+              <h1 className="mt-5 font-[family-name:var(--font-bricolage)] text-[clamp(36px,7vw,84px)] leading-[0.9] font-black tracking-[-.04em] text-cream">
+                GIẢI CẦU
+                <br />
+                LÔNG CLB
+                <span className="text-gold">.</span>
+              </h1>
+              <p className="mt-5 max-w-[440px] text-[clamp(15px,1.6vw,18px)] leading-[1.55] text-[#B9D6CD]">
+                16 tay vợt, 8 đội, một buổi sáng. Thể thức Swiss-system (Bo1): thắng đủ 3 trận vào
+                playoffs, thua đủ 3 trận dừng bước. Bạn bè trước, ăn thua sau — nhưng vẫn phải
+                thắng.
+              </p>
             </div>
-            <h1
-              style={{
-                margin: "20px 0 0",
-                fontFamily: "var(--font-bricolage), Archivo, sans-serif",
-                fontSize: "clamp(36px,7vw,84px)",
-                lineHeight: 0.9,
-                fontWeight: 900,
-                letterSpacing: "-.04em",
-                color: "#FFFDF7",
-              }}
-            >
-              GIẢI CẦU
-              <br />
-              LÔNG CLB
-              <span style={{ color: "#F2B544" }}>.</span>
-            </h1>
-            <p
-              style={{
-                margin: "20px 0 0",
-                maxWidth: 440,
-                fontSize: "clamp(15px,1.6vw,18px)",
-                lineHeight: 1.55,
-                color: "#B9D6CD",
-              }}
-            >
-              16 tay vợt, 8 đội, một buổi sáng. Thể thức Swiss-system (Bo1): thắng đủ 3 trận vào
-              playoffs, thua đủ 3 trận dừng bước. Bạn bè trước, ăn thua sau — nhưng vẫn phải
-              thắng.
-            </p>
-          </div>
 
-          <div
-            style={{
-              position: "relative",
-              marginTop: 38,
-              display: "flex",
-              gap: 34,
-              flexWrap: "wrap",
-              alignItems: "flex-end",
-            }}
-          >
-            <div>
-              <div
-                style={{
-                  fontFamily: "var(--font-jetbrains), monospace",
-                  fontSize: 10,
-                  letterSpacing: ".16em",
-                  color: "#8FBCB0",
-                  marginBottom: 10,
-                }}
-              >
-                TRẬN ĐẤU SẼ BẮT ĐẦU SAU
+            <div className="relative mt-[38px] flex flex-wrap items-end gap-[34px]">
+              <div>
+                <div className="mb-2.5 font-[family-name:var(--font-jetbrains)] text-[10px] tracking-[.16em] text-[#8FBCB0]">
+                  TRẬN ĐẤU SẼ BẮT ĐẦU SAU
+                </div>
+                <Countdown target={EVENT_START} />
               </div>
-              <Countdown target={EVENT_START} />
-            </div>
-            <div style={{ borderLeft: "1px solid rgba(255,255,255,.2)", paddingLeft: 26 }}>
-              <div
-                style={{
-                  fontFamily: "var(--font-jetbrains), monospace",
-                  fontSize: 10,
-                  letterSpacing: ".16em",
-                  color: "#8FBCB0",
-                  marginBottom: 8,
-                }}
-              >
-                THỜI GIAN
-              </div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#FFFDF7" }}>09:00 – 12:00</div>
-              <div style={{ fontSize: 14, color: "#B9D6CD", marginTop: 2 }}>Thứ Bảy, 15 tháng 8</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 12 }}>
-                <span
-                  style={{
-                    width: 14,
-                    height: 14,
-                    flex: "none",
-                    borderRadius: "50%",
-                    border: "2px solid #F2B544",
-                    position: "relative",
-                  }}
-                >
-                  <span
-                    style={{
-                      position: "absolute",
-                      left: "50%",
-                      top: "50%",
-                      width: 4,
-                      height: 4,
-                      background: "#F2B544",
-                      borderRadius: "50%",
-                      transform: "translate(-50%,-50%)",
-                    }}
-                  />
-                </span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "#DCEDE7" }}>
-                  Sân Gia Tưởng, Tân Bình
-                </span>
+              <div className="border-l border-white/20 pl-[26px]">
+                <div className="mb-2 font-[family-name:var(--font-jetbrains)] text-[10px] tracking-[.16em] text-[#8FBCB0]">
+                  THỜI GIAN
+                </div>
+                <div className="text-xl font-extrabold text-cream">09:00 – 12:00</div>
+                <div className="mt-0.5 text-sm text-[#B9D6CD]">Thứ Bảy, 15 tháng 8</div>
+                <div className="mt-3 flex items-center gap-1.5">
+                  <span className="relative flex size-3.5 flex-none items-center justify-center rounded-full border-2 border-gold">
+                    <span className="absolute size-1 rounded-full bg-gold" />
+                  </span>
+                  <span className="text-[13px] font-semibold text-[#DCEDE7]">Sân Gia Tưởng, Tân Bình</span>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </Card>
+        </Reveal>
       </div>
 
       {/* Live / recent / location cards */}
-      <div
-        style={{
-          maxWidth: 1240,
-          margin: "16px auto 0",
-          padding: "0 20px",
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))",
-          gap: 16,
-        }}
-      >
-        <Suspense fallback={<HomeLiveSkeleton />}>
-          <HomeLiveData />
-        </Suspense>
+      <Reveal delay={0.1}>
+        <div className="mx-auto mt-4 grid max-w-[1240px] grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-4 px-5">
+          <Suspense fallback={<HomeLiveSkeleton />}>
+            <HomeLiveData />
+          </Suspense>
 
-        <div style={{ background: "#FFFDF7", border: "1px solid rgba(10,31,26,.12)", borderRadius: 22, padding: 26 }}>
-          <div
-            style={{
-              fontFamily: "var(--font-jetbrains), monospace",
-              fontSize: 10,
-              letterSpacing: ".16em",
-              color: "#5B7A72",
-            }}
-          >
-            ĐỊA ĐIỂM
-          </div>
-          <div style={{ marginTop: 14, fontSize: 24, fontWeight: 900, letterSpacing: "-.02em" }}>Sân Gia Tưởng</div>
-          <div style={{ marginTop: 8, fontSize: 14, lineHeight: 1.55, color: "#3C5A53" }}>
-            33 Trần Văn Quang, Q. Tân Bình,
-            <br />
-            TP. Hồ Chí Minh 70000
-          </div>
-          <div
-            style={{
-              marginTop: 16,
-              position: "relative",
-              height: 130,
-              borderRadius: 14,
-              overflow: "hidden",
-              background: "#0B5D4E",
-            }}
-          >
-            <div style={{ position: "absolute", inset: 0, opacity: 0.45 }}>
-              <div
-                style={{
-                  position: "absolute",
-                  left: "8%",
-                  right: "8%",
-                  top: "14%",
-                  bottom: "14%",
-                  border: "2px solid rgba(255,255,255,.55)",
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  left: "8%",
-                  right: "8%",
-                  top: "50%",
-                  height: 2,
-                  background: "rgba(255,255,255,.55)",
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  top: "14%",
-                  bottom: "14%",
-                  left: "30%",
-                  width: 2,
-                  background: "rgba(255,255,255,.35)",
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  top: "14%",
-                  bottom: "14%",
-                  right: "30%",
-                  width: 2,
-                  background: "rgba(255,255,255,.35)",
-                }}
-              />
+          <Card className="rounded-[22px] border-border bg-cream p-[26px]">
+            <div className="font-[family-name:var(--font-jetbrains)] text-[10px] tracking-[.16em] text-text-muted">
+              ĐỊA ĐIỂM
             </div>
-            <div
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: "50%",
-                transform: "translate(-50%,-50%)",
-                width: 16,
-                height: 16,
-                borderRadius: "50%",
-                background: "#F2B544",
-                boxShadow: "0 0 0 8px rgba(242,181,68,.25)",
-              }}
-            />
-          </div>
-          <a
-            href="https://maps.app.goo.gl/mM8kAaS4AYuqpPJ28"
-            target="_blank"
-            rel="noopener"
-            style={{
-              marginTop: 14,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              background: "#0B5D4E",
-              color: "#FFFDF7",
-              padding: "11px 18px",
-              borderRadius: 999,
-              fontSize: 13,
-              fontWeight: 700,
-            }}
-          >
-            Mở Google Maps →
-          </a>
+            <div className="mt-3.5 text-2xl font-black tracking-[-.02em]">Sân Gia Tưởng</div>
+            <div className="mt-2 text-sm leading-[1.55] text-text-soft">
+              33 Trần Văn Quang, Q. Tân Bình,
+              <br />
+              TP. Hồ Chí Minh 70000
+            </div>
+            <div className="relative mt-4 h-[130px] overflow-hidden rounded-[14px] bg-primary">
+              <div className="absolute inset-0 opacity-45">
+                <div className="absolute inset-x-[8%] top-[14%] bottom-[14%] border-2 border-white/55" />
+                <div className="absolute inset-x-[8%] top-1/2 h-0.5 bg-white/55" />
+                <div className="absolute top-[14%] bottom-[14%] left-[30%] w-0.5 bg-white/35" />
+                <div className="absolute top-[14%] bottom-[14%] right-[30%] w-0.5 bg-white/35" />
+              </div>
+              <div className="absolute top-1/2 left-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold shadow-[0_0_0_8px_rgba(242,181,68,.25)]" />
+            </div>
+            <Button
+              asChild
+              className="mt-3.5 rounded-full bg-primary px-[18px] py-[11px] text-[13px] font-bold text-cream hover:bg-primary/90"
+            >
+              <a href="https://maps.app.goo.gl/mM8kAaS4AYuqpPJ28" target="_blank" rel="noopener">
+                <MapPin />
+                Mở Google Maps
+                <ArrowUpRight />
+              </a>
+            </Button>
+          </Card>
         </div>
-      </div>
+      </Reveal>
 
       {/* Rewards podium */}
-      <div style={{ maxWidth: 1240, margin: "16px auto 0", padding: "0 20px" }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap", marginBottom: 14 }}>
-          <h2
-            style={{
-              margin: 0,
-              fontFamily: "var(--font-bricolage), Archivo, sans-serif",
-              fontSize: "clamp(26px,3.4vw,38px)",
-              fontWeight: 900,
-              letterSpacing: "-.03em",
-            }}
-          >
-            Phần thưởng
-          </h2>
-          <span
-            style={{
-              fontFamily: "var(--font-jetbrains), monospace",
-              fontSize: 11,
-              color: "#8AA39C",
-            }}
-          >
-            TOP 3 · CHI TIẾT SẼ CÔNG BỐ TRƯỚC NGÀY THI ĐẤU
-          </span>
+      <Reveal delay={0.2}>
+        <div className="mx-auto mt-4 max-w-[1240px] px-5">
+          <div className="mb-3.5 flex flex-wrap items-baseline gap-3.5">
+            <h2 className="m-0 font-[family-name:var(--font-bricolage)] text-[clamp(26px,3.4vw,38px)] font-black tracking-[-.03em]">
+              Phần thưởng
+            </h2>
+            <span className="font-[family-name:var(--font-jetbrains)] text-[11px] text-text-faint">
+              TOP 3 · CHI TIẾT SẼ CÔNG BỐ TRƯỚC NGÀY THI ĐẤU
+            </span>
+          </div>
+          <Suspense fallback={<div className="h-[260px]" />}>
+            <RewardsPodium />
+          </Suspense>
         </div>
-        <Suspense fallback={<div style={{ height: 260 }} />}>
-          <RewardsPodium />
-        </Suspense>
-      </div>
+      </Reveal>
     </div>
   );
 }
