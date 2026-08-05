@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Gavel, LayoutDashboard, Users, UsersRound } from "lucide-react";
+import { Gavel, LayoutDashboard, Trophy, Users, UsersRound } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -11,6 +11,7 @@ const ADMIN_NAV = [
   { href: "/admin/referee", label: "Trọng tài", icon: Gavel },
   { href: "/admin/players", label: "Vận động viên", icon: Users },
   { href: "/admin/pairs", label: "Cặp đấu", icon: UsersRound },
+  { href: "/admin/mvp", label: "Bình chọn MVP", icon: Trophy },
 ];
 
 export function AdminNav() {
