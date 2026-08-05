@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { HomeLiveSection } from "@/app/HomeLiveSection";
 import { HomeLiveSkeleton } from "@/app/HomeLiveSkeleton";
+import { MvpPrizeSection } from "./MvpPrizeSection";
 import { RewardsPodium } from "@/app/RewardsPodium";
 import { getMatches, getPairIdToTeamId } from "@/lib/supabase/tournament";
 
@@ -140,6 +141,15 @@ export default function HomePage() {
           </Suspense>
         </div>
       </Reveal>
+
+      {/* MVP prize + winners */}
+      <div className="mx-auto mt-4 max-w-[1240px] px-5">
+        <Reveal delay={0.2}>
+          <Suspense fallback={<div className="h-[220px]" />}>
+            <MvpPrizeSection />
+          </Suspense>
+        </Reveal>
+      </div>
     </div>
   );
 }
