@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Loader2, Play, RotateCcw } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
+import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -93,15 +94,15 @@ export function LifecyclePanel({
       </p>
       <Button
         type="button"
+        variant="success"
         disabled={startDisabled}
         onClick={() => void start()}
-        className={`mt-2 h-12 rounded-xl px-6 font-[family-name:var(--font-archivo)] text-sm font-extrabold ${
-          startDisabled ? "cursor-not-allowed" : "cursor-pointer"
-        } ${
-          status === "setup" && !rosterError
-            ? "bg-[#3FBF8F] text-[#052D22] hover:bg-[#3FBF8F]"
-            : "bg-[rgba(10,31,26,.12)] text-[#8AA39C] hover:bg-[rgba(10,31,26,.12)]"
-        }`}
+        className={cn(
+          "mt-2 h-12 rounded-xl px-6 font-[family-name:var(--font-archivo)] text-sm font-extrabold",
+          startDisabled ? "cursor-not-allowed" : "cursor-pointer",
+          startDisabled &&
+            "bg-[rgba(10,31,26,.12)] text-[#8AA39C] hover:bg-[rgba(10,31,26,.12)] cursor-not-allowed"
+        )}
       >
         {busy ? <Loader2 className="animate-spin" /> : <Play />}
         Gửi đội hình & bắt đầu giải
@@ -127,9 +128,9 @@ export function LifecyclePanel({
           <AlertDialogTrigger asChild>
             <Button
               type="button"
-              variant="outline"
+              variant="dangerOutline"
               disabled={busy}
-              className="mt-2 h-11 rounded-xl border-[#B0435F] bg-transparent px-5 font-[family-name:var(--font-archivo)] text-[13px] font-extrabold text-[#B0435F] hover:bg-transparent hover:text-[#B0435F]"
+              className="mt-2 h-11 rounded-xl px-5 font-[family-name:var(--font-archivo)] text-[13px] font-extrabold"
             >
               <RotateCcw />
               Đặt lại giải đấu…
@@ -145,12 +146,12 @@ export function LifecyclePanel({
             <AlertDialogFooter>
               <AlertDialogCancel disabled={busy}>Huỷ</AlertDialogCancel>
               <AlertDialogAction
+                variant="danger"
                 disabled={busy}
                 onClick={(e) => {
                   e.preventDefault();
                   void reset();
                 }}
-                className="bg-[#B0435F] text-[#FFFDF7] hover:bg-[#B0435F]/90"
               >
                 Xác nhận đặt lại — không thể hoàn tác
               </AlertDialogAction>

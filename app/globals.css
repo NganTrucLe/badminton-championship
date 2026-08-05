@@ -114,31 +114,6 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-  background: var(--color-bg);
-}
-
-* {
-  box-sizing: border-box;
-}
-
-a {
-  color: var(--color-primary);
-  text-decoration: none;
-}
-
-a:hover {
-  color: #e08a1e;
-}
-
-::selection {
-  background: var(--color-gold);
-  color: var(--color-darker);
-}
-
 @keyframes livePulse {
   0%,
   100% {
@@ -151,15 +126,40 @@ a:hover {
   }
 }
 
-body {
-  min-height: 100vh;
-  background: var(--color-bg);
-  font-family: var(--font-archivo), Helvetica, sans-serif;
-  color: var(--color-text);
-  overflow-x: hidden;
-}
-
 @layer base {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--color-bg);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  a {
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: #e08a1e;
+  }
+
+  ::selection {
+    background: var(--color-gold);
+    color: var(--color-darker);
+  }
+
+  body {
+    min-height: 100vh;
+    background: var(--color-bg);
+    font-family: var(--font-archivo), Helvetica, sans-serif;
+    color: var(--color-text);
+    overflow-x: hidden;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }

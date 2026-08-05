@@ -75,9 +75,7 @@ export default function HomePage() {
                 <div className="text-xl font-extrabold text-cream">09:00 – 12:00</div>
                 <div className="mt-0.5 text-sm text-[#B9D6CD]">Thứ Bảy, 15 tháng 8</div>
                 <div className="mt-3 flex items-center gap-1.5">
-                  <span className="relative flex size-3.5 flex-none items-center justify-center rounded-full border-2 border-gold">
-                    <span className="absolute size-1 rounded-full bg-gold" />
-                  </span>
+                  <MapPin className="size-4 flex-none text-gold" />
                   <span className="text-[13px] font-semibold text-[#DCEDE7]">Sân Gia Tưởng, Tân Bình</span>
                 </div>
               </div>

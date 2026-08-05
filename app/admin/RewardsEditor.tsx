@@ -65,9 +65,10 @@ export function RewardsEditor({ initialRewards }: { initialRewards: IReward[] })
       </div>
       <Button
         type="button"
+        variant="success"
         disabled={busy}
         onClick={() => void save()}
-        className="mt-4 h-[46px] rounded-xl px-6 font-[family-name:var(--font-archivo)] text-sm font-extrabold bg-[#3FBF8F] text-[#052D22] hover:bg-[#3FBF8F]"
+        className="mt-4 h-[46px] rounded-xl px-6 font-[family-name:var(--font-archivo)] text-sm font-extrabold"
       >
         {busy ? <Loader2 className="animate-spin" /> : <Save />}
         Lưu phần thưởng

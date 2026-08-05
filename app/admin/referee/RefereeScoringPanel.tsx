@@ -395,11 +395,12 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
                   <>
                     <Button
                       type="button"
+                      variant="success"
                       disabled={saving}
                       onClick={() => {
                         void commit("done");
                       }}
-                      className="h-[50px] min-w-[150px] flex-1 rounded-xl bg-[#3FBF8F] font-[family-name:var(--font-archivo)] text-[14px] font-extrabold text-[#052D22] hover:bg-[#3FBF8F]/90"
+                      className="h-[50px] min-w-[150px] flex-1 rounded-xl font-[family-name:var(--font-archivo)] text-[14px] font-extrabold"
                     >
                       {saving ? <Loader2 className="animate-spin" /> : <Square />}
                       Kết thúc trận
@@ -414,9 +415,9 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
                       <AlertDialogTrigger asChild>
                         <Button
                           type="button"
-                          variant="outline"
+                          variant="dangerOutline"
                           disabled={saving}
-                          className="h-[50px] min-w-[130px] rounded-xl border-[#B0435F] bg-transparent font-[family-name:var(--font-archivo)] text-[14px] font-extrabold text-[#B0435F] hover:bg-transparent hover:text-[#B0435F]"
+                          className="h-[50px] min-w-[130px] rounded-xl font-[family-name:var(--font-archivo)] text-[14px] font-extrabold"
                         >
                           Đặt lại trận
                         </Button>
@@ -432,12 +433,12 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
                         <AlertDialogFooter>
                           <AlertDialogCancel disabled={saving}>Hủy</AlertDialogCancel>
                           <AlertDialogAction
+                            variant="danger"
                             disabled={saving}
                             onClick={(e) => {
                               e.preventDefault();
                               void resetMatch();
                             }}
-                            className="bg-[#B0435F] text-[#FFFDF7] hover:bg-[#B0435F]/90"
                           >
                             Xác nhận đặt lại
                           </AlertDialogAction>
