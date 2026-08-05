@@ -1,14 +1,7 @@
 export function SiteFooter() {
   return (
-    <div style={{ borderTop: "1px solid rgba(10,31,26,.12)", padding: "26px 20px", textAlign: "center" }}>
-      <div
-        style={{
-          fontFamily: "var(--font-jetbrains), monospace",
-          fontSize: 10,
-          letterSpacing: ".14em",
-          color: "#8AA39C",
-        }}
-      >
+    <div className="border-t border-border py-[26px] px-5 text-center">
+      <div className="font-[family-name:var(--font-jetbrains)] text-[10px] tracking-[0.14em] text-[color:var(--color-text-faint)]">
         GIẢI CẦU LÔNG CLB · 15.08.2026 · SÂN GIA TƯỞNG, TÂN BÌNH
       </div>
     </div>
