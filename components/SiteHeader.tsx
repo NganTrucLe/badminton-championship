@@ -5,6 +5,10 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useRefereeAuth } from "@/contexts/RefereeAuthContext";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { GoogleIcon } from "@/components/brand/GoogleIcon";
+import { cn } from "@/lib/utils";
 
 const NAV_ITEMS: { href: string; label: string }[] = [
   { href: "/", label: "Trang chủ" },
@@ -31,6 +35,18 @@ function initialsOf(name: string): string {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
+function NavLink({ href, label, active }: { href: string; label: string; active: boolean }) {
+  return (
+    <Link
+      href={href}
+      className="relative rounded-full px-[15px] py-2 font-[family-name:var(--font-archivo)] text-[13px] font-bold"
+    >
+      {active && <span className="absolute inset-0 rounded-full bg-primary" />}
+      <span className={cn("relative", active ? "text-primary-foreground" : "text-text-soft")}>{label}</span>
+    </Link>
+  );
+}
+
 export function SiteHeader() {
   const pathname = usePathname();
   const { user, signInWithGoogle, signOut } = useRefereeAuth();
@@ -53,204 +69,49 @@ export function SiteHeader() {
   }, [user]);
 
   return (
-    <div
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 50,
-        background: "rgba(244,241,230,.92)",
-        backdropFilter: "blur(10px)",
-        borderBottom: "1px solid rgba(10,31,26,.12)",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: 1240,
-          margin: "0 auto",
-          padding: "14px 20px",
-          display: "flex",
-          alignItems: "center",
-          gap: 20,
-          flexWrap: "wrap",
-        }}
-      >
-        <Link
-          href="/"
-          style={{ display: "flex", alignItems: "center", gap: 10, marginRight: "auto", color: "inherit" }}
-        >
-          <div
-            style={{
-              width: 30,
-              height: 30,
-              borderRadius: "50%",
-              background: "#0B5D4E",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flex: "none",
-            }}
-          >
-            <div style={{ width: 11, height: 11, borderRadius: "50%", background: "#F4F1E6" }} />
+    <div className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur">
+      <div className="mx-auto flex max-w-[1240px] flex-wrap items-center gap-5 px-5 py-3.5">
+        <Link href="/" className="mr-auto flex items-center gap-2.5 text-inherit">
+          <div className="flex size-[30px] flex-none items-center justify-center rounded-full bg-primary">
+            <div className="size-[11px] rounded-full bg-background" />
           </div>
-          <div style={{ lineHeight: 1 }}>
-            <div style={{ fontWeight: 900, fontSize: 15, letterSpacing: "-.02em", color: "#0A1F1A" }}>
-              GIẢI CẦU LÔNG CLB
-            </div>
-            <div
-              style={{
-                fontFamily: "var(--font-jetbrains), monospace",
-                fontSize: 10,
-                letterSpacing: ".14em",
-                color: "#5B7A72",
-                marginTop: 3,
-              }}
-            >
+          <div className="leading-none">
+            <div className="text-[15px] font-black tracking-[-0.02em] text-foreground">GIẢI CẦU LÔNG CLB</div>
+            <div className="mt-[3px] font-[family-name:var(--font-jetbrains)] text-[10px] tracking-[.14em] text-text-soft">
               15.08 · SÂN GIA TƯỞNG
             </div>
           </div>
         </Link>
 
-        <nav style={{ display: "flex", gap: 2, background: "rgba(11,93,78,.07)", padding: 4, borderRadius: 999 }}>
-          {NAV_ITEMS.map((item) => {
-            const active = isActivePath(pathname, item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                style={{
-                  border: "none",
-                  cursor: "pointer",
-                  fontFamily: "var(--font-archivo), sans-serif",
-                  fontWeight: 700,
-                  fontSize: 13,
-                  padding: "8px 15px",
-                  borderRadius: 999,
-                  background: "transparent",
-                  position: "relative",
-                }}
-              >
-                {active && (
-                  <span
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      background: "#0B5D4E",
-                      borderRadius: 999,
-                    }}
-                  />
-                )}
-                <span style={{ position: "relative", color: active ? "#FFFDF7" : "#3C5A53" }}>{item.label}</span>
-              </Link>
-            );
-          })}
-          {isOrg && (
-            <Link
-              href="/admin"
-              style={{
-                border: "none",
-                cursor: "pointer",
-                fontFamily: "var(--font-archivo), sans-serif",
-                fontWeight: 700,
-                fontSize: 13,
-                padding: "8px 15px",
-                borderRadius: 999,
-                background: "transparent",
-                position: "relative",
-              }}
-            >
-              {pathname.startsWith("/admin") && (
-                <span
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    background: "#0B5D4E",
-                    borderRadius: 999,
-                  }}
-                />
-              )}
-              <span
-                style={{
-                  position: "relative",
-                  color: pathname.startsWith("/admin") ? "#FFFDF7" : "#3C5A53",
-                }}
-              >
-                Quản trị
-              </span>
-            </Link>
-          )}
+        <nav className="flex gap-0.5 rounded-full bg-primary/[.07] p-1">
+          {NAV_ITEMS.map((item) => (
+            <NavLink key={item.href} href={item.href} label={item.label} active={isActivePath(pathname, item.href)} />
+          ))}
+          {isOrg && <NavLink href="/admin" label="Quản trị" active={pathname.startsWith("/admin")} />}
         </nav>
 
         {user ? (
-          <div
-            style={{ position: "relative" }}
-            onMouseEnter={() => setMenuOpen(true)}
-            onMouseLeave={() => setMenuOpen(false)}
-          >
+          <div className="relative" onMouseEnter={() => setMenuOpen(true)} onMouseLeave={() => setMenuOpen(false)}>
             <button
               type="button"
               onClick={() => setMenuOpen((o) => !o)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 9,
-                padding: "5px 12px 5px 5px",
-                borderRadius: 999,
-                background: "#0B5D4E",
-                border: "none",
-                cursor: "pointer",
-              }}
+              className="flex items-center gap-[9px] rounded-full bg-primary py-[5px] pr-3 pl-[5px]"
             >
-              <div
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: "50%",
-                  background: "#F2B544",
-                  color: "#08241E",
-                  fontSize: 11,
-                  fontWeight: 900,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {initialsOf(displayName(user))}
-              </div>
-              <span style={{ color: "#EAF3F0", fontSize: 12, fontWeight: 600 }}>{displayName(user)}</span>
+              <Avatar size="sm">
+                <AvatarFallback className="bg-secondary text-[11px] font-black text-secondary-foreground">
+                  {initialsOf(displayName(user))}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-xs font-semibold text-primary-foreground">{displayName(user)}</span>
             </button>
             {menuOpen && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: "calc(100% + 6px)",
-                  right: 0,
-                  background: "#FFFDF7",
-                  border: "1px solid rgba(10,31,26,.12)",
-                  borderRadius: 12,
-                  boxShadow: "0 8px 24px rgba(10,31,26,.14)",
-                  padding: 6,
-                  minWidth: 160,
-                  zIndex: 60,
-                }}
-              >
+              <div className="absolute top-[calc(100%+6px)] right-0 z-[60] min-w-[160px] rounded-xl border border-border bg-background p-1.5 shadow-[0_8px_24px_rgba(10,31,26,.14)]">
                 <button
                   type="button"
                   onClick={() => {
                     void signOut();
                   }}
-                  style={{
-                    width: "100%",
-                    textAlign: "left",
-                    background: "transparent",
-                    border: "none",
-                    padding: "9px 12px",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    fontFamily: "var(--font-archivo), sans-serif",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: "#B0435F",
-                  }}
+                  className="w-full rounded-lg px-3 py-[9px] text-left font-[family-name:var(--font-archivo)] text-[13px] font-bold text-destructive"
                 >
                   Đăng xuất
                 </button>
@@ -258,30 +119,17 @@ export function SiteHeader() {
             )}
           </div>
         ) : (
-          <button
+          <Button
             type="button"
+            variant="outline"
+            className="rounded-full font-[family-name:var(--font-archivo)] text-xs font-bold"
             onClick={() => {
               void signInWithGoogle("/admin/referee");
             }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              border: "1px solid rgba(10,31,26,.2)",
-              background: "#FFFDF7",
-              padding: "8px 14px",
-              borderRadius: 999,
-              cursor: "pointer",
-              fontFamily: "var(--font-archivo), sans-serif",
-              fontSize: 12,
-              fontWeight: 700,
-              color: "#0A1F1A",
-            }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/google-g.svg" alt="" width={16} height={16} style={{ display: "block" }} />
+            <GoogleIcon size={14} />
             Đăng nhập Google
-          </button>
+          </Button>
         )}
       </div>
     </div>
