@@ -30,7 +30,7 @@ export default function HomePage() {
       {/* Hero */}
       <div className="mx-auto mt-[22px] max-w-[1240px] px-5">
         <Reveal>
-          <Card className="relative flex min-h-[clamp(430px,60vw,560px)] flex-col justify-between overflow-hidden rounded-[26px] border-none bg-primary p-[clamp(30px,5vw,64px)] text-cream">
+          <Card className="relative flex min-h-[clamp(430px,60vw,560px)] flex-col justify-between gap-0 overflow-hidden rounded-[26px] border-none bg-primary p-[clamp(30px,5vw,64px)] text-cream">
             {/* Decorative badminton-court line art */}
             <div className="pointer-events-none absolute inset-0 opacity-50">
               <div className="absolute inset-x-0 top-[26%] h-0.5 bg-white/50" />
@@ -45,7 +45,7 @@ export default function HomePage() {
                 variant="outline"
                 className="gap-[9px] rounded-full border-white/24 bg-white/[.13] px-3.5 py-[7px] font-[family-name:var(--font-jetbrains)] text-[11px] font-normal tracking-[.14em] text-[#DCEDE7]"
               >
-                <LivePulse className="bg-gold" />
+                <LivePulse color="var(--color-gold)" />
                 MÙA GIẢI 2026 · 8 CẶP ĐÔI
               </Badge>
               <h1 className="mt-5 font-[family-name:var(--font-bricolage)] text-[clamp(36px,7vw,84px)] leading-[0.9] font-black tracking-[-.04em] text-cream">
@@ -93,7 +93,7 @@ export default function HomePage() {
             <HomeLiveData />
           </Suspense>
 
-          <Card className="rounded-[22px] border-border bg-cream p-[26px]">
+          <Card className="gap-0 rounded-[22px] border-border bg-cream p-[26px]">
             <div className="font-[family-name:var(--font-jetbrains)] text-[10px] tracking-[.16em] text-text-muted">
               ĐỊA ĐIỂM
             </div>

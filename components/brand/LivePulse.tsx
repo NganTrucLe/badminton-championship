@@ -1,4 +1,10 @@
-export function LivePulse({ className }: { className?: string }) {
+export function LivePulse({
+  className,
+  color = "var(--color-live)",
+}: {
+  className?: string;
+  color?: string;
+}) {
   return (
     <span
       className={className}
@@ -7,7 +13,7 @@ export function LivePulse({ className }: { className?: string }) {
         width: 8,
         height: 8,
         borderRadius: "50%",
-        background: "var(--color-live)",
+        background: color,
         animation: "livePulse 1.4s ease-in-out infinite",
       }}
     />
