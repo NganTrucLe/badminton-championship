@@ -83,38 +83,47 @@ function SwissMatchCard({ m }: { m: ISwissMatchDisplay }) {
 
 function ChipRow({ chip }: { chip: ITeamChip }) {
   return (
-    <Badge
-      variant="outline"
-      className="w-full justify-start gap-[7px] rounded-[9px] border-dashed border-[rgba(10,31,26,.2)] bg-white/75 px-2 py-1.5"
+    <div
+      data-slot="badge"
+      data-variant="outline"
+      className="inline-flex w-full shrink-0 items-center justify-start gap-[7px] overflow-hidden rounded-[9px] border border-dashed border-[rgba(10,31,26,.2)] bg-white/75 px-2 py-1.5 text-xs font-medium whitespace-nowrap text-foreground"
     >
       <TeamAvatars teamId={chip.teamId} />
       <span className="min-w-0 flex-1 text-[11.5px] font-bold text-[#0A1F1A]">{chip.name}</span>
       <span className="font-[family-name:var(--font-jetbrains)] text-[10px] text-[#8AA39C]">{chip.rec}</span>
-    </Badge>
+    </div>
   );
 }
 
 function QualifiedChip({ chip }: { chip: ITeamChip }) {
   return (
-    <Badge className="w-full justify-start gap-[7px] rounded-lg bg-primary px-2 py-1.5 text-primary-foreground">
+    <div
+      data-slot="badge"
+      data-variant="default"
+      className="inline-flex w-full shrink-0 items-center justify-start gap-[7px] overflow-hidden rounded-lg border border-transparent bg-primary px-2 py-1.5 text-xs font-medium whitespace-nowrap text-primary-foreground"
+    >
       <Check className="size-3.5 flex-none" />
       <TeamAvatars teamId={chip.teamId} />
       <span className="min-w-0 flex-1 text-[11.5px] font-bold">{chip.name}</span>
       <span className="font-[family-name:var(--font-jetbrains)] text-[10px] text-primary-foreground/70">{chip.rec}</span>
-    </Badge>
+    </div>
   );
 }
 
 function EliminatedChip({ chip }: { chip: ITeamChip }) {
   return (
-    <Badge className="w-full justify-start gap-[7px] rounded-lg bg-muted px-2 py-1.5 text-muted-foreground line-through">
+    <div
+      data-slot="badge"
+      data-variant="default"
+      className="inline-flex w-full shrink-0 items-center justify-start gap-[7px] overflow-hidden rounded-lg border border-transparent bg-muted px-2 py-1.5 text-xs font-medium whitespace-nowrap text-muted-foreground line-through"
+    >
       <X className="size-3.5 flex-none" />
       <div className="opacity-70">
         <TeamAvatars teamId={chip.teamId} />
       </div>
       <span className="min-w-0 flex-1 text-[11.5px] font-bold">{chip.name}</span>
       <span className="font-[family-name:var(--font-jetbrains)] text-[10px]">{chip.rec}</span>
-    </Badge>
+    </div>
   );
 }
 

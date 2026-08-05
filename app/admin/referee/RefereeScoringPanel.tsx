@@ -68,6 +68,7 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
   const [draftB, setDraftB] = useState<number>(() => activeMatch?.sb ?? 0);
   const [savedMsg, setSavedMsg] = useState<string>("Mọi thay đổi hiển thị ngay trên trang chủ.");
   const [saving, setSaving] = useState(false);
+  const [resetError, setResetError] = useState<string>("");
 
   // Sync drafts from the active match only when the active match ID changes — not on every
   // realtime tick — so in-progress ± taps aren't clobbered by echoed score updates. Adjusted
@@ -221,16 +222,19 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
         .select();
       if (error) {
         setSavedMsg(`Lỗi khi đặt lại: ${error.message}`);
+        setResetError(`Lỗi khi đặt lại: ${error.message}`);
         return;
       }
       if (!data || data.length === 0) {
         setSavedMsg("Không thể đặt lại: tài khoản này không có quyền, hoặc giải chưa bắt đầu.");
+        setResetError("Không thể đặt lại: tài khoản này không có quyền, hoặc giải chưa bắt đầu.");
         return;
       }
       setMatches((prev) => prev.map((m) => (m.id === activeMatch.id ? { ...m, sa: 0, sb: 0, state: "next" } : m)));
       setConfirmingReset(false);
       setSelectedId("");
       setSavedMsg("Đã đặt lại trận.");
+      setResetError("");
     } finally {
       setSaving(false);
     }
@@ -400,7 +404,13 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
                       {saving ? <Loader2 className="animate-spin" /> : <Square />}
                       Kết thúc trận
                     </Button>
-                    <AlertDialog open={confirmingReset} onOpenChange={setConfirmingReset}>
+                    <AlertDialog
+                      open={confirmingReset}
+                      onOpenChange={(open) => {
+                        setConfirmingReset(open);
+                        if (open) setResetError("");
+                      }}
+                    >
                       <AlertDialogTrigger asChild>
                         <Button
                           type="button"
@@ -418,6 +428,7 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
                             Đưa trận về “sắp diễn ra” với tỉ số 0–0. Chỉ dùng để sửa lỗi.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
+                        {resetError && <p className="text-destructive text-[12px] mt-2">{resetError}</p>}
                         <AlertDialogFooter>
                           <AlertDialogCancel disabled={saving}>Hủy</AlertDialogCancel>
                           <AlertDialogAction
