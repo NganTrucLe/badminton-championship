@@ -4,7 +4,7 @@
 
 **Goal:** Let a referee run a single time-boxed MVP vote per tournament in which 16 allow-listed players sign in with Google and anonymously each pick one male and one female MVP, with live turnout for the referee and final winners shown to everyone (and advertised on the landing page as a sport-shirt prize).
 
-**Eligibility (no passcode):** Anyone can sign in with Google, but only the 16 allow-listed emails can cast a vote — enforced server-side in `cast_mvp_vote()` via `is_mvp_voter()`. This replaces the passcode entirely: the allow-list is a stronger, per-identity gate than a shared code.
+**Eligibility (no passcode):** Anyone can sign in with Google, but only allow-listed emails can cast a vote — enforced server-side in `cast_mvp_vote()` via `is_mvp_voter()`. This replaces the passcode entirely: the allow-list is a stronger, per-identity gate than a shared code. The admin builds the allow-list by **picking from everyone who has signed in** (a `SECURITY DEFINER` `list_system_users()` reads `auth.users`, organizer-only), not by typing emails — so players sign in first, then the referee checks off the ~16 voters.
 
 **Architecture:** Add a `gender` column to `players` (every player is a candidate) plus four new tables — `mvp_vote` (singleton state: deadline, status), `mvp_voter_allowlist` (16 eligible emails), `mvp_receipts` (one row per voter — proves participation, no choice) and `mvp_ballots` (choices — gender + candidate, **no voter reference**). Anonymity is structural: a single `SECURITY DEFINER` RPC `cast_mvp_vote()` writes one receipt + two ballots in one transaction, so the app can never join a person to their choice. Reads that gate results-by-time go through `SECURITY DEFINER` RPCs (`get_mvp_status`, `get_mvp_results`). Referee turnout is live via Supabase Realtime on `mvp_receipts`. UI follows the existing organizer-gated client-mutation pattern and the landing-page `<Suspense>` streaming pattern.
 
@@ -40,7 +40,7 @@
 - `app/vote/loading.tsx` — route-transition skeleton.
 - `app/admin/mvp/page.tsx` — organizer MVP control route (server shell + Suspense).
 - `app/admin/mvp/MvpControlPanel.tsx` — `"use client"` start/close/reset + live turnout.
-- `app/admin/mvp/MvpVoterAllowlistEditor.tsx` — `"use client"` manage 16 emails.
+- `app/admin/mvp/MvpVoterAllowlistEditor.tsx` — `"use client"` pick voters from all signed-in users (checkbox per user).
 - `app/MvpPrizeSection.tsx` — landing-page server component (prize blurb + winners when closed).
 - `lib/supabase/useMvpTurnout.ts` — `"use client"` Realtime hook for live turnout count.
 
@@ -90,11 +90,20 @@ export interface IMvpStatus {
   isEligible: boolean;      // current signed-in email is on the allow-list
   hasVoted: boolean;        // current signed-in email already has a receipt
 }
+
+// A user who has signed in at least once (sourced from auth.users, organizer-only).
+export interface ISystemUser {
+  id: string;
+  email: string;
+  name: string | null;
+  avatarUrl: string | null;
+}
 ```
 
 RPC signatures (defined in Task 2):
 
 - `is_mvp_voter() → boolean`
+- `list_system_users() → setof (id uuid, email text, name text, avatar_url text)` (organizer — everyone who has signed in)
 - `get_mvp_status() → json` (keys: `status, deadline, voted_count, total_eligible, is_eligible, has_voted`)
 - `get_mvp_results() → setof (gender text, candidate_id uuid, votes bigint)` (empty unless effectively closed)
 - `cast_mvp_vote(p_male_id uuid, p_female_id uuid) → void`
@@ -267,6 +276,23 @@ $$;
 revoke all on function public.is_mvp_voter() from public;
 grant execute on function public.is_mvp_voter() to anon, authenticated;
 
+-- Organizer-only: list everyone who has signed in (safe subset of auth.users), so the
+-- admin can pick voters instead of typing emails. Returns nothing for non-organizers.
+create or replace function public.list_system_users()
+  returns table (id uuid, email text, name text, avatar_url text)
+  language sql security definer set search_path = public stable
+as $$
+  select u.id,
+         u.email,
+         coalesce(u.raw_user_meta_data ->> 'full_name', u.raw_user_meta_data ->> 'name'),
+         coalesce(u.raw_user_meta_data ->> 'avatar_url', u.raw_user_meta_data ->> 'picture')
+  from auth.users u
+  where public.is_organizer() and u.email is not null
+  order by coalesce(u.raw_user_meta_data ->> 'full_name', u.email);
+$$;
+revoke all on function public.list_system_users() from public;
+grant execute on function public.list_system_users() to authenticated;
+
 -- Public status snapshot. Collapses past-deadline -> 'closed'.
 create or replace function public.get_mvp_status()
   returns json language sql security definer set search_path = public stable
@@ -425,6 +451,9 @@ insert into public.mvp_voter_allowlist (email) values ('voter@example.com');
 
 -- results hidden while idle
 select count(*) from public.get_mvp_results();                    -- 0
+
+-- organizer can enumerate signed-in users; a non-organizer JWT gets 0 rows
+select count(*) from public.list_system_users();                  -- >=1 as organizer, 0 otherwise
 
 -- open as organizer (run with a JWT whose email is in organizers; via app or set request.jwt.claims)
 select public.open_mvp_vote(60);
@@ -612,6 +641,13 @@ export interface IMvpStatus {
   hasVoted: boolean;
 }
 
+export interface ISystemUser {
+  id: string;
+  email: string;
+  name: string | null;
+  avatarUrl: string | null;
+}
+
 export function effectiveStatus(
   raw: TMvpStatus,
   deadline: string | null,
@@ -690,11 +726,11 @@ git commit -m "feat(mvp): add pure MVP tally and status logic with tests"
 
 **Interfaces:**
 - Consumes: types + `tallyBallots` from Task 3; RPCs from Task 2; the three Supabase clients (`createServerSupabaseClient`, `createAuthServerClient`, `createBrowserSupabaseClient`).
-- Produces: `getMvpCandidates`, `getMvpStatus`, `getMvpResults` (server); `castMvpVote`, `openMvpVote`, `closeMvpVote`, `resetMvpVote`, `getMvpVoterAllowlist`, `addMvpVoter`, `removeMvpVoter` (client/RPC).
+- Produces: `getMvpCandidates`, `getMvpStatus`, `getMvpResults` (server); `castMvpVote`, `openMvpVote`, `closeMvpVote`, `resetMvpVote`, `listSystemUsers`, `getMvpVoterAllowlist`, `addMvpVoter`, `removeMvpVoter` (client/RPC).
 
 - [ ] **Step 1: Extend `database.types.ts`**
 
-In `lib/supabase/database.types.ts`, add to the `public.Tables` block (matching the existing generated shape) entries for `mvp_vote`, `mvp_voter_allowlist`, `mvp_receipts`, `mvp_ballots`, add `gender: string | null` to `players` Row/Insert/Update, and add to the `Functions` block: `is_mvp_voter`, `is_mvp_open`, `get_mvp_status`, `get_mvp_results`, `cast_mvp_vote`, `open_mvp_vote`, `close_mvp_vote`, `reset_mvp_vote` with argument/return types mirroring Task 2. Follow the exact style of the existing `is_organizer` / `start_tournament` declarations already in the file. If the Supabase CLI is available, prefer `supabase gen types typescript --local > lib/supabase/database.types.ts` and then re-check the file compiles.
+In `lib/supabase/database.types.ts`, add to the `public.Tables` block (matching the existing generated shape) entries for `mvp_vote`, `mvp_voter_allowlist`, `mvp_receipts`, `mvp_ballots`, add `gender: string | null` to `players` Row/Insert/Update, and add to the `Functions` block: `is_mvp_voter`, `is_mvp_open`, `list_system_users`, `get_mvp_status`, `get_mvp_results`, `cast_mvp_vote`, `open_mvp_vote`, `close_mvp_vote`, `reset_mvp_vote` with argument/return types mirroring Task 2. Follow the exact style of the existing `is_organizer` / `start_tournament` declarations already in the file. If the Supabase CLI is available, prefer `supabase gen types typescript --local > lib/supabase/database.types.ts` and then re-check the file compiles.
 
 - [ ] **Step 2: Write the data-layer module**
 
@@ -785,6 +821,20 @@ Then create the **client** helpers (they use the browser client, so keep them in
 "use client";
 
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
+import type { ISystemUser } from "@/lib/tournament/mvp";
+
+// Organizer-only: everyone who has signed in at least once. Empty for non-organizers.
+export async function listSystemUsers(): Promise<ISystemUser[]> {
+  const supabase = createBrowserSupabaseClient();
+  const { data, error } = await supabase.rpc("list_system_users");
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((u) => ({
+    id: u.id,
+    email: u.email,
+    name: u.name,
+    avatarUrl: u.avatar_url,
+  }));
+}
 
 export async function castMvpVote(maleId: string, femaleId: string): Promise<void> {
   const supabase = createBrowserSupabaseClient();
@@ -912,7 +962,7 @@ git commit -m "feat(mvp): add player gender selector to admin players editor"
 - Modify: `app/admin/AdminNav.tsx`
 
 **Interfaces:**
-- Consumes: `getMvpStatus` (Task 4, server), `openMvpVote`/`closeMvpVote`/`resetMvpVote`/`getMvpVoterAllowlist`/`addMvpVoter`/`removeMvpVoter` (Task 4, client), the `AdminSectionSkeleton` fallback, and the `<Countdown target=.../>` component.
+- Consumes: `getMvpStatus` (Task 4, server), `openMvpVote`/`closeMvpVote`/`resetMvpVote`/`listSystemUsers`/`getMvpVoterAllowlist`/`addMvpVoter`/`removeMvpVoter` (Task 4, client), `PlayerAvatar`, the `AdminSectionSkeleton` fallback, and the `<Countdown target=.../>` component.
 - Produces: the organizer surface for the whole feature.
 
 - [ ] **Step 1: Add the nav tab**
@@ -1046,71 +1096,75 @@ export function MvpControlPanel({ initial }: { initial: IMvpStatus }) {
 }
 ```
 
-- [ ] **Step 4: Allow-list editor**
+- [ ] **Step 4: Voter picker (from all signed-in users)**
 
-Create `app/admin/mvp/MvpVoterAllowlistEditor.tsx` (`"use client"`): loads emails via `getMvpVoterAllowlist()` in an effect, shows the list with a remove button per email and an add-email input. Disable editing when `status === "open"` (pass `disabled` prop). Handle `addMvpVoter` returning `"denied"` by showing "Không có quyền quản trị." Show a `X / 16` hint. Follow the same inline-style + `busy` conventions as the control panel. Validate the email is non-empty and contains `@` before calling `addMvpVoter`.
+Create `app/admin/mvp/MvpVoterAllowlistEditor.tsx` (`"use client"`): in one effect, load `listSystemUsers()` (everyone who has signed in) and `getMvpVoterAllowlist()` (current voter emails) in parallel; render every user as a row with avatar + name + email and a checkbox reflecting whether they are on the allow-list. Toggling **on** calls `addMvpVoter(email)`, **off** calls `removeMvpVoter(email)`, updating a local `Set` of selected emails. Handle `addMvpVoter` returning `"denied"` by showing "Không có quyền quản trị." Show a `X / 16` selected hint and a note that users appear only after signing in once. Disable all toggles when `status === "open"` (pass `disabled` prop). Follow the same inline-style + `busy` conventions as the control panel.
 
 ```tsx
 "use client";
 
 import { useEffect, useState } from "react";
-import { addMvpVoter, getMvpVoterAllowlist, removeMvpVoter } from "@/lib/supabase/mvpClient";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
+import {
+  addMvpVoter, getMvpVoterAllowlist, listSystemUsers, removeMvpVoter,
+} from "@/lib/supabase/mvpClient";
+import type { ISystemUser } from "@/lib/tournament/mvp";
 
 export function MvpVoterAllowlistEditor({ disabled }: { disabled: boolean }) {
-  const [emails, setEmails] = useState<string[]>([]);
-  const [input, setInput] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [users, setUsers] = useState<ISystemUser[]>([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [busyEmail, setBusyEmail] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
-  useEffect(() => { void getMvpVoterAllowlist().then(setEmails).catch(() => {}); }, []);
+  useEffect(() => {
+    void (async () => {
+      try {
+        const [list, emails] = await Promise.all([listSystemUsers(), getMvpVoterAllowlist()]);
+        setUsers(list);
+        setSelected(new Set(emails));
+      } catch (e) { setMsg(`Lỗi: ${(e as Error).message}`); }
+    })();
+  }, []);
 
-  async function add() {
-    const email = input.trim().toLowerCase();
-    if (!email.includes("@")) { setMsg("Email không hợp lệ."); return; }
-    setBusy(true); setMsg(null);
+  async function toggle(email: string, on: boolean) {
+    setBusyEmail(email); setMsg(null);
     try {
-      const res = await addMvpVoter(email);
-      if (res === "denied") { setMsg("Không có quyền quản trị."); return; }
-      setEmails((prev) => Array.from(new Set([...prev, email])).sort());
-      setInput("");
+      if (on) {
+        const res = await addMvpVoter(email);
+        if (res === "denied") { setMsg("Không có quyền quản trị."); return; }
+        setSelected((prev) => new Set(prev).add(email));
+      } else {
+        await removeMvpVoter(email);
+        setSelected((prev) => { const n = new Set(prev); n.delete(email); return n; });
+      }
     } catch (e) { setMsg(`Lỗi: ${(e as Error).message}`); }
-    finally { setBusy(false); }
-  }
-
-  async function remove(email: string) {
-    setBusy(true); setMsg(null);
-    try { await removeMvpVoter(email); setEmails((p) => p.filter((e) => e !== email)); }
-    catch (e) { setMsg(`Lỗi: ${(e as Error).message}`); }
-    finally { setBusy(false); }
+    finally { setBusyEmail(null); }
   }
 
   return (
     <section style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       <h3 style={{ fontFamily: "var(--font-bricolage)" }}>
-        Người bình chọn ({emails.length}/16)
+        Người bình chọn ({selected.size}/16)
       </h3>
-      {!disabled && (
-        <div style={{ display: "flex", gap: 8 }}>
-          <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="email@gmail.com"
-            style={{ flex: 1, padding: 8, borderRadius: 8, border: "1px solid #ddd" }} />
-          <button disabled={busy} onClick={add}
-            style={{ padding: "8px 14px", borderRadius: 8, background: "var(--color-primary)", color: "#fff", border: "none" }}>
-            Thêm
-          </button>
-        </div>
-      )}
+      <p style={{ fontSize: 12, color: "#6b6b6b" }}>
+        Người dùng chỉ hiện ở đây sau khi đã đăng nhập ít nhất một lần.
+      </p>
       <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 4 }}>
-        {emails.map((email) => (
-          <li key={email} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 10px", background: "var(--color-cream)", borderRadius: 8 }}>
-            <span style={{ fontFamily: "var(--font-jetbrains)", fontSize: 13 }}>{email}</span>
-            {!disabled && (
-              <button disabled={busy} onClick={() => remove(email)}
-                style={{ border: "none", background: "none", color: "var(--color-live)", cursor: "pointer" }}>
-                Xóa
-              </button>
-            )}
-          </li>
-        ))}
+        {users.map((u) => {
+          const on = selected.has(u.email);
+          return (
+            <li key={u.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 10px", background: on ? "var(--color-cream)" : "#fff", borderRadius: 8, border: "1px solid #eee" }}>
+              <input type="checkbox" checked={on} disabled={disabled || busyEmail === u.email}
+                onChange={(e) => toggle(u.email, e.target.checked)} />
+              <PlayerAvatar name={u.name ?? u.email} avatarKey={null} avatarUrl={u.avatarUrl} />
+              <span style={{ display: "flex", flexDirection: "column" }}>
+                <strong style={{ fontSize: 14 }}>{u.name ?? "(chưa có tên)"}</strong>
+                <span style={{ fontFamily: "var(--font-jetbrains)", fontSize: 12, color: "#6b6b6b" }}>{u.email}</span>
+              </span>
+            </li>
+          );
+        })}
+        {users.length === 0 && <li style={{ color: "#6b6b6b" }}>Chưa có người dùng nào đăng nhập.</li>}
       </ul>
       {disabled && <p style={{ fontSize: 12, color: "#6b6b6b" }}>Không thể sửa khi đang bình chọn.</p>}
       {msg && <p>{msg}</p>}
@@ -1118,6 +1172,7 @@ export function MvpVoterAllowlistEditor({ disabled }: { disabled: boolean }) {
   );
 }
 ```
+(Confirm `PlayerAvatar`'s real prop names against `components/PlayerAvatar.tsx`; it accepts an uploaded `avatarUrl` and falls back to initials when `avatarKey`/`avatarUrl` are null.)
 
 - [ ] **Step 5: The page (server shell + Suspense)**
 
@@ -1155,7 +1210,7 @@ export default function MvpAdminPage() {
 - [ ] **Step 6: Verify build + manual walkthrough**
 
 Run: `npm run build`
-Expected: succeeds. Manual: as an organizer, `/admin/mvp` shows the idle start form + allow-list editor; adding an email updates `X/16`; opening a vote (with genders set on players) flips to the live turnout view with countdown; casting a vote from another browser increments turnout live; "Kết thúc" flips to closed.
+Expected: succeeds. Manual: as an organizer, `/admin/mvp` shows the idle start form + a voter picker listing every signed-in user; checking a user updates `X/16` and persists (reload confirms); opening a vote (with genders set on players) flips to the live turnout view with countdown; casting a vote from another browser increments turnout live; "Kết thúc" flips to closed. Confirm a user who has never signed in does not appear in the picker.
 
 - [ ] **Step 7: Commit**
 
@@ -1410,7 +1465,8 @@ git commit -m "feat(mvp): add MVP prize and winners section to landing page"
 **1. Spec coverage:**
 - "Landing page prize for 1 male + 1 female MVP, voted by 16 players, prize = sport shirt" → Task 8 (blurb copy names the sport shirt + 16 voters) + Task 1 (gender) ✓
 - "Referee starts a voting session, adds time, sees number already voted" → Task 2 (`open_mvp_vote(minutes)`) + Task 6 (control panel: minutes input, live `X/total` turnout via `useMvpTurnout`, countdown) ✓
-- "Only invited people can log in and vote" → Task 1/2 (allow-list + `is_mvp_voter()` enforced inside `cast_mvp_vote`; no passcode) + Task 7 (`signInWithGoogle`, then eligibility gate) + Task 6 (allow-list editor) ✓
+- "Only invited people can log in and vote" → Task 1/2 (allow-list + `is_mvp_voter()` enforced inside `cast_mvp_vote`; no passcode) + Task 7 (`signInWithGoogle`, then eligibility gate) + Task 6 (voter picker) ✓
+- "Show all logged-in users so the admin can pick voters from them" → Task 2 (`list_system_users()` reads `auth.users`, organizer-only) + Task 4 (`listSystemUsers`) + Task 6 (checkbox picker with avatar/name/email, toggling insert/delete on `mvp_voter_allowlist`) ✓
 - "Voting is anonymous" → Task 1/2 (receipts vs. ballots split; `cast_mvp_vote` writes both, ballots hold no voter ref; ballots table has no SELECT policy) ✓
 - "When time's up or referee ends, everyone sees results" → Task 2 (`get_mvp_results` gated on closed-or-past-deadline; `get_mvp_status` collapses past-deadline → closed) + Task 8 (winners on landing) + Task 6 (manual close) ✓
 - Eligibility to exactly 16 → Task 1/2 allow-list + `is_mvp_voter`; Task 6 allow-list editor with `X/16` ✓
