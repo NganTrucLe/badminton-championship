@@ -1,4 +1,7 @@
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { Reveal } from "@/components/motion";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { getTeams } from "@/lib/supabase/tournament";
 import { TIER, type TTier } from "@/lib/tournament/data";
 
@@ -12,130 +15,66 @@ export default async function TeamsPage() {
   const teams = await getTeams();
 
   return (
-    <div style={{ maxWidth: 1240, margin: "0 auto", padding: "34px 20px 60px" }}>
-      <h2
-        style={{
-          margin: 0,
-          fontFamily: "var(--font-bricolage), Archivo, sans-serif",
-          fontSize: "clamp(30px,4.6vw,52px)",
-          fontWeight: 900,
-          letterSpacing: "-.035em",
-        }}
-      >
+    <div className="mx-auto max-w-[1240px] px-5 pt-[34px] pb-[60px]">
+      <h2 className="m-0 font-[family-name:var(--font-bricolage)] text-[clamp(30px,4.6vw,52px)] font-black tracking-[-.035em]">
         8 cặp đôi
       </h2>
-      <p style={{ margin: "10px 0 0", maxWidth: 560, fontSize: 15, lineHeight: 1.6, color: "#3C5A53" }}>
+      <p className="mt-2.5 max-w-[560px] text-[15px] leading-[1.6] text-[#3C5A53]">
         16 tay vợt được xếp vào 4 bậc trình. Luật ghép cặp: <strong>Bậc 1 + Bậc 4</strong> và{" "}
         <strong>Bậc 2 + Bậc 3</strong> — để mọi cặp có sức mạnh tương đương nhau.
       </p>
 
-      <div style={{ marginTop: 20, display: "flex", gap: 10, flexWrap: "wrap" }}>
+      <div className="mt-5 flex flex-wrap gap-2.5">
         {TIER_ORDER.map((n) => (
-          <div
+          <Badge
             key={n}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              background: "#FFFDF7",
-              border: "1px solid rgba(10,31,26,.12)",
-              borderRadius: 999,
-              padding: "7px 14px 7px 8px",
-            }}
+            variant="outline"
+            className="gap-2 rounded-full border-border bg-card py-[7px] pr-3.5 pl-2 text-xs font-semibold text-[#3C5A53]"
           >
             <span
-              style={{
-                width: 22,
-                height: 22,
-                borderRadius: "50%",
-                background: TIER[n].color,
-                color: TIER[n].fg,
-                fontFamily: "var(--font-jetbrains), monospace",
-                fontSize: 11,
-                fontWeight: 700,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+              className="flex size-[22px] items-center justify-center rounded-full font-[family-name:var(--font-jetbrains)] text-[11px] font-bold"
+              style={{ background: TIER[n].color, color: TIER[n].fg }}
             >
               {n}
             </span>
-            <span style={{ fontSize: 12, fontWeight: 600, color: "#3C5A53" }}>{TIER[n].label}</span>
-          </div>
+            {TIER[n].label}
+          </Badge>
         ))}
       </div>
 
-      <div
-        style={{
-          marginTop: 24,
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))",
-          gap: 16,
-        }}
-      >
-        {teams.map((t) => (
-          <div
-            key={t.id}
-            style={{
-              background: "#FFFDF7",
-              border: "1px solid rgba(10,31,26,.12)",
-              borderRadius: 22,
-              padding: 20,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div
-                style={{
-                  fontFamily: "var(--font-jetbrains), monospace",
-                  fontSize: 11,
-                  letterSpacing: ".14em",
-                  color: "#8AA39C",
-                }}
-              >
-                ĐỘI {t.letter}
-              </div>
-            </div>
-            <div style={{ marginTop: 4, fontSize: 22, fontWeight: 900, letterSpacing: "-.02em" }}>{t.name}</div>
-            <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 16 }}>
-              {t.players.map((p) => (
-                <div key={p.name} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <PlayerAvatar player={p} size={64} initials="double" />
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 16, fontWeight: 700 }}>{p.name}</div>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        fontFamily: "var(--font-jetbrains), monospace",
-                        color: "#8AA39C",
-                        marginTop: 2,
-                      }}
-                    >
-                      {TIER[p.tier].label}
-                    </div>
+      <div className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
+        {teams.map((t, i) => (
+          <Reveal key={t.id} delay={Math.min(i * 0.05, 0.3)}>
+            <Card className="rounded-[22px] border-border bg-card p-5">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <div className="font-[family-name:var(--font-jetbrains)] text-[11px] tracking-[.14em] text-text-faint">
+                    ĐỘI {t.letter}
                   </div>
-                  <span
-                    style={{
-                      marginLeft: "auto",
-                      width: 26,
-                      height: 26,
-                      flex: "none",
-                      borderRadius: "50%",
-                      background: TIER[p.tier].color,
-                      color: TIER[p.tier].fg,
-                      fontFamily: "var(--font-jetbrains), monospace",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    {p.tier}
-                  </span>
                 </div>
-              ))}
-            </div>
-          </div>
+                <div className="mt-1 text-[22px] font-black tracking-[-.02em]">{t.name}</div>
+                <div className="mt-4 flex flex-col gap-4">
+                  {t.players.map((p) => (
+                    <div key={p.name} className="flex items-center gap-3">
+                      <PlayerAvatar player={p} size={64} initials="double" />
+                      <div className="min-w-0">
+                        <div className="text-base font-bold">{p.name}</div>
+                        <div className="mt-0.5 font-[family-name:var(--font-jetbrains)] text-[11px] text-text-faint">
+                          {TIER[p.tier].label}
+                        </div>
+                      </div>
+                      <span
+                        className="ml-auto flex size-[26px] flex-none items-center justify-center rounded-full font-[family-name:var(--font-jetbrains)] text-xs font-bold"
+                        style={{ background: TIER[p.tier].color, color: TIER[p.tier].fg }}
+                      >
+                        {p.tier}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </Reveal>
         ))}
       </div>
     </div>

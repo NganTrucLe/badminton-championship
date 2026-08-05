@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/Skeleton";
+import { Card } from "@/components/ui/card";
 
 /**
  * Loading skeleton for the teams page.
@@ -28,18 +29,7 @@ export default function TeamsLoading() {
         }}
       >
         {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-          <div
-            key={i}
-            style={{
-              background: "#FFFDF7",
-              border: "1px solid rgba(10,31,26,.12)",
-              borderRadius: 22,
-              padding: 20,
-              display: "flex",
-              flexDirection: "column",
-              gap: 16,
-            }}
-          >
+          <Card key={i} className="flex flex-col gap-4 rounded-[22px] border-border bg-card p-5">
             {/* Team header */}
             <div>
               <Skeleton width="80px" height="16px" borderRadius="4px" />
@@ -57,7 +47,7 @@ export default function TeamsLoading() {
                 <Skeleton width="26px" height="26px" borderRadius="50%" flex="none" />
               </div>
             ))}
-          </div>
+          </Card>
         ))}
       </div>
     </div>
