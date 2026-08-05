@@ -1,6 +1,7 @@
 "use client";
 
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { Badge } from "@/components/ui/badge";
 import { getTeam, type IMatch } from "@/lib/tournament/data";
 import { buildTeamRecords, computeSwissColumns, type ISwissMatchDisplay, type ITeamChip } from "@/lib/tournament/standings";
 import { isSelectable } from "./refereeControls";
@@ -8,7 +9,7 @@ import { isSelectable } from "./refereeControls";
 function TeamAvatars({ teamId, size = 18 }: { teamId: number; size?: number }) {
   const team = getTeam(teamId);
   return (
-    <div style={{ display: "flex", gap: 2, flex: "none" }}>
+    <div className="flex flex-none gap-[2px]">
       {team.players.map((p) => (
         <PlayerAvatar key={p.name} player={p} size={size} />
       ))}
@@ -18,20 +19,10 @@ function TeamAvatars({ teamId, size = 18 }: { teamId: number; size?: number }) {
 
 function ChipRow({ chip }: { chip: ITeamChip }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 7,
-        background: "rgba(255,255,255,.75)",
-        border: "1px dashed rgba(10,31,26,.2)",
-        borderRadius: 9,
-        padding: "6px 8px",
-      }}
-    >
+    <div className="flex items-center gap-[7px] rounded-[9px] border border-dashed border-[rgba(10,31,26,.2)] bg-white/75 px-2 py-[6px]">
       <TeamAvatars teamId={chip.teamId} />
-      <span style={{ flex: 1, minWidth: 0, fontSize: 11, fontWeight: 700, color: "#0A1F1A" }}>{chip.name}</span>
-      <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 9.5, color: "#8AA39C" }}>{chip.rec}</span>
+      <span className="min-w-0 flex-1 text-[11px] font-bold text-[#0A1F1A]">{chip.name}</span>
+      <span className="font-[family-name:var(--font-jetbrains)] text-[9.5px] text-[#8AA39C]">{chip.rec}</span>
     </div>
   );
 }
@@ -49,65 +40,40 @@ function RefereeSwissMatchCard({ m, active, selectable, onSelect }: IRefereeSwis
       type="button"
       disabled={!selectable}
       onClick={() => onSelect(m.code)}
+      className="block w-full overflow-hidden rounded-[9px] p-0 text-left font-[family-name:var(--font-archivo)] disabled:cursor-default"
       style={{
-        display: "block",
-        width: "100%",
-        textAlign: "left",
-        padding: 0,
         background: active ? "rgba(11,93,78,.08)" : "#fff",
         border: active ? "1.5px solid #0B5D4E" : "1px solid rgba(10,31,26,.12)",
-        borderRadius: 9,
-        overflow: "hidden",
         cursor: selectable ? "pointer" : "default",
         opacity: selectable ? 1 : 0.5,
-        fontFamily: "var(--font-archivo), sans-serif",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          padding: "5px 8px",
-          background: "rgba(10,31,26,.035)",
-        }}
-      >
-        <span
-          style={{
-            marginLeft: "auto",
-            fontFamily: "var(--font-jetbrains), monospace",
-            fontSize: 8.5,
-            letterSpacing: ".06em",
-            color: m.stateColor,
-          }}
+      <div className="flex items-center gap-[6px] bg-[rgba(10,31,26,.035)] px-2 py-[5px]">
+        <Badge
+          className="ml-auto rounded-full bg-transparent px-0 font-[family-name:var(--font-jetbrains)] text-[8.5px] tracking-[.06em]"
+          style={{ color: m.stateColor }}
         >
           {m.state}
-        </span>
+        </Badge>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "6px 8px", background: m.aBg }}>
+      <div className="flex items-center gap-[7px] px-2 py-[6px]" style={{ background: m.aBg }}>
         <TeamAvatars teamId={m.aTeamId} />
-        <span style={{ flex: 1, minWidth: 0, fontSize: 11.5, fontWeight: Number(m.aWeight), color: m.aFg }}>
+        <span className="min-w-0 flex-1 text-[11.5px]" style={{ fontWeight: Number(m.aWeight), color: m.aFg }}>
           {m.aName}
         </span>
-        <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 11.5, fontWeight: 700, color: m.aFg }}>
+        <span className="font-[family-name:var(--font-jetbrains)] text-[11.5px] font-bold" style={{ color: m.aFg }}>
           {m.sa}
         </span>
       </div>
       <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 7,
-          padding: "6px 8px",
-          background: m.bBg,
-          borderTop: "1px solid rgba(10,31,26,.07)",
-        }}
+        className="flex items-center gap-[7px] border-t border-[rgba(10,31,26,.07)] px-2 py-[6px]"
+        style={{ background: m.bBg }}
       >
         <TeamAvatars teamId={m.bTeamId} />
-        <span style={{ flex: 1, minWidth: 0, fontSize: 11.5, fontWeight: Number(m.bWeight), color: m.bFg }}>
+        <span className="min-w-0 flex-1 text-[11.5px]" style={{ fontWeight: Number(m.bWeight), color: m.bFg }}>
           {m.bName}
         </span>
-        <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 11.5, fontWeight: 700, color: m.bFg }}>
+        <span className="font-[family-name:var(--font-jetbrains)] text-[11.5px] font-bold" style={{ color: m.bFg }}>
           {m.sb}
         </span>
       </div>
@@ -136,32 +102,27 @@ export function RefereeSwissPicker({ matches, activeId, liveMatchId, onSelect }:
   const liveMatch = liveMatchId ? { id: liveMatchId } : undefined;
 
   return (
-    <div style={{ overflowX: "auto", paddingBottom: 6 }}>
-      <div style={{ minWidth: swissCols.length * 196, display: "flex", gap: 12, alignItems: "flex-start" }}>
+    <div className="overflow-x-auto pb-[6px]">
+      <div className="flex items-start gap-3" style={{ minWidth: swissCols.length * 196 }}>
         {swissCols.map((col) => (
-          <div key={col.round} style={{ width: 184, flex: "none" }}>
-            <div style={{ background: "#0B5D4E", color: "#FFFDF7", borderRadius: 9, padding: 8, textAlign: "center", fontSize: 12, fontWeight: 800 }}>
+          <div key={col.round} className="w-[184px] flex-none">
+            <div className="rounded-[9px] bg-[#0B5D4E] p-2 text-center text-[12px] font-extrabold text-[#FFFDF7]">
               {col.title}
             </div>
             <div
-              style={{
-                textAlign: "center",
-                fontFamily: "var(--font-jetbrains), monospace",
-                fontSize: 9,
-                letterSpacing: ".1em",
-                color: col.statusColor,
-                marginTop: 6,
-                marginBottom: 10,
-              }}
+              className="mt-[6px] mb-[10px] text-center font-[family-name:var(--font-jetbrains)] text-[9px] tracking-[.1em]"
+              style={{ color: col.statusColor }}
             >
               {col.status}
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div className="flex flex-col gap-[10px]">
               {col.groups.map((g) => (
-                <div key={g.label} style={{ background: g.bg, border: `1.5px solid ${g.border}`, borderRadius: 12, padding: 10 }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: ".04em", color: g.fg }}>{g.label}</div>
-                  <div style={{ fontSize: 9.5, color: "#8AA39C", marginTop: 3 }}>{g.sub}</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 7, marginTop: 9 }}>
+                <div key={g.label} className="rounded-xl p-[10px]" style={{ background: g.bg, border: `1.5px solid ${g.border}` }}>
+                  <div className="text-[11px] font-extrabold tracking-[.04em]" style={{ color: g.fg }}>
+                    {g.label}
+                  </div>
+                  <div className="mt-[3px] text-[9.5px] text-[#8AA39C]">{g.sub}</div>
+                  <div className="mt-[9px] flex flex-col gap-[7px]">
                     {g.matches.map((m) => {
                       const match = matches.find((x) => x.id === m.code);
                       const selectable = match ? isSelectable(match, liveMatch) : false;

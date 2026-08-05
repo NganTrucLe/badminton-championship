@@ -58,39 +58,16 @@ export function Countdown({ target }: { target: string }) {
   const countdown = useCountdown(target);
 
   return (
-    <div style={{ display: "flex", gap: 10 }}>
+    <div className="flex gap-2.5">
       {countdown.map((c) => (
         <div
           key={c.l}
-          style={{
-            background: "rgba(255,253,247,.1)",
-            border: "1px solid rgba(255,255,255,.18)",
-            borderRadius: 12,
-            padding: "10px 14px",
-            minWidth: 72,
-            textAlign: "center",
-          }}
+          className="min-w-[72px] rounded-xl border border-white/[0.18] bg-[rgba(255,253,247,0.1)] px-3.5 py-2.5 text-center"
         >
-          <div
-            style={{
-              fontFamily: "var(--font-jetbrains), monospace",
-              fontWeight: 700,
-              fontSize: "clamp(24px,3.4vw,34px)",
-              color: "#FFFDF7",
-              lineHeight: 1,
-            }}
-          >
+          <div className="font-[family-name:var(--font-jetbrains)] text-[clamp(24px,3.4vw,34px)] leading-none font-bold text-[#FFFDF7]">
             {c.v}
           </div>
-          <div
-            style={{
-              fontFamily: "var(--font-jetbrains), monospace",
-              fontSize: 9,
-              letterSpacing: ".14em",
-              color: "#8FBCB0",
-              marginTop: 6,
-            }}
-          >
+          <div className="mt-1.5 font-[family-name:var(--font-jetbrains)] text-[9px] tracking-[0.14em] text-[#8FBCB0]">
             {c.l}
           </div>
         </div>

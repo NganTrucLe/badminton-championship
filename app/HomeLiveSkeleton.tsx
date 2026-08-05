@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/Skeleton";
+import { Card } from "@/components/ui/card";
 
 /**
  * Skeleton placeholder for HomeLiveSection.
@@ -9,167 +10,75 @@ export function HomeLiveSkeleton() {
   return (
     <>
       {/* Dark live match card skeleton */}
-      <div
-        style={{
-          gridColumn: "span 1",
-          background: "#0A1F1A",
-          borderRadius: 22,
-          padding: 26,
-          color: "#FFFDF7",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
+      <Card className="col-span-1 gap-0 overflow-hidden rounded-[22px] border-none bg-[var(--color-dark)] p-[26px] text-cream">
         {/* Header with label + info */}
-        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-          <div
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: "50%",
-              background: "rgba(255,255,255,.15)",
-              flex: "none",
-            }}
-          />
-          <div
-            style={{
-              width: 140,
-              height: 13,
-              borderRadius: 4,
-              background: "rgba(255,255,255,.1)",
-              animation: "skeletonPulse 2s ease-in-out infinite",
-            }}
-          />
-          <div
-            style={{
-              marginLeft: "auto",
-              width: 80,
-              height: 13,
-              borderRadius: 4,
-              background: "rgba(255,255,255,.1)",
-              animation: "skeletonPulse 2s ease-in-out infinite",
-            }}
+        <div className="flex items-center gap-[9px]">
+          <div className="h-2 w-2 flex-none rounded-full bg-white/15" />
+          <Skeleton width="140px" height="13px" borderRadius="4px" style={{ background: "rgba(255,255,255,.1)", border: "none" }} />
+          <Skeleton
+            width="80px"
+            height="13px"
+            borderRadius="4px"
+            style={{ background: "rgba(255,255,255,.1)", border: "none", marginLeft: "auto" }}
           />
         </div>
 
         {/* Score section */}
-        <div
-          style={{
-            marginTop: 22,
-            display: "grid",
-            gridTemplateColumns: "1fr auto 1fr",
-            alignItems: "center",
-            gap: 14,
-          }}
-        >
+        <div className="mt-[22px] grid grid-cols-[1fr_auto_1fr] items-center gap-[14px]">
           <div>
-            <div
-              style={{
-                width: 100,
-                height: 12,
-                borderRadius: 4,
-                background: "rgba(255,255,255,.1)",
-                animation: "skeletonPulse 2s ease-in-out infinite",
-                marginBottom: 8,
-              }}
+            <Skeleton
+              width="100px"
+              height="12px"
+              borderRadius="4px"
+              style={{ background: "rgba(255,255,255,.1)", border: "none", marginBottom: "8px" }}
             />
-            <div
-              style={{
-                width: 140,
-                height: 18,
-                borderRadius: 4,
-                background: "rgba(255,255,255,.1)",
-                animation: "skeletonPulse 2s ease-in-out infinite",
-                marginTop: 5,
-              }}
+            <Skeleton
+              width="140px"
+              height="18px"
+              borderRadius="4px"
+              style={{ background: "rgba(255,255,255,.1)", border: "none", marginTop: "5px" }}
             />
           </div>
-          <div
-            style={{
-              width: 80,
-              height: 48,
-              borderRadius: 4,
-              background: "rgba(255,255,255,.1)",
-              animation: "skeletonPulse 2s ease-in-out infinite",
-            }}
-          />
-          <div style={{ textAlign: "right" }}>
-            <div
-              style={{
-                width: 100,
-                height: 12,
-                borderRadius: 4,
-                background: "rgba(255,255,255,.1)",
-                animation: "skeletonPulse 2s ease-in-out infinite",
-                marginBottom: 8,
-                marginLeft: "auto",
-              }}
+          <Skeleton width="80px" height="48px" borderRadius="4px" style={{ background: "rgba(255,255,255,.1)", border: "none" }} />
+          <div className="text-right">
+            <Skeleton
+              width="100px"
+              height="12px"
+              borderRadius="4px"
+              style={{ background: "rgba(255,255,255,.1)", border: "none", marginBottom: "8px", marginLeft: "auto" }}
             />
-            <div
-              style={{
-                width: 140,
-                height: 18,
-                borderRadius: 4,
-                background: "rgba(255,255,255,.1)",
-                animation: "skeletonPulse 2s ease-in-out infinite",
-                marginTop: 5,
-                marginLeft: "auto",
-              }}
+            <Skeleton
+              width="140px"
+              height="18px"
+              borderRadius="4px"
+              style={{ background: "rgba(255,255,255,.1)", border: "none", marginTop: "5px", marginLeft: "auto" }}
             />
           </div>
         </div>
 
         {/* Progress bar */}
-        <div
-          style={{
-            marginTop: 22,
-            height: 5,
-            borderRadius: 999,
-            background: "rgba(255,255,255,.12)",
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              height: "100%",
-              background: "rgba(255,255,255,.08)",
-              borderRadius: 999,
-              width: "45%",
-            }}
-          />
+        <div className="mt-[22px] h-[5px] overflow-hidden rounded-full bg-white/12">
+          <div className="h-full w-[45%] rounded-full bg-white/8" />
         </div>
 
         {/* Footer text */}
-        <div
-          style={{
-            marginTop: 10,
-            width: 160,
-            height: 11,
-            borderRadius: 4,
-            background: "rgba(255,255,255,.1)",
-            animation: "skeletonPulse 2s ease-in-out infinite",
-          }}
+        <Skeleton
+          width="160px"
+          height="11px"
+          borderRadius="4px"
+          style={{ background: "rgba(255,255,255,.1)", border: "none", marginTop: "10px" }}
         />
-      </div>
+      </Card>
 
       {/* Light recent results card skeleton */}
-      <div style={{ background: "#FFFDF7", border: "1px solid rgba(10,31,26,.12)", borderRadius: 22, padding: 26 }}>
+      <Card className="gap-0 rounded-[22px] border-[rgba(10,31,26,.12)] bg-cream p-[26px]">
         {/* Header */}
         <Skeleton width="140px" height="12px" borderRadius="4px" />
 
         {/* Results list placeholders */}
-        <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 2 }}>
+        <div className="mt-4 flex flex-col gap-0.5">
           {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                padding: "11px 0",
-                borderBottom: "1px solid rgba(10,31,26,.08)",
-              }}
-            >
+            <div key={i} className="flex items-center gap-3 border-b border-[rgba(10,31,26,.08)] py-[11px]">
               <Skeleton width="26px" height="14px" borderRadius="4px" style={{ flex: "none" }} />
               <Skeleton width="120px" height="14px" borderRadius="4px" style={{ flex: 1, minWidth: 0 }} />
               <Skeleton width="40px" height="14px" borderRadius="4px" style={{ flex: "none" }} />
@@ -179,8 +88,8 @@ export function HomeLiveSkeleton() {
         </div>
 
         {/* Link skeleton */}
-        <Skeleton width="180px" height="13px" borderRadius="4px" style={{ marginTop: 16 }} />
-      </div>
+        <Skeleton width="180px" height="13px" borderRadius="4px" style={{ marginTop: "16px" }} />
+      </Card>
     </>
   );
 }

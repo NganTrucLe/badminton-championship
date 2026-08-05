@@ -5,6 +5,10 @@ import { AvatarUpload } from "@/components/AvatarUpload";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
 import { validatePlayerName, validateTier } from "@/lib/tournament/adminValidation";
 import type { IAdminPlayer } from "@/lib/supabase/admin";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function PlayersEditor({ initialPlayers, editable }: { initialPlayers: IAdminPlayer[]; editable: boolean }) {
   const [players, setPlayers] = useState(initialPlayers);
@@ -29,24 +33,27 @@ export function PlayersEditor({ initialPlayers, editable }: { initialPlayers: IA
 
   return (
     <div>
-      <h2 style={{ fontFamily: "var(--font-bricolage), sans-serif", fontSize: 28, fontWeight: 900, margin: "0 0 16px" }}>
-        Vận động viên
-      </h2>
+      <h2 className="m-0 mb-4 font-[family-name:var(--font-bricolage)] text-[28px] font-black">Vận động viên</h2>
       {!editable && (
-        <div style={{ background: "rgba(242,181,68,.16)", border: "1px solid #F2B544", borderRadius: 12, padding: "10px 14px", fontSize: 13, marginBottom: 16 }}>
-          Giải đang diễn ra — đội hình đã khoá. Đặt lại giải để chỉnh sửa.
-        </div>
+        <Alert className="mb-4 border-[#F2B544] bg-[rgba(242,181,68,.16)]">
+          <AlertDescription className="text-[13px] text-inherit">
+            Giải đang diễn ra — đội hình đã khoá. Đặt lại giải để chỉnh sửa.
+          </AlertDescription>
+        </Alert>
       )}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div className="flex flex-col gap-2.5">
         {players.map((p) => (
-          <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", background: "#FFFDF7", border: "1px solid rgba(10,31,26,.12)", borderRadius: 14, padding: 14 }}>
+          <Card
+            key={p.id}
+            className="flex-row flex-wrap items-center gap-3.5 rounded-[14px] border-[rgba(10,31,26,.12)] bg-[#FFFDF7] p-3.5 py-3.5"
+          >
             <AvatarUpload
               playerId={p.id}
               currentUrl={p.avatarUrl ?? (p.avatarKey ? `/avatars/${p.avatarKey}.jpg` : null)}
               onUploaded={(url) => void patch(p.id, { avatar_url: url })}
               disabled={!editable}
             />
-            <input
+            <Input
               defaultValue={p.name}
               disabled={!editable}
               onBlur={(e) => {
@@ -54,25 +61,31 @@ export function PlayersEditor({ initialPlayers, editable }: { initialPlayers: IA
                 if (err) return setMsg(err);
                 if (e.target.value.trim() !== p.name) void patch(p.id, { name: e.target.value.trim() });
               }}
-              style={{ flex: 1, minWidth: 160, height: 40, borderRadius: 10, border: "1px solid rgba(10,31,26,.18)", padding: "0 12px", fontFamily: "var(--font-archivo), sans-serif" }}
+              className="h-10 min-w-[160px] flex-1"
             />
-            <select
-              defaultValue={p.tier}
-              disabled={!editable}
-              onChange={(e) => {
-                const tier = Number(e.target.value);
+            <Select
+              defaultValue={String(p.tier)}
+              onValueChange={(value) => {
+                const tier = Number(value);
                 if (validateTier(tier)) void patch(p.id, { tier });
               }}
-              style={{ height: 40, borderRadius: 10, border: "1px solid rgba(10,31,26,.18)", padding: "0 12px" }}
+              disabled={!editable}
             >
-              {[1, 2, 3, 4].map((t) => (
-                <option key={t} value={t}>Bậc {t}</option>
-              ))}
-            </select>
-          </div>
+              <SelectTrigger className="h-10">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[1, 2, 3, 4].map((t) => (
+                  <SelectItem key={t} value={String(t)}>
+                    Bậc {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Card>
         ))}
       </div>
-      {msg && <div style={{ marginTop: 14, fontFamily: "var(--font-jetbrains), monospace", fontSize: 11, color: "#5F817A" }}>{msg}</div>}
+      {msg && <div className="mt-3.5 font-[family-name:var(--font-jetbrains)] text-[11px] text-[#5F817A]">{msg}</div>}
     </div>
   );
 }

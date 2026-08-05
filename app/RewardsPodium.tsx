@@ -1,5 +1,7 @@
 import { getTournament } from "@/lib/supabase/tournament";
 import type { IReward } from "@/lib/tournament/reward";
+import { Card } from "@/components/ui/card";
+import { Reveal } from "@/components/motion";
 
 // Reads the podium copy (title/detail per place) from the tournament config in Supabase so
 // organizers can update reward text without a code change. Styling/markup is unchanged from the
@@ -12,152 +14,48 @@ export async function RewardsPodium() {
   const third = byPlace(3);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "flex-end",
-        justifyContent: "center",
-        gap: 16,
-        flexWrap: "wrap",
-        padding: "20px 0 8px",
-      }}
-    >
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, width: 220 }}>
-        <div
-          style={{
-            width: 76,
-            height: 76,
-            borderRadius: "50%",
-            background: "#C9D6D2",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 30,
-            fontWeight: 900,
-            color: "#08241E",
-            boxShadow: "0 6px 0 rgba(10,31,26,.18)",
-          }}
-        >
-          🥈
-        </div>
-        <div style={{ fontSize: 19, fontWeight: 800, lineHeight: 1.3, textAlign: "center" }}>{second.title}</div>
-        <div
-          style={{
-            background: "#FFFDF7",
-            border: "1px solid rgba(10,31,26,.14)",
-            borderRadius: "20px 20px 10px 10px",
-            width: "100%",
-            height: 150,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 6,
-          }}
-        >
-          <div
-            style={{
-              fontFamily: "var(--font-jetbrains), monospace",
-              fontSize: 11,
-              letterSpacing: ".18em",
-              color: "#5B7A72",
-            }}
-          >
-            HẠNG NHÌ
+    <div className="flex items-end justify-center gap-4 flex-wrap py-5 pb-2">
+      <Reveal delay={0}>
+        <div className="flex flex-col items-center gap-3 w-[220px]">
+          <div className="size-[76px] rounded-full bg-[#C9D6D2] flex items-center justify-center text-[30px] font-black text-[#08241E] shadow-[0_6px_0_rgba(10,31,26,.18)]">
+            🥈
           </div>
-          <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: "-.05em", color: "#0B5D4E" }}>02</div>
-          <div style={{ fontSize: 13, color: "#8AA39C" }}>{second.detail}</div>
+          <div className="text-[19px] font-extrabold leading-[1.3] text-center">{second.title}</div>
+          <Card className="bg-card border border-border h-[150px] rounded-t-[20px] rounded-b-[10px] w-full flex flex-col items-center justify-center gap-1.5 p-0 transition-transform duration-200 hover:-translate-y-0.5">
+            <div className="font-[family-name:var(--font-jetbrains)] text-[11px] tracking-[.18em] text-[#5B7A72]">HẠNG NHÌ</div>
+            <div className="text-[44px] font-black tracking-[-.05em] text-[#0B5D4E]">02</div>
+            <div className="text-[13px] text-[#8AA39C]">{second.detail}</div>
+          </Card>
         </div>
-      </div>
+      </Reveal>
 
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, width: 240 }}>
-        <div
-          style={{
-            width: 96,
-            height: 96,
-            borderRadius: "50%",
-            background: "#F2B544",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 40,
-            fontWeight: 900,
-            color: "#08241E",
-            boxShadow: "0 8px 0 rgba(10,31,26,.2)",
-          }}
-        >
-          🏆
-        </div>
-        <div style={{ fontSize: 21, fontWeight: 900, lineHeight: 1.3, textAlign: "center" }}>{first.title}</div>
-        <div
-          style={{
-            background: "#F2B544",
-            borderRadius: "24px 24px 10px 10px",
-            width: "100%",
-            height: 200,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            color: "#08241E",
-          }}
-        >
-          <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 11, letterSpacing: ".18em" }}>
-            HẠNG NHẤT
+      <Reveal delay={0.1}>
+        <div className="flex flex-col items-center gap-3 w-[240px]">
+          <div className="size-24 rounded-full bg-[#F2B544] flex items-center justify-center text-[40px] font-black text-[#08241E] shadow-[0_8px_0_rgba(10,31,26,.2)]">
+            🏆
           </div>
-          <div style={{ fontSize: 56, fontWeight: 900, letterSpacing: "-.05em" }}>01</div>
-          <div style={{ fontSize: 14, opacity: 0.75 }}>{first.detail}</div>
+          <div className="text-[21px] font-black leading-[1.3] text-center">{first.title}</div>
+          <Card className="bg-[#F2B544] border-0 h-[200px] rounded-t-[24px] rounded-b-[10px] w-full flex flex-col items-center justify-center gap-2 p-0 text-[#08241E] transition-transform duration-200 hover:-translate-y-0.5">
+            <div className="font-[family-name:var(--font-jetbrains)] text-[11px] tracking-[.18em]">HẠNG NHẤT</div>
+            <div className="text-[56px] font-black tracking-[-.05em]">01</div>
+            <div className="text-[14px] opacity-75">{first.detail}</div>
+          </Card>
         </div>
-      </div>
+      </Reveal>
 
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, width: 220 }}>
-        <div
-          style={{
-            width: 76,
-            height: 76,
-            borderRadius: "50%",
-            background: "#E0A672",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 30,
-            fontWeight: 900,
-            color: "#08241E",
-            boxShadow: "0 6px 0 rgba(10,31,26,.18)",
-          }}
-        >
-          🥉
-        </div>
-        <div style={{ fontSize: 19, fontWeight: 800, lineHeight: 1.3, textAlign: "center" }}>{third.title}</div>
-        <div
-          style={{
-            background: "#FFFDF7",
-            border: "1px solid rgba(10,31,26,.14)",
-            borderRadius: "20px 20px 10px 10px",
-            width: "100%",
-            height: 130,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 6,
-          }}
-        >
-          <div
-            style={{
-              fontFamily: "var(--font-jetbrains), monospace",
-              fontSize: 11,
-              letterSpacing: ".18em",
-              color: "#5B7A72",
-            }}
-          >
-            HẠNG BA
+      <Reveal delay={0.2}>
+        <div className="flex flex-col items-center gap-3 w-[220px]">
+          <div className="size-[76px] rounded-full bg-[#E0A672] flex items-center justify-center text-[30px] font-black text-[#08241E] shadow-[0_6px_0_rgba(10,31,26,.18)]">
+            🥉
           </div>
-          <div style={{ fontSize: 40, fontWeight: 900, letterSpacing: "-.05em", color: "#0B5D4E" }}>03</div>
-          <div style={{ fontSize: 13, color: "#8AA39C" }}>{third.detail}</div>
+          <div className="text-[19px] font-extrabold leading-[1.3] text-center">{third.title}</div>
+          <Card className="bg-card border border-border h-[130px] rounded-t-[20px] rounded-b-[10px] w-full flex flex-col items-center justify-center gap-1.5 p-0 transition-transform duration-200 hover:-translate-y-0.5">
+            <div className="font-[family-name:var(--font-jetbrains)] text-[11px] tracking-[.18em] text-[#5B7A72]">HẠNG BA</div>
+            <div className="text-[40px] font-black tracking-[-.05em] text-[#0B5D4E]">03</div>
+            <div className="text-[13px] text-[#8AA39C]">{third.detail}</div>
+          </Card>
         </div>
-      </div>
+      </Reveal>
     </div>
   );
 }

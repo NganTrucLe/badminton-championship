@@ -2,7 +2,22 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Loader2, Play, RotateCcw } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
+import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const STATUS_LABEL: Record<string, string> = {
   setup: "ĐANG THIẾT LẬP",
@@ -21,7 +36,7 @@ export function LifecyclePanel({
   const [status, setStatus] = useState(initialStatus);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
-  const [confirming, setConfirming] = useState(false);
+  const [open, setOpen] = useState(false);
 
   async function start() {
     if (busy) return;
@@ -54,7 +69,7 @@ export function LifecyclePanel({
         return;
       }
       setStatus("setup");
-      setConfirming(false);
+      setOpen(false);
       setMsg("Đã đặt lại toàn bộ tỉ số. Giải trở về trạng thái thiết lập.");
       router.refresh();
     } finally {
@@ -62,82 +77,88 @@ export function LifecyclePanel({
     }
   }
 
+  const startDisabled = busy || status !== "setup" || !!rosterError;
+
   return (
-    <div style={{ background: "#FFFDF7", border: "1px solid rgba(10,31,26,.12)", borderRadius: 20, padding: 24 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <h2 style={{ margin: 0, fontFamily: "var(--font-bricolage), sans-serif", fontSize: 28, fontWeight: 900 }}>
+    <Card className="gap-0 rounded-[20px] border-[rgba(10,31,26,.12)] bg-[#FFFDF7] p-6">
+      <div className="flex flex-wrap items-center gap-3">
+        <h2 className="m-0 font-[family-name:var(--font-bricolage)] text-[28px] font-black">
           Điều khiển giải đấu
         </h2>
-        <span style={{ marginLeft: "auto", fontFamily: "var(--font-jetbrains), monospace", fontSize: 11, letterSpacing: ".14em", color: "#0B5D4E" }}>
+        <span className="ml-auto font-[family-name:var(--font-jetbrains)] text-[11px] tracking-[.14em] text-[#0B5D4E]">
           {STATUS_LABEL[status]}
         </span>
       </div>
-      <p style={{ color: "#5B7A72", fontSize: 14, marginTop: 12 }}>
+      <p className="mt-3 text-sm text-[#5B7A72]">
         Ở trạng thái “thiết lập”, bạn có thể sửa vận động viên và cặp đấu. Bấm bắt đầu để khoá đội hình và cho phép chấm điểm.
       </p>
-      <button
+      <Button
         type="button"
-        disabled={busy || status !== "setup" || !!rosterError}
+        variant="success"
+        disabled={startDisabled}
         onClick={() => void start()}
-        style={{
-          marginTop: 8,
-          height: 48,
-          padding: "0 24px",
-          borderRadius: 12,
-          border: "none",
-          background: status === "setup" && !rosterError ? "#3FBF8F" : "rgba(10,31,26,.12)",
-          color: status === "setup" && !rosterError ? "#052D22" : "#8AA39C",
-          fontWeight: 800,
-          fontSize: 14,
-          cursor: busy || status !== "setup" || !!rosterError ? "not-allowed" : "pointer",
-          fontFamily: "var(--font-archivo), sans-serif",
-        }}
+        className={cn(
+          "mt-2 h-12 rounded-xl px-6 font-[family-name:var(--font-archivo)] text-sm font-extrabold",
+          startDisabled ? "cursor-not-allowed" : "cursor-pointer",
+          startDisabled &&
+            "bg-[rgba(10,31,26,.12)] text-[#8AA39C] hover:bg-[rgba(10,31,26,.12)] cursor-not-allowed"
+        )}
       >
+        {busy ? <Loader2 className="animate-spin" /> : <Play />}
         Gửi đội hình & bắt đầu giải
-      </button>
+      </Button>
       {status === "setup" && rosterError && (
-        <div style={{ marginTop: 12, fontFamily: "var(--font-jetbrains), monospace", fontSize: 11, color: "#B0435F" }}>
+        <div className="mt-3 font-[family-name:var(--font-jetbrains)] text-[11px] text-[#B0435F]">
           {rosterError}
         </div>
       )}
-      {msg && <div style={{ marginTop: 12, fontFamily: "var(--font-jetbrains), monospace", fontSize: 11, color: "#5F817A" }}>{msg}</div>}
-      <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid rgba(10,31,26,.1)" }}>
-        <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 10, letterSpacing: ".16em", color: "#B0435F" }}>
+      {msg && (
+        <div className="mt-3 font-[family-name:var(--font-jetbrains)] text-[11px] text-[#5F817A]">
+          {msg}
+        </div>
+      )}
+      <div className="mt-6 border-t border-[rgba(10,31,26,.1)] pt-5">
+        <div className="font-[family-name:var(--font-jetbrains)] text-[10px] tracking-[.16em] text-[#B0435F]">
           VÙNG NGUY HIỂM
         </div>
-        <p style={{ color: "#5B7A72", fontSize: 13, marginTop: 8 }}>
+        <p className="mt-2 text-[13px] text-[#5B7A72]">
           Đặt lại sẽ xoá toàn bộ tỉ số và đưa mọi trận về “sắp diễn ra”. Vận động viên và cặp đấu được giữ nguyên.
         </p>
-        {!confirming ? (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => setConfirming(true)}
-            style={{ marginTop: 8, height: 44, padding: "0 20px", borderRadius: 12, border: "1px solid #B0435F", background: "transparent", color: "#B0435F", fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "var(--font-archivo), sans-serif" }}
-          >
-            Đặt lại giải đấu…
-          </button>
-        ) : (
-          <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
-            <button
+        <AlertDialog open={open} onOpenChange={setOpen}>
+          <AlertDialogTrigger asChild>
+            <Button
               type="button"
+              variant="dangerOutline"
               disabled={busy}
-              onClick={() => void reset()}
-              style={{ height: 44, padding: "0 20px", borderRadius: 12, border: "none", background: "#B0435F", color: "#FFFDF7", fontWeight: 800, fontSize: 13, cursor: busy ? "not-allowed" : "pointer", fontFamily: "var(--font-archivo), sans-serif" }}
+              className="mt-2 h-11 rounded-xl px-5 font-[family-name:var(--font-archivo)] text-[13px] font-extrabold"
             >
-              Xác nhận đặt lại — không thể hoàn tác
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => setConfirming(false)}
-              style={{ height: 44, padding: "0 20px", borderRadius: 12, border: "1px solid rgba(10,31,26,.18)", background: "transparent", color: "#3C5A53", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "var(--font-archivo), sans-serif" }}
-            >
-              Huỷ
-            </button>
-          </div>
-        )}
+              <RotateCcw />
+              Đặt lại giải đấu…
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Đặt lại giải đấu?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Đặt lại sẽ xoá toàn bộ tỉ số và đưa mọi trận về “sắp diễn ra”. Vận động viên và cặp đấu được giữ nguyên.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={busy}>Huỷ</AlertDialogCancel>
+              <AlertDialogAction
+                variant="danger"
+                disabled={busy}
+                onClick={(e) => {
+                  e.preventDefault();
+                  void reset();
+                }}
+              >
+                Xác nhận đặt lại — không thể hoàn tác
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-    </div>
+    </Card>
   );
 }

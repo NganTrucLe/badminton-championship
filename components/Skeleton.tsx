@@ -1,8 +1,11 @@
 import { CSSProperties } from "react";
+import { Skeleton as UiSkeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 /**
  * A lightweight pulsing skeleton block for loading states.
- * CSS-only pulse animation — no Date.now() or Math.random().
+ * Backed by the shadcn Skeleton primitive (animate-pulse), styled to
+ * preserve this app's established cream skeleton look.
  */
 export function Skeleton({
   width = "100%",
@@ -20,15 +23,14 @@ export function Skeleton({
   [key: string]: unknown;
 }) {
   return (
-    <div
-      className={className}
+    <UiSkeleton
+      className={cn("bg-transparent", className)}
       style={{
         width,
         height,
         borderRadius,
-        background: "#FFFDF7",
+        background: "var(--color-cream)",
         border: "1px solid rgba(10,31,26,.08)",
-        animation: "skeletonPulse 2s ease-in-out infinite",
         ...style,
       }}
       {...rest}

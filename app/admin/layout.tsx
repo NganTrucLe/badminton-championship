@@ -18,7 +18,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const { user, isOrganizer } = await getOrganizerSession();
 
   return (
-    <div style={{ maxWidth: 1240, margin: "0 auto", padding: "34px 20px 60px" }}>
+    <div className="max-w-[1240px] mx-auto px-5 pt-[34px] pb-[60px]">
       {!user && <AdminSignedOut />}
       {user && !isOrganizer && <AdminDenied email={user.email} />}
       {user && isOrganizer && (

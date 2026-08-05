@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { Loader2, Save } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
 import type { Json } from "@/lib/supabase/database.types";
 import { mergeRewards, type IReward } from "@/lib/tournament/reward";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export function RewardsEditor({ initialRewards }: { initialRewards: IReward[] }) {
   const [rewards, setRewards] = useState(initialRewards);
@@ -36,37 +40,40 @@ export function RewardsEditor({ initialRewards }: { initialRewards: IReward[] })
 
   return (
     <div>
-      <h2 style={{ fontFamily: "var(--font-bricolage), sans-serif", fontSize: 28, fontWeight: 900, margin: "0 0 16px" }}>
-        Phần thưởng
-      </h2>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <h2 className="m-0 mb-4 font-[family-name:var(--font-bricolage)] text-[28px] font-black">Phần thưởng</h2>
+      <div className="flex flex-col gap-3">
         {rewards.map((r) => (
-          <div key={r.place} style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", background: "#FFFDF7", border: "1px solid rgba(10,31,26,.12)", borderRadius: 14, padding: 14 }}>
-            <span style={{ fontSize: 24 }}>{r.medal}</span>
-            <input
+          <Card
+            key={r.place}
+            className="flex-row flex-wrap items-center gap-3 rounded-[14px] border-[rgba(10,31,26,.12)] bg-[#FFFDF7] p-3.5 py-3.5"
+          >
+            <span className="text-2xl">{r.medal}</span>
+            <Input
               value={r.title}
               onChange={(e) => edit(r.place, "title", e.target.value)}
               placeholder="Tiêu đề phần thưởng"
-              style={{ flex: 2, minWidth: 200, height: 40, borderRadius: 10, border: "1px solid rgba(10,31,26,.18)", padding: "0 12px" }}
+              className="h-10 min-w-[200px] flex-[2]"
             />
-            <input
+            <Input
               value={r.detail}
               onChange={(e) => edit(r.place, "detail", e.target.value)}
               placeholder="Chi tiết"
-              style={{ flex: 1, minWidth: 140, height: 40, borderRadius: 10, border: "1px solid rgba(10,31,26,.18)", padding: "0 12px" }}
+              className="h-10 min-w-[140px] flex-1"
             />
-          </div>
+          </Card>
         ))}
       </div>
-      <button
+      <Button
         type="button"
+        variant="success"
         disabled={busy}
         onClick={() => void save()}
-        style={{ marginTop: 16, height: 46, padding: "0 24px", borderRadius: 12, border: "none", background: "#3FBF8F", color: "#052D22", fontWeight: 800, fontSize: 14, cursor: busy ? "not-allowed" : "pointer", fontFamily: "var(--font-archivo), sans-serif" }}
+        className="mt-4 h-[46px] rounded-xl px-6 font-[family-name:var(--font-archivo)] text-sm font-extrabold"
       >
+        {busy ? <Loader2 className="animate-spin" /> : <Save />}
         Lưu phần thưởng
-      </button>
-      {msg && <div style={{ marginTop: 12, fontFamily: "var(--font-jetbrains), monospace", fontSize: 11, color: "#5F817A" }}>{msg}</div>}
+      </Button>
+      {msg && <div className="mt-3 font-[family-name:var(--font-jetbrains)] text-[11px] text-[#5F817A]">{msg}</div>}
     </div>
   );
 }

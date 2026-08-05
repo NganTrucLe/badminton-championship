@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 import {
   avatarFallbackColor,
   avatarPhotoPath,
@@ -20,57 +21,30 @@ interface IPlayerAvatarProps {
 /**
  * Renders a player's photo when one exists at `/avatars/{avatarKey}.jpg`, falling back to a
  * colored initials circle (same fallback the design uses for `noPhoto`). Photos are optional —
- * see `public/avatars/README.md`. If the file 404s at runtime we also fall back, so dropping in
- * JPGs later needs no code changes.
+ * see `public/avatars/README.md`. Radix's `AvatarImage` falls back to `AvatarFallback`
+ * automatically on load error (including a 404), so dropping in JPGs later needs no code changes.
  */
 export function PlayerAvatar({ player, size, initials = "single", className }: IPlayerAvatarProps) {
-  const [errored, setErrored] = useState(false);
   const photo = avatarPhotoPath(player);
-  const showPhoto = Boolean(photo) && !errored;
   const label = initials === "double" ? playerInitials(player.name) : playerInitial(player.name);
 
-  if (showPhoto) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element -- variable/optional local avatar file, falls back on load error
-      <img
-        src={photo}
-        alt={player.name}
-        width={size}
-        height={size}
-        onError={() => setErrored(true)}
-        className={className}
-        style={{
-          width: size,
-          height: size,
-          borderRadius: "50%",
-          objectFit: "cover",
-          border: "1.5px solid #fff",
-          flex: "none",
-        }}
-      />
-    );
-  }
-
   return (
-    <div
-      className={className}
-      style={{
-        width: size,
-        height: size,
-        borderRadius: "50%",
-        background: avatarFallbackColor(player.name),
-        border: "1.5px solid #fff",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#fff",
-        fontFamily: "var(--font-jetbrains), monospace",
-        fontWeight: 800,
-        fontSize: Math.round(size * 0.42),
-        flex: "none",
-      }}
+    <Avatar
+      className={cn("flex-none rounded-full border-[1.5px] border-white", className)}
+      style={{ width: size, height: size }}
     >
-      {label}
-    </div>
+      {photo ? <AvatarImage src={photo} alt={player.name} className="object-cover" /> : null}
+      <AvatarFallback
+        className="rounded-full text-white"
+        style={{
+          background: avatarFallbackColor(player.name),
+          fontFamily: "var(--font-jetbrains), monospace",
+          fontWeight: 800,
+          fontSize: Math.round(size * 0.42),
+        }}
+      >
+        {label}
+      </AvatarFallback>
+    </Avatar>
   );
 }

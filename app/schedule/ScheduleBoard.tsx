@@ -1,6 +1,18 @@
 "use client";
 
+import { Check, Trophy, X } from "lucide-react";
+
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useLiveMatches } from "@/lib/supabase/useLiveMatches";
 import { getTeam } from "@/lib/tournament/data";
 import type { IMatch } from "@/lib/tournament/data";
@@ -18,7 +30,7 @@ import {
 function TeamAvatars({ teamId, size = 20 }: { teamId: number; size?: number }) {
   const team = getTeam(teamId);
   return (
-    <div style={{ display: "flex", gap: 2, flex: "none" }}>
+    <div className="flex flex-none gap-0.5">
       {team.players.map((p) => (
         <PlayerAvatar key={p.name} player={p} size={size} />
       ))}
@@ -28,100 +40,89 @@ function TeamAvatars({ teamId, size = 20 }: { teamId: number; size?: number }) {
 
 function SwissMatchCard({ m }: { m: ISwissMatchDisplay }) {
   return (
-    <div style={{ background: "#fff", border: "1px solid rgba(10,31,26,.12)", borderRadius: 9, overflow: "hidden" }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          padding: "5px 8px",
-          background: "rgba(10,31,26,.035)",
-        }}
-      >
-        <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 8.5, color: "#8AA39C" }}>
-          {m.meta}
-        </span>
+    <Card className="gap-0 overflow-hidden rounded-[9px] border-[rgba(10,31,26,.12)] bg-white py-0">
+      <div className="flex items-center gap-1.5 bg-[rgba(10,31,26,.035)] px-2 py-[5px]">
+        <span className="font-[family-name:var(--font-jetbrains)] text-[8.5px] text-[#8AA39C]">{m.meta}</span>
         <span
-          style={{
-            marginLeft: "auto",
-            fontFamily: "var(--font-jetbrains), monospace",
-            fontSize: 8.5,
-            letterSpacing: ".06em",
-            color: m.stateColor,
-          }}
+          className="ml-auto font-[family-name:var(--font-jetbrains)] text-[8.5px] tracking-[.06em]"
+          style={{ color: m.stateColor }}
         >
           {m.state}
         </span>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "6px 8px", background: m.aBg }}>
+      <div className="flex items-center gap-[7px] px-2 py-1.5" style={{ background: m.aBg }}>
         <TeamAvatars teamId={m.aTeamId} />
-        <span style={{ flex: 1, minWidth: 0, fontSize: 11.5, fontWeight: Number(m.aWeight), color: m.aFg }}>
+        <span className="min-w-0 flex-1 text-[11.5px]" style={{ fontWeight: Number(m.aWeight), color: m.aFg }}>
           {m.aName}
         </span>
-        <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 11.5, fontWeight: 700, color: m.aFg }}>
+        <span
+          className="font-[family-name:var(--font-jetbrains)] text-[11.5px] font-bold"
+          style={{ color: m.aFg }}
+        >
           {m.sa}
         </span>
       </div>
       <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 7,
-          padding: "6px 8px",
-          background: m.bBg,
-          borderTop: "1px solid rgba(10,31,26,.07)",
-        }}
+        className="flex items-center gap-[7px] border-t border-[rgba(10,31,26,.07)] px-2 py-1.5"
+        style={{ background: m.bBg }}
       >
         <TeamAvatars teamId={m.bTeamId} />
-        <span style={{ flex: 1, minWidth: 0, fontSize: 11.5, fontWeight: Number(m.bWeight), color: m.bFg }}>
+        <span className="min-w-0 flex-1 text-[11.5px]" style={{ fontWeight: Number(m.bWeight), color: m.bFg }}>
           {m.bName}
         </span>
-        <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 11.5, fontWeight: 700, color: m.bFg }}>
+        <span
+          className="font-[family-name:var(--font-jetbrains)] text-[11.5px] font-bold"
+          style={{ color: m.bFg }}
+        >
           {m.sb}
         </span>
       </div>
-    </div>
+    </Card>
   );
 }
 
 function ChipRow({ chip }: { chip: ITeamChip }) {
   return (
     <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 7,
-        background: "rgba(255,255,255,.75)",
-        border: "1px dashed rgba(10,31,26,.2)",
-        borderRadius: 9,
-        padding: "6px 8px",
-      }}
+      data-slot="badge"
+      data-variant="outline"
+      className="inline-flex w-full shrink-0 items-center justify-start gap-[7px] overflow-hidden rounded-[9px] border border-dashed border-[rgba(10,31,26,.2)] bg-white/75 px-2 py-1.5 text-xs font-medium whitespace-nowrap text-foreground"
     >
       <TeamAvatars teamId={chip.teamId} />
-      <span style={{ flex: 1, minWidth: 0, fontSize: 11.5, fontWeight: 700, color: "#0A1F1A" }}>{chip.name}</span>
-      <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 10, color: "#8AA39C" }}>{chip.rec}</span>
+      <span className="min-w-0 flex-1 text-[11.5px] font-bold text-[#0A1F1A]">{chip.name}</span>
+      <span className="font-[family-name:var(--font-jetbrains)] text-[10px] text-[#8AA39C]">{chip.rec}</span>
     </div>
   );
 }
 
 function QualifiedChip({ chip }: { chip: ITeamChip }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 7, background: "#fff", borderRadius: 8, padding: "6px 8px" }}>
+    <div
+      data-slot="badge"
+      data-variant="default"
+      className="inline-flex w-full shrink-0 items-center justify-start gap-[7px] overflow-hidden rounded-lg border border-transparent bg-primary px-2 py-1.5 text-xs font-medium whitespace-nowrap text-primary-foreground"
+    >
+      <Check className="size-3.5 flex-none" />
       <TeamAvatars teamId={chip.teamId} />
-      <span style={{ flex: 1, minWidth: 0, fontSize: 11.5, fontWeight: 700 }}>{chip.name}</span>
-      <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 10, color: "#8AA39C" }}>{chip.rec}</span>
+      <span className="min-w-0 flex-1 text-[11.5px] font-bold">{chip.name}</span>
+      <span className="font-[family-name:var(--font-jetbrains)] text-[10px] text-primary-foreground/70">{chip.rec}</span>
     </div>
   );
 }
 
 function EliminatedChip({ chip }: { chip: ITeamChip }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 7, background: "#fff", borderRadius: 8, padding: "6px 8px" }}>
-      <div style={{ opacity: 0.7 }}>
+    <div
+      data-slot="badge"
+      data-variant="default"
+      className="inline-flex w-full shrink-0 items-center justify-start gap-[7px] overflow-hidden rounded-lg border border-transparent bg-muted px-2 py-1.5 text-xs font-medium whitespace-nowrap text-muted-foreground line-through"
+    >
+      <X className="size-3.5 flex-none" />
+      <div className="opacity-70">
         <TeamAvatars teamId={chip.teamId} />
       </div>
-      <span style={{ flex: 1, minWidth: 0, fontSize: 11.5, fontWeight: 700, color: "#7A8A85" }}>{chip.name}</span>
-      <span style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 10, color: "#B4BEBA" }}>{chip.rec}</span>
+      <span className="min-w-0 flex-1 text-[11.5px] font-bold">{chip.name}</span>
+      <span className="font-[family-name:var(--font-jetbrains)] text-[10px]">{chip.rec}</span>
     </div>
   );
 }
@@ -152,31 +153,40 @@ export function ScheduleBoard({ initialMatches, pairIdToTeamId }: IScheduleBoard
   return (
     <>
       {/* Board 1 · Swiss stage */}
-      <div style={{ marginTop: 20, background: "#FFFDF7", border: "1px solid rgba(10,31,26,.12)", borderRadius: 22, padding: 20 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
-          <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 10, letterSpacing: ".16em", color: "#5B7A72" }}>
+      <div className="mt-5 rounded-[22px] border border-[rgba(10,31,26,.12)] bg-[#FFFDF7] p-5">
+        <div className="mb-4 flex flex-wrap items-baseline gap-3">
+          <div className="font-[family-name:var(--font-jetbrains)] text-[10px] tracking-[.16em] text-[#5B7A72]">
             BOARD 1 · SWISS STAGE
           </div>
-          <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 10, color: "#B4BEBA" }}>
+          <div className="font-[family-name:var(--font-jetbrains)] text-[10px] text-[#B4BEBA]">
             CUỘN NGANG ĐỂ XEM CÁC VÒNG SAU →
           </div>
         </div>
-        <div style={{ overflowX: "auto", paddingBottom: 6 }}>
-          <div style={{ minWidth: 1160, display: "grid", gridTemplateColumns: "repeat(6,minmax(184px,1fr))", gap: 12, alignItems: "start" }}>
+        <div className="overflow-x-auto pb-1.5">
+          <div className="grid min-w-[1160px] grid-cols-[repeat(6,minmax(184px,1fr))] items-start gap-3">
             {swissCols.map((col) => (
               <div key={col.round}>
-                <div style={{ background: "#0B5D4E", color: "#FFFDF7", borderRadius: 9, padding: 8, textAlign: "center", fontSize: 12, fontWeight: 800 }}>
+                <div className="rounded-[9px] bg-[#0B5D4E] p-2 text-center text-xs font-extrabold text-[#FFFDF7]">
                   {col.title}
                 </div>
-                <div style={{ textAlign: "center", fontFamily: "var(--font-jetbrains), monospace", fontSize: 9, letterSpacing: ".1em", color: col.statusColor, marginTop: 6, marginBottom: 10 }}>
+                <div
+                  className="mt-1.5 mb-2.5 text-center font-[family-name:var(--font-jetbrains)] text-[9px] tracking-[.1em]"
+                  style={{ color: col.statusColor }}
+                >
                   {col.status}
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div className="flex flex-col gap-2.5">
                   {col.groups.map((g) => (
-                    <div key={g.label} style={{ background: g.bg, border: `1.5px solid ${g.border}`, borderRadius: 12, padding: 10 }}>
-                      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: ".04em", color: g.fg }}>{g.label}</div>
-                      <div style={{ fontSize: 9.5, color: "#8AA39C", marginTop: 3 }}>{g.sub}</div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 7, marginTop: 9 }}>
+                    <div
+                      key={g.label}
+                      className="rounded-xl p-2.5"
+                      style={{ background: g.bg, border: `1.5px solid ${g.border}` }}
+                    >
+                      <div className="text-[11px] font-extrabold tracking-[.04em]" style={{ color: g.fg }}>
+                        {g.label}
+                      </div>
+                      <div className="mt-[3px] text-[9.5px] text-[#8AA39C]">{g.sub}</div>
+                      <div className="mt-[9px] flex flex-col gap-[7px]">
                         {g.matches.map((m) => (
                           <SwissMatchCard key={m.code} m={m} />
                         ))}
@@ -191,42 +201,35 @@ export function ScheduleBoard({ initialMatches, pairIdToTeamId }: IScheduleBoard
             ))}
 
             <div>
-              <div style={{ background: "#0A1F1A", color: "#FFFDF7", borderRadius: 9, padding: 8, textAlign: "center", fontSize: 12, fontWeight: 800 }}>
+              <div className="flex items-center justify-center gap-1.5 rounded-[9px] bg-[#0A1F1A] p-2 text-center text-xs font-extrabold text-[#FFFDF7]">
+                <Trophy className="size-3.5" />
                 Kết quả Swiss
               </div>
-              <div style={{ textAlign: "center", fontFamily: "var(--font-jetbrains), monospace", fontSize: 9, color: "#8AA39C", margin: "6px 0 10px" }}>
+              <div className="my-1.5 mt-1.5 mb-2.5 text-center font-[family-name:var(--font-jetbrains)] text-[9px] text-[#8AA39C]">
                 4 VÀO · 4 RA
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ background: "#E9F8EE", border: "1.5px solid #9CCFB0", borderRadius: 12, padding: 10 }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: ".04em", color: "#1A6B3A" }}>
-                    QUALIFIED · 3 THẮNG
-                  </div>
-                  <div style={{ fontSize: 9.5, color: "#8AA39C", marginTop: 3 }}>Vào Board 2 — playoffs</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 9 }}>
+              <div className="flex flex-col gap-2.5">
+                <div className="rounded-xl border-[1.5px] border-[#9CCFB0] bg-[#E9F8EE] p-2.5">
+                  <div className="text-[11px] font-extrabold tracking-[.04em] text-[#1A6B3A]">QUALIFIED · 3 THẮNG</div>
+                  <div className="mt-[3px] text-[9.5px] text-[#8AA39C]">Vào Board 2 — playoffs</div>
+                  <div className="mt-[9px] flex flex-col gap-1.5">
                     {qualified.map((c) => (
                       <QualifiedChip key={c.teamId} chip={c} />
                     ))}
                   </div>
                   {qualified.length === 0 && (
-                    <div style={{ marginTop: 9, fontSize: 11, color: "#8AA39C", fontStyle: "italic" }}>
-                      Chưa có đội nào đủ 3 thắng
-                    </div>
+                    <div className="mt-[9px] text-[11px] text-[#8AA39C] italic">Chưa có đội nào đủ 3 thắng</div>
                   )}
                 </div>
-                <div style={{ background: "#F3F3F0", border: "1.5px solid #DCDCD4", borderRadius: 12, padding: 10 }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: ".04em", color: "#7A8A85" }}>
-                    ELIMINATED · 3 THUA
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 9 }}>
+                <div className="rounded-xl border-[1.5px] border-[#DCDCD4] bg-[#F3F3F0] p-2.5">
+                  <div className="text-[11px] font-extrabold tracking-[.04em] text-[#7A8A85]">ELIMINATED · 3 THUA</div>
+                  <div className="mt-[9px] flex flex-col gap-1.5">
                     {eliminated.map((c) => (
                       <EliminatedChip key={c.teamId} chip={c} />
                     ))}
                   </div>
                   {eliminated.length === 0 && (
-                    <div style={{ marginTop: 9, fontSize: 11, color: "#B4BEBA", fontStyle: "italic" }}>
-                      Chưa có đội nào bị loại
-                    </div>
+                    <div className="mt-[9px] text-[11px] text-[#B4BEBA] italic">Chưa có đội nào bị loại</div>
                   )}
                 </div>
               </div>
@@ -236,118 +239,107 @@ export function ScheduleBoard({ initialMatches, pairIdToTeamId }: IScheduleBoard
       </div>
 
       {/* Board 2 · Playoffs */}
-      <div style={{ marginTop: 34, background: "#0B5D4E", borderRadius: 22, padding: "clamp(22px,3vw,34px)", overflowX: "auto" }}>
-        <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 10, letterSpacing: ".16em", color: "#8FBCB0" }}>
+      <div className="mt-[34px] overflow-x-auto rounded-[22px] bg-[#0B5D4E] p-[clamp(22px,3vw,34px)]">
+        <div className="font-[family-name:var(--font-jetbrains)] text-[10px] tracking-[.16em] text-[#8FBCB0]">
           BOARD 2 · PLAYOFFS (4 ĐỘI QUALIFIED)
         </div>
-        <div style={{ marginTop: 18, minWidth: 660, display: "grid", gridTemplateColumns: "1fr 30px 1fr", alignItems: "stretch" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 22, justifyContent: "center" }}>
+        <div className="mt-[18px] grid min-w-[660px] grid-cols-[1fr_30px_1fr] items-stretch">
+          <div className="flex flex-col justify-center gap-[22px]">
             {semis.map((m) => (
-              <div key={m.code} style={{ background: "rgba(255,253,247,.08)", border: "1px solid rgba(255,255,255,.18)", borderRadius: 12, overflow: "hidden" }}>
-                <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 9.5, letterSpacing: ".1em", color: "#8FBCB0", padding: "7px 12px", background: "rgba(0,0,0,.18)" }}>
+              <Card
+                key={m.code}
+                className="gap-0 overflow-hidden rounded-xl border-white/[.18] bg-white/[.08] py-0"
+              >
+                <div className="bg-black/[.18] px-3 py-[7px] font-[family-name:var(--font-jetbrains)] text-[9.5px] tracking-[.1em] text-[#8FBCB0]">
                   {m.code}
                 </div>
-                <div style={{ padding: "10px 12px", fontSize: 14, fontWeight: 700, color: "#FFFDF7" }}>{m.aName}</div>
-                <div style={{ padding: "10px 12px", fontSize: 14, fontWeight: 700, color: "#FFFDF7", borderTop: "1px solid rgba(255,255,255,.14)" }}>
+                <div className="px-3 py-2.5 text-sm font-bold text-[#FFFDF7]">{m.aName}</div>
+                <div className="border-t border-white/[.14] px-3 py-2.5 text-sm font-bold text-[#FFFDF7]">
                   {m.bName}
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
-          <div style={{ margin: "62px 0", border: "2px solid rgba(255,255,255,.28)", borderLeft: "none", borderRadius: "0 10px 10px 0" }} />
-          <div style={{ display: "flex", flexDirection: "column", gap: 14, justifyContent: "center", paddingLeft: 16 }}>
-            <div style={{ background: "#F2B544", borderRadius: 12, padding: 16, color: "#08241E" }}>
-              <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 9.5, letterSpacing: ".14em" }}>
+          <div className="my-[62px] rounded-[0_10px_10px_0] border-2 border-l-0 border-white/[.28]" />
+          <div className="flex flex-col justify-center gap-3.5 pl-4">
+            <Card className="gap-0 rounded-xl border-transparent bg-secondary p-4 text-secondary-foreground">
+              <div className="font-[family-name:var(--font-jetbrains)] text-[9.5px] tracking-[.14em]">
                 CHUNG KẾT · SÂN 1
               </div>
-              <div style={{ marginTop: 10, fontSize: 16, fontWeight: 800 }}>Thắng Bán kết 1</div>
-              <div style={{ marginTop: 7, fontSize: 16, fontWeight: 800 }}>Thắng Bán kết 2</div>
-            </div>
-            <div style={{ background: "rgba(255,253,247,.08)", border: "1px solid rgba(255,255,255,.18)", borderRadius: 12, padding: 16, color: "#DCEDE7" }}>
-              <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 9.5, letterSpacing: ".14em", color: "#8FBCB0" }}>
+              <div className="mt-2.5 text-base font-extrabold">Thắng Bán kết 1</div>
+              <div className="mt-[7px] text-base font-extrabold">Thắng Bán kết 2</div>
+            </Card>
+            <Card className="gap-0 rounded-xl border-white/[.18] bg-white/[.08] p-4 text-[#DCEDE7]">
+              <div className="font-[family-name:var(--font-jetbrains)] text-[9.5px] tracking-[.14em] text-[#8FBCB0]">
                 TRANH HẠNG 3 · SÂN 2
               </div>
-              <div style={{ marginTop: 10, fontSize: 16, fontWeight: 800 }}>Thua Bán kết 1</div>
-              <div style={{ marginTop: 7, fontSize: 16, fontWeight: 800 }}>Thua Bán kết 2</div>
-            </div>
+              <div className="mt-2.5 text-base font-extrabold">Thua Bán kết 1</div>
+              <div className="mt-[7px] text-base font-extrabold">Thua Bán kết 2</div>
+            </Card>
           </div>
         </div>
       </div>
 
       {/* Tracking table */}
-      <div style={{ marginTop: 16, background: "#FFFDF7", border: "1px solid rgba(10,31,26,.12)", borderRadius: 22, padding: 22, overflowX: "auto" }}>
-        <div style={{ fontFamily: "var(--font-jetbrains), monospace", fontSize: 10, letterSpacing: ".16em", color: "#5B7A72", marginBottom: 14 }}>
+      <div className="mt-4 overflow-x-auto rounded-[22px] border border-[rgba(10,31,26,.12)] bg-[#FFFDF7] p-[22px]">
+        <div className="mb-3.5 font-[family-name:var(--font-jetbrains)] text-[10px] tracking-[.16em] text-[#5B7A72]">
           BẢNG THEO DÕI THEO VÒNG
         </div>
-        <div style={{ minWidth: 640 }}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr repeat(5,44px) 46px 46px 96px",
-              gap: 8,
-              paddingBottom: 9,
-              borderBottom: "1px solid rgba(10,31,26,.12)",
-              fontFamily: "var(--font-jetbrains), monospace",
-              fontSize: 9.5,
-              letterSpacing: ".08em",
-              color: "#8AA39C",
-            }}
-          >
-            <div>ĐỘI</div>
-            <div style={{ textAlign: "center" }}>R1</div>
-            <div style={{ textAlign: "center" }}>R2</div>
-            <div style={{ textAlign: "center" }}>R3</div>
-            <div style={{ textAlign: "center" }}>R4</div>
-            <div style={{ textAlign: "center" }}>R5</div>
-            <div style={{ textAlign: "center" }}>T</div>
-            <div style={{ textAlign: "center" }}>B</div>
-            <div style={{ textAlign: "center" }}>TRẠNG THÁI</div>
-          </div>
-          {trackRows.map((r) => (
-            <div
-              key={r.teamId}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr repeat(5,44px) 46px 46px 96px",
-                gap: 8,
-                alignItems: "center",
-                padding: "9px 0",
-                borderBottom: "1px solid rgba(10,31,26,.07)",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                <TeamAvatars teamId={r.teamId} size={22} />
-                <span style={{ fontSize: 13.5, fontWeight: 700 }}>{r.name}</span>
-              </div>
-              {r.cells.map((c, i) => (
-                <div key={i} style={{ textAlign: "center", fontFamily: "var(--font-jetbrains), monospace", fontSize: 12, fontWeight: Number(c.weight), color: c.color }}>
-                  {c.v}
-                </div>
-              ))}
-              <div style={{ textAlign: "center", fontFamily: "var(--font-jetbrains), monospace", fontSize: 13, fontWeight: 700, color: "#1F7A45" }}>
-                {r.w}
-              </div>
-              <div style={{ textAlign: "center", fontFamily: "var(--font-jetbrains), monospace", fontSize: 13, fontWeight: 700, color: "#B5562B" }}>
-                {r.l}
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <span
-                  style={{
-                    display: "inline-block",
-                    background: r.statusBg,
-                    color: r.statusFg,
-                    borderRadius: 6,
-                    padding: "3px 9px",
-                    fontSize: 10.5,
-                    fontWeight: 700,
-                  }}
+        <Table className="min-w-[640px]">
+          <TableHeader>
+            <TableRow className="border-[rgba(10,31,26,.12)] hover:bg-transparent">
+              <TableHead className="h-auto px-0 pb-[9px] font-[family-name:var(--font-jetbrains)] text-[9.5px] tracking-[.08em] text-[#8AA39C]">
+                ĐỘI
+              </TableHead>
+              {["R1", "R2", "R3", "R4", "R5", "T", "B"].map((h) => (
+                <TableHead
+                  key={h}
+                  className="h-auto px-0 pb-[9px] text-center font-[family-name:var(--font-jetbrains)] text-[9.5px] tracking-[.08em] text-[#8AA39C]"
                 >
-                  {r.status}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+                  {h}
+                </TableHead>
+              ))}
+              <TableHead className="h-auto px-0 pb-[9px] text-center font-[family-name:var(--font-jetbrains)] text-[9.5px] tracking-[.08em] text-[#8AA39C]">
+                TRẠNG THÁI
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {trackRows.map((r) => (
+              <TableRow key={r.teamId} className="border-[rgba(10,31,26,.07)] hover:bg-transparent">
+                <TableCell className="px-0 py-[9px]">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <TeamAvatars teamId={r.teamId} size={22} />
+                    <span className="text-[13.5px] font-bold">{r.name}</span>
+                  </div>
+                </TableCell>
+                {r.cells.map((c, i) => (
+                  <TableCell
+                    key={i}
+                    className="px-0 py-[9px] text-center font-[family-name:var(--font-jetbrains)] text-xs"
+                    style={{ fontWeight: Number(c.weight), color: c.color }}
+                  >
+                    {c.v}
+                  </TableCell>
+                ))}
+                <TableCell className="px-0 py-[9px] text-center font-[family-name:var(--font-jetbrains)] text-[13px] font-bold text-[#1F7A45]">
+                  {r.w}
+                </TableCell>
+                <TableCell className="px-0 py-[9px] text-center font-[family-name:var(--font-jetbrains)] text-[13px] font-bold text-[#B5562B]">
+                  {r.l}
+                </TableCell>
+                <TableCell className="px-0 py-[9px] text-center">
+                  <Badge
+                    className="rounded-md px-2.5 py-[3px] text-[10.5px] font-bold"
+                    style={{ background: r.statusBg, color: r.statusFg }}
+                  >
+                    {r.status}
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </>
   );

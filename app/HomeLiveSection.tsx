@@ -3,6 +3,9 @@
 import { useLiveMatches } from "@/lib/supabase/useLiveMatches";
 import { computeLiveMatch, computeRecentResults } from "@/lib/tournament/standings";
 import type { IMatch } from "@/lib/tournament/data";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { LivePulse } from "@/components/brand/LivePulse";
 
 interface IHomeLiveSectionProps {
   initialMatches: IMatch[];
@@ -24,168 +27,65 @@ export function HomeLiveSection({ initialMatches, pairIdToTeamId }: IHomeLiveSec
   return (
     <>
       {live && (
-        <div
-          style={{
-            gridColumn: "span 1",
-            background: "#0A1F1A",
-            borderRadius: 22,
-            padding: 26,
-            color: "#FFFDF7",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-            <span
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: "50%",
-                background: "#FF5A47",
-                animation: "livePulse 1.3s ease-in-out infinite",
-              }}
-            />
-            <span
-              style={{
-                fontFamily: "var(--font-jetbrains), monospace",
-                fontSize: 11,
-                letterSpacing: ".18em",
-                color: "#FF8C7D",
-              }}
+        <Card className="col-span-1 gap-0 overflow-hidden rounded-[22px] border-none bg-[var(--color-dark)] p-[26px] text-cream">
+          <div className="flex items-center gap-[9px]">
+            <LivePulse />
+            <Badge
+              variant="outline"
+              className="rounded-none border-none bg-transparent p-0 font-mono text-[11px] tracking-[.18em] text-[#FF8C7D]"
             >
               ĐANG THI ĐẤU
-            </span>
-            <span
-              style={{
-                marginLeft: "auto",
-                fontFamily: "var(--font-jetbrains), monospace",
-                fontSize: 11,
-                color: "#6E8A83",
-              }}
-            >
+            </Badge>
+            <span className="ml-auto font-mono text-[11px] text-[#6E8A83]">
               {live.round} · SÂN {live.court}
             </span>
           </div>
-          <div
-            style={{
-              marginTop: 22,
-              display: "grid",
-              gridTemplateColumns: "1fr auto 1fr",
-              alignItems: "center",
-              gap: 14,
-            }}
-          >
+          <div className="mt-[22px] grid grid-cols-[1fr_auto_1fr] items-center gap-[14px]">
             <div>
-              <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: ".04em", color: "#8FBCB0" }}>
-                {live.aName}
-              </div>
-              <div style={{ fontSize: 17, fontWeight: 700, marginTop: 5, lineHeight: 1.3 }}>{live.aPlayers}</div>
+              <div className="text-[13px] font-extrabold tracking-[.04em] text-[#8FBCB0]">{live.aName}</div>
+              <div className="mt-[5px] text-[17px] font-bold leading-[1.3]">{live.aPlayers}</div>
             </div>
-            <div
-              style={{
-                fontFamily: "var(--font-jetbrains), monospace",
-                fontWeight: 700,
-                fontSize: "clamp(38px,6vw,54px)",
-                letterSpacing: "-.03em",
-                whiteSpace: "nowrap",
-              }}
-            >
+            <div className="whitespace-nowrap font-mono text-[clamp(38px,6vw,54px)] font-bold tracking-[-.03em]">
               {live.aScore}
-              <span style={{ color: "#496660", margin: "0 6px" }}>:</span>
+              <span className="mx-[6px] text-[#496660]">:</span>
               {live.bScore}
             </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: ".04em", color: "#8FBCB0" }}>
-                {live.bName}
-              </div>
-              <div style={{ fontSize: 17, fontWeight: 700, marginTop: 5, lineHeight: 1.3 }}>{live.bPlayers}</div>
+            <div className="text-right">
+              <div className="text-[13px] font-extrabold tracking-[.04em] text-[#8FBCB0]">{live.bName}</div>
+              <div className="mt-[5px] text-[17px] font-bold leading-[1.3]">{live.bPlayers}</div>
             </div>
           </div>
-          <div
-            style={{
-              marginTop: 22,
-              height: 5,
-              borderRadius: 999,
-              background: "rgba(255,255,255,.12)",
-              overflow: "hidden",
-            }}
-          >
-            <div style={{ height: "100%", background: "#F2B544", borderRadius: 999, width: live.pct }} />
+          <div className="mt-[22px] h-[5px] overflow-hidden rounded-full bg-white/12">
+            {/* live.pct is a runtime percentage string ("81%") — kept as an inline dynamic width
+                rather than forced through shadcn Progress (which expects a numeric 0-100 value
+                and would need re-parsing the same string right back out). */}
+            <div className="h-full rounded-full bg-secondary" style={{ width: live.pct }} />
           </div>
-          <div
-            style={{
-              marginTop: 10,
-              fontFamily: "var(--font-jetbrains), monospace",
-              fontSize: 10,
-              color: "#6E8A83",
-            }}
-          >
-            CHẠM 21 · CÁCH BIỆT 2 ĐIỂM
-          </div>
-        </div>
+          <div className="mt-[10px] font-mono text-[10px] text-[#6E8A83]">CHẠM 21 · CÁCH BIỆT 2 ĐIỂM</div>
+        </Card>
       )}
 
-      <div style={{ background: "#FFFDF7", border: "1px solid rgba(10,31,26,.12)", borderRadius: 22, padding: 26 }}>
-        <div
-          style={{
-            fontFamily: "var(--font-jetbrains), monospace",
-            fontSize: 10,
-            letterSpacing: ".16em",
-            color: "#5B7A72",
-          }}
-        >
-          KẾT QUẢ GẦN NHẤT
-        </div>
-        <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 2 }}>
+      <Card className="gap-0 rounded-[22px] border-[rgba(10,31,26,.12)] bg-cream p-[26px]">
+        <div className="font-mono text-[10px] tracking-[.16em] text-[#5B7A72]">KẾT QUẢ GẦN NHẤT</div>
+        <div className="mt-4 flex flex-col gap-0.5">
           {recent.map((m) => (
             <div
               key={m.code}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                padding: "11px 0",
-                borderBottom: "1px solid rgba(10,31,26,.08)",
-              }}
+              className="flex items-center gap-3 border-b border-[rgba(10,31,26,.08)] py-[11px]"
             >
-              <span style={{ fontSize: 14, fontWeight: 700, flex: 1, minWidth: 0 }}>{m.aName}</span>
-              <span
-                style={{
-                  fontFamily: "var(--font-jetbrains), monospace",
-                  fontSize: 15,
-                  fontWeight: 700,
-                  flex: "none",
-                }}
-              >
-                {m.score}
-              </span>
-              <span
-                style={{ fontSize: 14, fontWeight: 700, flex: 1, minWidth: 0, textAlign: "right", color: "#5B7A72" }}
-              >
-                {m.bName}
-              </span>
+              <span className="min-w-0 flex-1 text-sm font-bold">{m.aName}</span>
+              <span className="flex-none font-mono text-[15px] font-bold">{m.score}</span>
+              <span className="min-w-0 flex-1 text-right text-sm font-bold text-[#5B7A72]">{m.bName}</span>
             </div>
           ))}
           {recent.length === 0 && (
-            <div style={{ fontSize: 13, color: "#8AA39C", fontStyle: "italic", padding: "11px 0" }}>
-              Chưa có kết quả nào.
-            </div>
+            <div className="py-[11px] text-[13px] italic text-[#8AA39C]">Chưa có kết quả nào.</div>
           )}
         </div>
-        <a
-          href="/schedule"
-          style={{
-            marginTop: 16,
-            display: "inline-block",
-            fontFamily: "var(--font-archivo), sans-serif",
-            fontSize: 13,
-            fontWeight: 700,
-            color: "#0B5D4E",
-          }}
-        >
+        <a href="/schedule" className="mt-4 inline-block font-sans text-[13px] font-bold text-[#0B5D4E]">
           Xem toàn bộ lịch đấu →
         </a>
-      </div>
+      </Card>
     </>
   );
 }

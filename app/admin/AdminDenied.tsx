@@ -1,6 +1,9 @@
 "use client";
 
 import { useRefereeAuth } from "@/contexts/RefereeAuthContext";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 
 interface IAdminDeniedProps {
   email: string | null;
@@ -16,67 +19,30 @@ export function AdminDenied({ email }: IAdminDeniedProps) {
   const { signOut } = useRefereeAuth();
 
   return (
-    <div
-      style={{
-        maxWidth: 420,
-        margin: "6vh auto",
-        background: "#FFFDF7",
-        border: "1px solid rgba(10,31,26,.12)",
-        borderRadius: 24,
-        padding: 36,
-        textAlign: "center",
-      }}
-    >
-      <div
-        style={{
-          width: 48,
-          height: 48,
-          margin: "0 auto",
-          borderRadius: "50%",
-          background: "#FF5A47",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <div style={{ width: 16, height: 16, borderRadius: "50%", background: "#F4F1E6" }} />
-      </div>
-      <h2
-        style={{
-          margin: "20px 0 0",
-          fontFamily: "var(--font-bricolage), Archivo, sans-serif",
-          fontSize: 26,
-          fontWeight: 900,
-          letterSpacing: "-.03em",
-        }}
-      >
-        Chưa được cấp quyền
-      </h2>
-      <p style={{ margin: "10px 0 0", fontSize: 14, lineHeight: 1.6, color: "#5B7A72" }}>
-        Tài khoản {email ?? "này"} chưa nằm trong danh sách quản trị viên được cấp quyền. Liên hệ
-        ban tổ chức nếu bạn cần quyền truy cập khu vực quản trị.
-      </p>
-      <button
-        type="button"
-        onClick={() => {
-          void signOut();
-        }}
-        style={{
-          marginTop: 24,
-          width: "100%",
-          border: "1px solid rgba(10,31,26,.2)",
-          background: "transparent",
-          padding: 14,
-          borderRadius: 12,
-          cursor: "pointer",
-          fontFamily: "var(--font-archivo), sans-serif",
-          fontSize: 14,
-          fontWeight: 700,
-          color: "#3C5A53",
-        }}
-      >
-        Đăng xuất
-      </button>
-    </div>
+    <Card className="max-w-[420px] mx-auto my-[6vh] rounded-[24px] p-9 text-center gap-0">
+      <CardContent className="p-0">
+        <div className="w-12 h-12 mx-auto rounded-full bg-destructive flex items-center justify-center">
+          <div className="w-4 h-4 rounded-full bg-background" />
+        </div>
+        <h2 className="mt-5 font-[family-name:var(--font-bricolage)] text-[26px] font-black tracking-[-.03em]">
+          Chưa được cấp quyền
+        </h2>
+        <p className="mt-2.5 text-sm leading-relaxed text-text-muted">
+          Tài khoản {email ?? "này"} chưa nằm trong danh sách quản trị viên được cấp quyền. Liên hệ
+          ban tổ chức nếu bạn cần quyền truy cập khu vực quản trị.
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          className="mt-6 w-full"
+          onClick={() => {
+            void signOut();
+          }}
+        >
+          <LogOut />
+          Đăng xuất
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
