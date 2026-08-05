@@ -21,7 +21,10 @@ export function MvpControlPanel({ initial }: { initial: IMvpStatus }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const [minutes, setMinutes] = useState(10);
+  const [days, setDays] = useState(0);
+  const [hours, setHours] = useState(1);
+  const [mins, setMins] = useState(0);
+  const totalMinutes = days * 1440 + hours * 60 + mins;
   const { votedCount, totalEligible } = useMvpTurnout(initial.votedCount, initial.totalEligible);
 
   async function run(action: () => Promise<void>) {
@@ -115,13 +118,26 @@ export function MvpControlPanel({ initial }: { initial: IMvpStatus }) {
       <p className="text-sm text-muted-foreground">
         Chỉ những người trong danh sách bên dưới mới có thể bình chọn.
       </p>
-      <div className="flex flex-col gap-1">
-        <Label htmlFor="mvp-minutes">Thời gian (phút)</Label>
-        <Input id="mvp-minutes" type="number" min={1} value={minutes} disabled={busy}
-          onChange={(e) => setMinutes(Number(e.target.value))} className="h-10 w-32" />
+      <div className="flex flex-wrap gap-3">
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="mvp-days">Ngày</Label>
+          <Input id="mvp-days" type="number" min={0} value={days} disabled={busy}
+            onChange={(e) => setDays(Math.max(0, Number(e.target.value)))} className="h-10 w-24" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="mvp-hours">Giờ</Label>
+          <Input id="mvp-hours" type="number" min={0} value={hours} disabled={busy}
+            onChange={(e) => setHours(Math.max(0, Number(e.target.value)))} className="h-10 w-24" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="mvp-mins">Phút</Label>
+          <Input id="mvp-mins" type="number" min={0} value={mins} disabled={busy}
+            onChange={(e) => setMins(Math.max(0, Number(e.target.value)))} className="h-10 w-24" />
+        </div>
       </div>
-      <Button variant="success" disabled={busy || minutes < 1} className="w-fit"
-        onClick={() => void run(() => openMvpVote(minutes))}>
+      <p className="text-xs text-muted-foreground">Tổng thời gian: {totalMinutes} phút</p>
+      <Button variant="success" disabled={busy || totalMinutes < 1} className="w-fit"
+        onClick={() => void run(() => openMvpVote(totalMinutes))}>
         {busy ? <Loader2 className="animate-spin" /> : <Play />} Mở bình chọn
       </Button>
       {msg && <p className="text-sm text-destructive">{msg}</p>}
