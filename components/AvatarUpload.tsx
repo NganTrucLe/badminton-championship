@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { Loader2, Upload } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
 
 interface IAvatarUploadProps {
@@ -47,24 +50,37 @@ export function AvatarUpload({ playerId, currentUrl, onUploaded, disabled }: IAv
   }
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      {currentUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={currentUrl} alt="" width={40} height={40} style={{ borderRadius: "50%", objectFit: "cover" }} />
-      ) : (
-        <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#C9D6D2" }} />
-      )}
-      <label style={{ fontSize: 12, fontWeight: 700, color: "#0B5D4E", cursor: busy ? "wait" : disabled ? "not-allowed" : "pointer" }}>
-        {busy ? "Đang tải…" : "Tải ảnh"}
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => void handleFile(e)}
-          disabled={busy || disabled}
-          style={{ display: "none" }}
-        />
-      </label>
-      {err && <span style={{ fontSize: 11, color: "#B0435F" }}>{err}</span>}
+    <div className="flex items-center gap-2.5">
+      <Avatar style={{ width: 40, height: 40 }}>
+        {currentUrl ? (
+          <AvatarImage src={currentUrl} alt="" />
+        ) : (
+          <AvatarFallback style={{ backgroundColor: "#C9D6D2" }} />
+        )}
+      </Avatar>
+      <Button asChild variant="outline" size="sm" disabled={busy || disabled}>
+        <label style={{ cursor: busy ? "wait" : disabled ? "not-allowed" : "pointer" }}>
+          {busy ? (
+            <>
+              <Loader2 className="animate-spin" />
+              Đang tải…
+            </>
+          ) : (
+            <>
+              <Upload />
+              Tải ảnh
+            </>
+          )}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => void handleFile(e)}
+            disabled={busy || disabled}
+            style={{ display: "none" }}
+          />
+        </label>
+      </Button>
+      {err && <span className="text-[11px] text-[#B0435F]">{err}</span>}
     </div>
   );
 }
