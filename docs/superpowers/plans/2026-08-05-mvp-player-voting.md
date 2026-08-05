@@ -2,9 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Let a referee run a single time-boxed, passcode-gated MVP vote per tournament in which 16 allow-listed players sign in with Google and anonymously each pick one male and one female MVP, with live turnout for the referee and final winners shown to everyone (and advertised on the landing page as a sport-shirt prize).
+**Goal:** Let a referee run a single time-boxed MVP vote per tournament in which 16 allow-listed players sign in with Google and anonymously each pick one male and one female MVP, with live turnout for the referee and final winners shown to everyone (and advertised on the landing page as a sport-shirt prize).
 
-**Architecture:** Add a `gender` column to `players` (every player is a candidate) plus four new tables — `mvp_vote` (singleton state: passcode, deadline, status), `mvp_voter_allowlist` (16 eligible emails), `mvp_receipts` (one row per voter — proves participation, no choice) and `mvp_ballots` (choices — gender + candidate, **no voter reference**). Anonymity is structural: a single `SECURITY DEFINER` RPC `cast_mvp_vote()` writes one receipt + two ballots in one transaction, so the app can never join a person to their choice. All reads that must hide the passcode or gate results-by-time go through `SECURITY DEFINER` RPCs (`get_mvp_status`, `get_mvp_results`). Referee turnout is live via Supabase Realtime on `mvp_receipts`. UI follows the existing organizer-gated client-mutation pattern and the landing-page `<Suspense>` streaming pattern.
+**Eligibility (no passcode):** Anyone can sign in with Google, but only the 16 allow-listed emails can cast a vote — enforced server-side in `cast_mvp_vote()` via `is_mvp_voter()`. This replaces the passcode entirely: the allow-list is a stronger, per-identity gate than a shared code.
+
+**Architecture:** Add a `gender` column to `players` (every player is a candidate) plus four new tables — `mvp_vote` (singleton state: deadline, status), `mvp_voter_allowlist` (16 eligible emails), `mvp_receipts` (one row per voter — proves participation, no choice) and `mvp_ballots` (choices — gender + candidate, **no voter reference**). Anonymity is structural: a single `SECURITY DEFINER` RPC `cast_mvp_vote()` writes one receipt + two ballots in one transaction, so the app can never join a person to their choice. Reads that gate results-by-time go through `SECURITY DEFINER` RPCs (`get_mvp_status`, `get_mvp_results`). Referee turnout is live via Supabase Realtime on `mvp_receipts`. UI follows the existing organizer-gated client-mutation pattern and the landing-page `<Suspense>` streaming pattern.
 
 **Tech Stack:** Next.js 16 (App Router) · React 19 · TypeScript 5 · Tailwind v4 (inline-style + CSS-var tokens) · Supabase (`@supabase/ssr`, Postgres + RLS + Realtime + Google OAuth) · Vitest 4 + Testing Library.
 
@@ -34,7 +36,7 @@
 - `lib/tournament/__tests__/mvp.test.ts` — unit tests for the pure logic.
 - `lib/supabase/mvp.ts` — typed query/mutation/RPC wrappers (server + client).
 - `app/vote/page.tsx` — public voting route (server shell).
-- `app/vote/VoteFlow.tsx` — `"use client"` voting flow (login → passcode → pick → submit → result).
+- `app/vote/VoteFlow.tsx` — `"use client"` voting flow (login → pick → submit → result).
 - `app/vote/loading.tsx` — route-transition skeleton.
 - `app/admin/mvp/page.tsx` — organizer MVP control route (server shell + Suspense).
 - `app/admin/mvp/MvpControlPanel.tsx` — `"use client"` start/close/reset + live turnout.
@@ -93,11 +95,10 @@ export interface IMvpStatus {
 RPC signatures (defined in Task 2):
 
 - `is_mvp_voter() → boolean`
-- `verify_mvp_passcode(p_passcode text) → boolean`
 - `get_mvp_status() → json` (keys: `status, deadline, voted_count, total_eligible, is_eligible, has_voted`)
 - `get_mvp_results() → setof (gender text, candidate_id uuid, votes bigint)` (empty unless effectively closed)
-- `cast_mvp_vote(p_passcode text, p_male_id uuid, p_female_id uuid) → void`
-- `open_mvp_vote(p_passcode text, p_minutes int) → void` (organizer)
+- `cast_mvp_vote(p_male_id uuid, p_female_id uuid) → void`
+- `open_mvp_vote(p_minutes int) → void` (organizer)
 - `close_mvp_vote() → void` (organizer)
 - `reset_mvp_vote() → void` (organizer)
 
@@ -124,11 +125,10 @@ alter table public.players
   add column if not exists gender text
   check (gender is null or gender in ('male', 'female'));
 
--- 2. Singleton vote state (mirrors public.tournament). Passcode is NEVER client-readable.
+-- 2. Singleton vote state (mirrors public.tournament).
 create table if not exists public.mvp_vote (
   id boolean primary key default true check (id),
   status text not null default 'idle' check (status in ('idle', 'open', 'closed')),
-  passcode text,
   opened_at timestamptz,
   deadline timestamptz,
   updated_at timestamptz not null default now()
@@ -175,7 +175,7 @@ alter table public.mvp_voter_allowlist enable row level security;
 alter table public.mvp_receipts enable row level security;
 alter table public.mvp_ballots enable row level security;
 
--- mvp_vote: organizer may SELECT (needs passcode to manage); no public select (passcode secret).
+-- mvp_vote: organizer may SELECT (manage). Anon/voters read state via get_mvp_status() RPC.
 --           No direct write policy — writes go only through RPCs.
 create policy "organizers read mvp_vote" on public.mvp_vote
   for select using (public.is_organizer());
@@ -267,21 +267,7 @@ $$;
 revoke all on function public.is_mvp_voter() from public;
 grant execute on function public.is_mvp_voter() to anon, authenticated;
 
--- Passcode gate for the UI (does NOT record anything).
-create or replace function public.verify_mvp_passcode(p_passcode text)
-  returns boolean language sql security definer set search_path = public stable
-as $$
-  select exists (
-    select 1 from public.mvp_vote v
-    where v.id = true and v.status = 'open'
-      and v.deadline is not null and now() < v.deadline
-      and v.passcode = p_passcode
-  );
-$$;
-revoke all on function public.verify_mvp_passcode(text) from public;
-grant execute on function public.verify_mvp_passcode(text) to authenticated;
-
--- Public status snapshot. Excludes passcode. Collapses past-deadline -> 'closed'.
+-- Public status snapshot. Collapses past-deadline -> 'closed'.
 create or replace function public.get_mvp_status()
   returns json language sql security definer set search_path = public stable
 as $$
@@ -319,9 +305,9 @@ $$;
 revoke all on function public.get_mvp_results() from public;
 grant execute on function public.get_mvp_results() to anon, authenticated;
 
--- Cast a ballot: 1 receipt + 2 ballots, atomic. Enforces eligibility, passcode, window, no-double.
+-- Cast a ballot: 1 receipt + 2 ballots, atomic. Enforces eligibility, window, no-double.
 create or replace function public.cast_mvp_vote(
-  p_passcode text, p_male_id uuid, p_female_id uuid)
+  p_male_id uuid, p_female_id uuid)
   returns void language plpgsql security definer set search_path = public
 as $$
 declare
@@ -333,13 +319,8 @@ begin
   if not public.is_mvp_voter() then
     raise exception 'not eligible to vote' using errcode = '42501';
   end if;
-  if not exists (
-    select 1 from public.mvp_vote v
-    where v.id = true and v.status = 'open'
-      and v.deadline is not null and now() < v.deadline
-      and v.passcode = p_passcode
-  ) then
-    raise exception 'voting is not open or passcode is wrong' using errcode = '42501';
+  if not public.is_mvp_open() then
+    raise exception 'voting is not open' using errcode = '42501';
   end if;
   if exists (select 1 from public.mvp_receipts r where r.email = v_email) then
     raise exception 'already voted' using errcode = '42501';
@@ -358,19 +339,16 @@ begin
     values ('male', p_male_id), ('female', p_female_id);
 end;
 $$;
-revoke all on function public.cast_mvp_vote(text, uuid, uuid) from public;
-grant execute on function public.cast_mvp_vote(text, uuid, uuid) to authenticated;
+revoke all on function public.cast_mvp_vote(uuid, uuid) from public;
+grant execute on function public.cast_mvp_vote(uuid, uuid) to authenticated;
 
 -- Organizer: open a fresh vote. Wipes prior receipts/ballots so re-runs start clean.
-create or replace function public.open_mvp_vote(p_passcode text, p_minutes int)
+create or replace function public.open_mvp_vote(p_minutes int)
   returns void language plpgsql security definer set search_path = public
 as $$
 begin
   if not public.is_organizer() then
     raise exception 'not authorized' using errcode = '42501';
-  end if;
-  if p_passcode is null or length(trim(p_passcode)) = 0 then
-    raise exception 'passcode required' using errcode = '22023';
   end if;
   if p_minutes is null or p_minutes <= 0 then
     raise exception 'minutes must be positive' using errcode = '22023';
@@ -387,14 +365,14 @@ begin
   delete from public.mvp_ballots;
   delete from public.mvp_receipts;
   update public.mvp_vote
-    set status = 'open', passcode = p_passcode,
+    set status = 'open',
         opened_at = now(), deadline = now() + make_interval(mins => p_minutes),
         updated_at = now()
     where id = true;
 end;
 $$;
-revoke all on function public.open_mvp_vote(text, int) from public;
-grant execute on function public.open_mvp_vote(text, int) to authenticated;
+revoke all on function public.open_mvp_vote(int) from public;
+grant execute on function public.open_mvp_vote(int) to authenticated;
 
 -- Organizer: end the vote now (results become visible).
 create or replace function public.close_mvp_vote()
@@ -421,7 +399,7 @@ begin
   delete from public.mvp_ballots;
   delete from public.mvp_receipts;
   update public.mvp_vote
-    set status = 'idle', passcode = null, opened_at = null, deadline = null,
+    set status = 'idle', opened_at = null, deadline = null,
         updated_at = now()
     where id = true;
 end;
@@ -449,15 +427,15 @@ insert into public.mvp_voter_allowlist (email) values ('voter@example.com');
 select count(*) from public.get_mvp_results();                    -- 0
 
 -- open as organizer (run with a JWT whose email is in organizers; via app or set request.jwt.claims)
-select public.open_mvp_vote('1234', 60);
+select public.open_mvp_vote(60);
 select status, (deadline > now()) from public.mvp_vote;           -- open, t
 
 -- results still hidden while open
 select count(*) from public.get_mvp_results();                    -- 0
 
 -- (as voter@example.com) cast a vote, then double-vote is blocked
-select public.cast_mvp_vote('1234', '<PLAYER_M>', '<PLAYER_F>');  -- ok
-select public.cast_mvp_vote('1234', '<PLAYER_M>', '<PLAYER_F>');  -- ERROR: already voted
+select public.cast_mvp_vote('<PLAYER_M>', '<PLAYER_F>');          -- ok
+select public.cast_mvp_vote('<PLAYER_M>', '<PLAYER_F>');          -- ERROR: already voted
 select count(*) from public.mvp_receipts;                         -- 1
 select count(*) from public.mvp_ballots;                          -- 2
 
@@ -465,7 +443,7 @@ select count(*) from public.mvp_ballots;                          -- 2
 select public.close_mvp_vote();
 select gender, votes from public.get_mvp_results() order by gender; -- female:1, male:1
 ```
-Expected: each assertion matches the comment; `cast_mvp_vote` with a wrong passcode or a non-allow-listed email raises `42501`.
+Expected: each assertion matches the comment; `cast_mvp_vote` from a non-allow-listed email (or while the vote is not open) raises `42501`.
 
 > **Note on JWT in psql:** to exercise `auth.jwt()`-dependent functions locally, wrap calls in a transaction that sets the claim, e.g. `set local request.jwt.claims = '{"email":"voter@example.com"}';` before the `cast_mvp_vote` call, and an organizer email before `open_mvp_vote`. If running these through the app instead of psql, sign in as each role.
 
@@ -712,11 +690,11 @@ git commit -m "feat(mvp): add pure MVP tally and status logic with tests"
 
 **Interfaces:**
 - Consumes: types + `tallyBallots` from Task 3; RPCs from Task 2; the three Supabase clients (`createServerSupabaseClient`, `createAuthServerClient`, `createBrowserSupabaseClient`).
-- Produces: `getMvpCandidates`, `getMvpStatus`, `getMvpResults` (server); `castMvpVote`, `verifyMvpPasscode`, `openMvpVote`, `closeMvpVote`, `resetMvpVote`, `getMvpVoterAllowlist`, `addMvpVoter`, `removeMvpVoter` (client/RPC).
+- Produces: `getMvpCandidates`, `getMvpStatus`, `getMvpResults` (server); `castMvpVote`, `openMvpVote`, `closeMvpVote`, `resetMvpVote`, `getMvpVoterAllowlist`, `addMvpVoter`, `removeMvpVoter` (client/RPC).
 
 - [ ] **Step 1: Extend `database.types.ts`**
 
-In `lib/supabase/database.types.ts`, add to the `public.Tables` block (matching the existing generated shape) entries for `mvp_vote`, `mvp_voter_allowlist`, `mvp_receipts`, `mvp_ballots`, add `gender: string | null` to `players` Row/Insert/Update, and add to the `Functions` block: `is_mvp_voter`, `is_mvp_open`, `verify_mvp_passcode`, `get_mvp_status`, `get_mvp_results`, `cast_mvp_vote`, `open_mvp_vote`, `close_mvp_vote`, `reset_mvp_vote` with argument/return types mirroring Task 2. Follow the exact style of the existing `is_organizer` / `start_tournament` declarations already in the file. If the Supabase CLI is available, prefer `supabase gen types typescript --local > lib/supabase/database.types.ts` and then re-check the file compiles.
+In `lib/supabase/database.types.ts`, add to the `public.Tables` block (matching the existing generated shape) entries for `mvp_vote`, `mvp_voter_allowlist`, `mvp_receipts`, `mvp_ballots`, add `gender: string | null` to `players` Row/Insert/Update, and add to the `Functions` block: `is_mvp_voter`, `is_mvp_open`, `get_mvp_status`, `get_mvp_results`, `cast_mvp_vote`, `open_mvp_vote`, `close_mvp_vote`, `reset_mvp_vote` with argument/return types mirroring Task 2. Follow the exact style of the existing `is_organizer` / `start_tournament` declarations already in the file. If the Supabase CLI is available, prefer `supabase gen types typescript --local > lib/supabase/database.types.ts` and then re-check the file compiles.
 
 - [ ] **Step 2: Write the data-layer module**
 
@@ -808,24 +786,17 @@ Then create the **client** helpers (they use the browser client, so keep them in
 
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
 
-export async function verifyMvpPasscode(passcode: string): Promise<boolean> {
-  const supabase = createBrowserSupabaseClient();
-  const { data, error } = await supabase.rpc("verify_mvp_passcode", { p_passcode: passcode });
-  if (error) throw new Error(error.message);
-  return data === true;
-}
-
-export async function castMvpVote(passcode: string, maleId: string, femaleId: string): Promise<void> {
+export async function castMvpVote(maleId: string, femaleId: string): Promise<void> {
   const supabase = createBrowserSupabaseClient();
   const { error } = await supabase.rpc("cast_mvp_vote", {
-    p_passcode: passcode, p_male_id: maleId, p_female_id: femaleId,
+    p_male_id: maleId, p_female_id: femaleId,
   });
   if (error) throw new Error(error.message);
 }
 
-export async function openMvpVote(passcode: string, minutes: number): Promise<void> {
+export async function openMvpVote(minutes: number): Promise<void> {
   const supabase = createBrowserSupabaseClient();
-  const { error } = await supabase.rpc("open_mvp_vote", { p_passcode: passcode, p_minutes: minutes });
+  const { error } = await supabase.rpc("open_mvp_vote", { p_minutes: minutes });
   if (error) throw new Error(error.message);
 }
 
@@ -1008,7 +979,6 @@ export function MvpControlPanel({ initial }: { initial: IMvpStatus }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const [passcode, setPasscode] = useState("");
   const [minutes, setMinutes] = useState(10);
   const { votedCount, totalEligible } = useMvpTurnout(initial.votedCount, initial.totalEligible);
 
@@ -1056,19 +1026,17 @@ export function MvpControlPanel({ initial }: { initial: IMvpStatus }) {
   return (
     <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <h2 style={{ fontFamily: "var(--font-bricolage)" }}>Bắt đầu bình chọn MVP</h2>
-      <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        <span>Mã bình chọn (passcode)</span>
-        <input value={passcode} onChange={(e) => setPasscode(e.target.value)}
-          style={{ padding: 8, borderRadius: 8, border: "1px solid #ddd" }} />
-      </label>
+      <p style={{ fontSize: 13, color: "#6b6b6b" }}>
+        Chỉ những người trong danh sách bên dưới mới có thể bình chọn.
+      </p>
       <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         <span>Thời gian (phút)</span>
         <input type="number" min={1} value={minutes}
           onChange={(e) => setMinutes(Number(e.target.value))}
           style={{ padding: 8, borderRadius: 8, border: "1px solid #ddd", width: 120 }} />
       </label>
-      <button disabled={busy || passcode.trim() === "" || minutes < 1}
-        onClick={() => run(() => openMvpVote(passcode.trim(), minutes), () => { setPasscode(""); })}
+      <button disabled={busy || minutes < 1}
+        onClick={() => run(() => openMvpVote(minutes), () => {})}
         style={{ padding: "10px 16px", borderRadius: 10, background: "var(--color-primary)", color: "#fff", border: "none" }}>
         {busy ? "Đang mở…" : "Mở bình chọn"}
       </button>
@@ -1206,7 +1174,7 @@ git commit -m "feat(mvp): add referee MVP control panel with live turnout and al
 - Create: `app/vote/loading.tsx`
 
 **Interfaces:**
-- Consumes: `getMvpStatus` + `getMvpCandidates` (Task 4, server); `verifyMvpPasscode` + `castMvpVote` (Task 4, client); `RefereeAuthContext` (`user`, `loading`, `signInWithGoogle(next)`); `groupCandidatesByGender`, `PlayerAvatar`.
+- Consumes: `getMvpStatus` + `getMvpCandidates` (Task 4, server); `castMvpVote` (Task 4, client); `RefereeAuthContext` (`user`, `loading`, `signInWithGoogle(next)`); `groupCandidatesByGender`, `PlayerAvatar`.
 - Produces: the end-to-end voter experience.
 
 - [ ] **Step 1: Route-transition skeleton**
@@ -1255,7 +1223,7 @@ Create `app/vote/VoteFlow.tsx` (`"use client"`). It is a small state machine ove
    - If `!user` (from `useRefereeAuth`) → "Đăng nhập bằng Google để bình chọn" button calling `signInWithGoogle("/vote")`.
    - Else if `!status.isEligible` → "Tài khoản của bạn không có trong danh sách bình chọn."
    - Else if `status.hasVoted` → "Bạn đã bình chọn. Cảm ơn!" (anonymity: never show their choice).
-   - Else → passcode step: input + "Vào bình chọn" → `verifyMvpPasscode`; on success show two candidate grids (male, female) with single-select each (using `PlayerAvatar`), then "Gửi bình chọn" → `castMvpVote(passcode, maleId, femaleId)`; on success show the thank-you state. Every button shows pending state.
+   - Else → show two candidate grids (male, female) with single-select each (using `PlayerAvatar`), then "Gửi bình chọn" → `castMvpVote(maleId, femaleId)`; on success show the thank-you state. Every button shows pending state.
 
 ```tsx
 "use client";
@@ -1264,15 +1232,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRefereeAuth } from "@/contexts/RefereeAuthContext";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
-import { castMvpVote, verifyMvpPasscode } from "@/lib/supabase/mvpClient";
+import { castMvpVote } from "@/lib/supabase/mvpClient";
 import type { IMvpCandidate, IMvpStatus } from "@/lib/tournament/mvp";
 
 export function VoteFlow({
   status, male, female,
 }: { status: IMvpStatus; male: IMvpCandidate[]; female: IMvpCandidate[] }) {
   const { user, loading, signInWithGoogle } = useRefereeAuth();
-  const [phase, setPhase] = useState<"passcode" | "pick" | "done">("passcode");
-  const [passcode, setPasscode] = useState("");
+  const [phase, setPhase] = useState<"pick" | "done">("pick");
   const [maleId, setMaleId] = useState<string | null>(null);
   const [femaleId, setFemaleId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -1293,37 +1260,13 @@ export function VoteFlow({
   if (!status.isEligible) return <p>Tài khoản của bạn không có trong danh sách bình chọn.</p>;
   if (status.hasVoted || phase === "done") return <p>Bạn đã bình chọn. Cảm ơn! 🏸</p>;
 
-  async function enter() {
-    setBusy(true); setMsg(null);
-    try {
-      const ok = await verifyMvpPasscode(passcode.trim());
-      if (!ok) { setMsg("Mã không đúng hoặc đã hết thời gian."); return; }
-      setPhase("pick");
-    } catch (e) { setMsg(`Lỗi: ${(e as Error).message}`); }
-    finally { setBusy(false); }
-  }
-
   async function submit() {
     if (!maleId || !femaleId) { setMsg("Hãy chọn 1 nam và 1 nữ."); return; }
     setBusy(true); setMsg(null);
-    try { await castMvpVote(passcode.trim(), maleId, femaleId); setPhase("done"); }
+    try { await castMvpVote(maleId, femaleId); setPhase("done"); }
     catch (e) { setMsg(`Lỗi: ${(e as Error).message}`); }
     finally { setBusy(false); }
   }
-
-  if (phase === "passcode")
-    return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <label>Nhập mã bình chọn</label>
-        <input value={passcode} onChange={(e) => setPasscode(e.target.value)}
-          style={{ padding: 10, borderRadius: 8, border: "1px solid #ddd" }} />
-        <button disabled={busy || passcode.trim() === ""} onClick={enter}
-          style={{ padding: "10px 16px", borderRadius: 10, background: "var(--color-primary)", color: "#fff", border: "none" }}>
-          {busy ? "Đang kiểm tra…" : "Vào bình chọn"}
-        </button>
-        {msg && <p>{msg}</p>}
-      </div>
-    );
 
   const Grid = ({ list, sel, onSel, title }: {
     list: IMvpCandidate[]; sel: string | null; onSel: (id: string) => void; title: string;
@@ -1362,13 +1305,13 @@ export function VoteFlow({
 - [ ] **Step 4: Verify build + manual walkthrough**
 
 Run: `npm run build`
-Expected: succeeds. Manual, with a vote open: visiting `/vote` signed-out prompts Google login; signed in as an allow-listed email, entering the correct passcode reveals the two grids; submitting one male + one female shows the thank-you state and blocks a second submission; a non-allow-listed account sees the ineligible message.
+Expected: succeeds. Manual, with a vote open: visiting `/vote` signed-out prompts Google login; signed in as an allow-listed email, the two candidate grids appear directly; submitting one male + one female shows the thank-you state and blocks a second submission; a non-allow-listed account sees the ineligible message.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add app/vote
-git commit -m "feat(mvp): add public MVP voting flow with Google login and passcode gate"
+git commit -m "feat(mvp): add public MVP voting flow with Google login and allow-list gate"
 ```
 
 ---
@@ -1466,11 +1409,12 @@ git commit -m "feat(mvp): add MVP prize and winners section to landing page"
 
 **1. Spec coverage:**
 - "Landing page prize for 1 male + 1 female MVP, voted by 16 players, prize = sport shirt" → Task 8 (blurb copy names the sport shirt + 16 voters) + Task 1 (gender) ✓
-- "Referee starts a voting session, adds time, sees number already voted, creates a passcode" → Task 2 (`open_mvp_vote(passcode, minutes)`) + Task 6 (control panel: passcode + minutes inputs, live `X/total` turnout via `useMvpTurnout`, countdown) ✓
-- "Players log in with Google and enter passcode to enter voting" → Task 7 (`signInWithGoogle` + passcode step via `verify_mvp_passcode`) ✓
+- "Referee starts a voting session, adds time, sees number already voted" → Task 2 (`open_mvp_vote(minutes)`) + Task 6 (control panel: minutes input, live `X/total` turnout via `useMvpTurnout`, countdown) ✓
+- "Only invited people can log in and vote" → Task 1/2 (allow-list + `is_mvp_voter()` enforced inside `cast_mvp_vote`; no passcode) + Task 7 (`signInWithGoogle`, then eligibility gate) + Task 6 (allow-list editor) ✓
 - "Voting is anonymous" → Task 1/2 (receipts vs. ballots split; `cast_mvp_vote` writes both, ballots hold no voter ref; ballots table has no SELECT policy) ✓
 - "When time's up or referee ends, everyone sees results" → Task 2 (`get_mvp_results` gated on closed-or-past-deadline; `get_mvp_status` collapses past-deadline → closed) + Task 8 (winners on landing) + Task 6 (manual close) ✓
 - Eligibility to exactly 16 → Task 1/2 allow-list + `is_mvp_voter`; Task 6 allow-list editor with `X/16` ✓
+- "Each user votes for exactly 1 male + 1 female" → Task 2 (`cast_mvp_vote(p_male_id, p_female_id)` validates each candidate's gender + writes exactly two ballots) + Task 7 (submit disabled until one of each is selected) ✓
 
 **2. Placeholder scan:** SQL, pure logic, data layer, and all four component files contain real code. Remaining "match the existing X" notes point at concrete files (`PlayerAvatar`, `Skeleton`, `Countdown`, `AdminSectionSkeleton`, `RefereeAuthContext`, the `patch`/`busyId` names in `PlayersEditor`) whose exact prop/handler names the implementer must confirm against source — these are verification instructions, not missing logic. No "TODO"/"add validation"/"similar to Task N" placeholders.
 
