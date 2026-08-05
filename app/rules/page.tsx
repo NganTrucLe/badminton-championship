@@ -1,3 +1,8 @@
+import { ListChecks, Users } from "lucide-react";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Reveal } from "@/components/motion";
+
 const SWISS_RULES: string[] = [
   "Mỗi trận đấu Bo1 — một ván duy nhất, chạm 21 điểm trước và cách biệt tối thiểu 2 điểm để thắng.",
   "Vòng 1: các đội được bốc thăm ghép cặp ngẫu nhiên.",
@@ -18,90 +23,54 @@ const DOUBLES_RULES: string[] = [
 ];
 
 function RuleSection({ n, title, rules }: { n: number; title: string; rules: string[] }) {
+  const Icon = n === 1 ? ListChecks : Users;
+
   return (
-    <div
-      style={{
-        marginTop: n === 1 ? 28 : 16,
-        background: "#FFFDF7",
-        border: "1px solid rgba(10,31,26,.12)",
-        borderRadius: 22,
-        padding: "clamp(22px,3vw,32px)",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <span
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: 8,
-            background: "#0B5D4E",
-            color: "#FFFDF7",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontFamily: "var(--font-jetbrains), monospace",
-            fontSize: 13,
-            fontWeight: 700,
-          }}
-        >
-          {n}
-        </span>
-        <h3 style={{ margin: 0, fontSize: 20, fontWeight: 900, letterSpacing: "-.02em" }}>{title}</h3>
-      </div>
-      <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 14 }}>
-        {rules.map((rule, i) => (
-          <div key={i} style={{ display: "flex", gap: 12 }}>
-            <span
-              style={{
-                fontFamily: "var(--font-jetbrains), monospace",
-                fontSize: 12,
-                color: "#8AA39C",
-                flex: "none",
-                width: 20,
-              }}
-            >
-              {i + 1}
-            </span>
-            <div style={{ fontSize: 14, lineHeight: 1.6 }}>{rule}</div>
-          </div>
-        ))}
-      </div>
-      {n === 2 && (
-        <div
-          style={{
-            marginTop: 18,
-            fontFamily: "var(--font-jetbrains), monospace",
-            fontSize: 11,
-            color: "#8AA39C",
-          }}
-        >
-          TRỌNG TÀI CÓ QUYỀN QUYẾT ĐỊNH CUỐI CÙNG TRONG MỌI TÌNH HUỐNG TRANH CHẤP.
+    <Card className={`${n === 1 ? "mt-7" : "mt-4"} rounded-[22px] border-border bg-card p-[clamp(22px,3vw,32px)]`}>
+      <CardContent className="p-0">
+        <div className="flex items-center gap-2.5">
+          <span className="flex size-7 items-center justify-center rounded-lg bg-primary font-[family-name:var(--font-jetbrains)] text-[13px] font-bold text-primary-foreground">
+            {n}
+          </span>
+          <Icon className="size-[18px] text-primary" aria-hidden="true" />
+          <h3 className="m-0 text-xl font-black tracking-[-.02em]">{title}</h3>
         </div>
-      )}
-    </div>
+        <div className="mt-[18px] flex flex-col gap-[14px]">
+          {rules.map((rule, i) => (
+            <div key={i} className="flex gap-3">
+              <span className="w-5 flex-none font-[family-name:var(--font-jetbrains)] text-xs text-text-faint">
+                {i + 1}
+              </span>
+              <div className="text-sm leading-[1.6]">{rule}</div>
+            </div>
+          ))}
+        </div>
+        {n === 2 && (
+          <div className="mt-[18px] font-[family-name:var(--font-jetbrains)] text-[11px] text-text-faint">
+            TRỌNG TÀI CÓ QUYỀN QUYẾT ĐỊNH CUỐI CÙNG TRONG MỌI TÌNH HUỐNG TRANH CHẤP.
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
 export default function RulesPage() {
   return (
-    <div style={{ maxWidth: 1000, margin: "0 auto", padding: "34px 20px 60px" }}>
-      <h2
-        style={{
-          margin: 0,
-          fontFamily: "var(--font-bricolage), Archivo, sans-serif",
-          fontSize: "clamp(30px,4.6vw,52px)",
-          fontWeight: 900,
-          letterSpacing: "-.035em",
-        }}
-      >
+    <div className="mx-auto max-w-[1000px] px-5 pt-[34px] pb-[60px]">
+      <h2 className="m-0 font-[family-name:var(--font-bricolage)] text-[clamp(30px,4.6vw,52px)] font-black tracking-[-.035em]">
         Quy tắc thi đấu
       </h2>
-      <p style={{ margin: "10px 0 0", maxWidth: 640, fontSize: 15, lineHeight: 1.6, color: "#3C5A53" }}>
+      <p className="mt-2.5 max-w-[640px] text-[15px] leading-[1.6] text-text-soft">
         Hai phần: thể thức giải (Swiss-system) và luật đánh cầu lông đôi tiêu chuẩn.
       </p>
 
-      <RuleSection n={1} title="Thể thức Swiss-system" rules={SWISS_RULES} />
-      <RuleSection n={2} title="Luật đánh cầu lông đôi" rules={DOUBLES_RULES} />
+      <Reveal delay={0}>
+        <RuleSection n={1} title="Thể thức Swiss-system" rules={SWISS_RULES} />
+      </Reveal>
+      <Reveal delay={0.08}>
+        <RuleSection n={2} title="Luật đánh cầu lông đôi" rules={DOUBLES_RULES} />
+      </Reveal>
     </div>
   );
 }
