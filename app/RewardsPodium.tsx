@@ -21,7 +21,7 @@ export async function RewardsPodium() {
             🥈
           </div>
           <div className="text-[19px] font-extrabold leading-[1.3] text-center">{second.title}</div>
-          <Card className="bg-card border border-border h-[150px] rounded-t-[20px] rounded-b-[10px] w-full flex flex-col items-center justify-center gap-1.5 p-0">
+          <Card className="bg-card border border-border h-[150px] rounded-t-[20px] rounded-b-[10px] w-full flex flex-col items-center justify-center gap-1.5 p-0 transition-transform duration-200 hover:-translate-y-0.5">
             <div className="font-[family-name:var(--font-jetbrains)] text-[11px] tracking-[.18em] text-[#5B7A72]">HẠNG NHÌ</div>
             <div className="text-[44px] font-black tracking-[-.05em] text-[#0B5D4E]">02</div>
             <div className="text-[13px] text-[#8AA39C]">{second.detail}</div>
@@ -35,7 +35,7 @@ export async function RewardsPodium() {
             🏆
           </div>
           <div className="text-[21px] font-black leading-[1.3] text-center">{first.title}</div>
-          <Card className="bg-[#F2B544] border-0 h-[200px] rounded-t-[24px] rounded-b-[10px] w-full flex flex-col items-center justify-center gap-2 p-0 text-[#08241E]">
+          <Card className="bg-[#F2B544] border-0 h-[200px] rounded-t-[24px] rounded-b-[10px] w-full flex flex-col items-center justify-center gap-2 p-0 text-[#08241E] transition-transform duration-200 hover:-translate-y-0.5">
             <div className="font-[family-name:var(--font-jetbrains)] text-[11px] tracking-[.18em]">HẠNG NHẤT</div>
             <div className="text-[56px] font-black tracking-[-.05em]">01</div>
             <div className="text-[14px] opacity-75">{first.detail}</div>
@@ -49,7 +49,7 @@ export async function RewardsPodium() {
             🥉
           </div>
           <div className="text-[19px] font-extrabold leading-[1.3] text-center">{third.title}</div>
-          <Card className="bg-card border border-border h-[130px] rounded-t-[20px] rounded-b-[10px] w-full flex flex-col items-center justify-center gap-1.5 p-0">
+          <Card className="bg-card border border-border h-[130px] rounded-t-[20px] rounded-b-[10px] w-full flex flex-col items-center justify-center gap-1.5 p-0 transition-transform duration-200 hover:-translate-y-0.5">
             <div className="font-[family-name:var(--font-jetbrains)] text-[11px] tracking-[.18em] text-[#5B7A72]">HẠNG BA</div>
             <div className="text-[40px] font-black tracking-[-.05em] text-[#0B5D4E]">03</div>
             <div className="text-[13px] text-[#8AA39C]">{third.detail}</div>

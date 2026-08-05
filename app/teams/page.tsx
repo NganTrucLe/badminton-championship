@@ -45,7 +45,7 @@ export default async function TeamsPage() {
       <div className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
         {teams.map((t, i) => (
           <Reveal key={t.id} delay={Math.min(i * 0.05, 0.3)}>
-            <Card className="rounded-[22px] border-border bg-card p-5">
+            <Card className="rounded-[22px] border-border bg-card p-5 transition-transform duration-200 hover:-translate-y-0.5">
               <div>
                 <div className="flex items-center gap-2.5">
                   <div className="font-[family-name:var(--font-jetbrains)] text-[11px] tracking-[.14em] text-text-faint">
