@@ -52,11 +52,11 @@ export function AvatarUpload({ playerId, currentUrl, onUploaded, disabled }: IAv
 
   return (
     <div className="flex items-center gap-2.5">
-      <Avatar style={{ width: 40, height: 40 }}>
+      <Avatar className="size-10">
         {currentUrl ? (
           <AvatarImage src={currentUrl} alt="" />
         ) : (
-          <AvatarFallback style={{ backgroundColor: "#C9D6D2" }} />
+          <AvatarFallback className="bg-[#C9D6D2]" />
         )}
       </Avatar>
       <Button asChild variant="outline" size="sm">
@@ -83,7 +83,7 @@ export function AvatarUpload({ playerId, currentUrl, onUploaded, disabled }: IAv
             accept="image/*"
             onChange={(e) => void handleFile(e)}
             disabled={busy || disabled}
-            style={{ display: "none" }}
+            className="hidden"
           />
         </label>
       </Button>

@@ -18,7 +18,7 @@ async function OverviewData() {
   return (
     <>
       <LifecyclePanel initialStatus={status} rosterError={rosterError} />
-      <section style={{ marginTop: 28, paddingTop: 24, borderTop: "1px solid rgba(10,31,26,.1)" }}>
+      <section className="mt-7 pt-6 border-t border-[rgba(10,31,26,0.1)]">
         <RewardsEditor initialRewards={rewards} />
       </section>
     </>

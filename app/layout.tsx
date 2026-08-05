@@ -39,7 +39,7 @@ export default function RootLayout({
     >
       <body className="min-h-screen bg-[var(--color-bg)] font-[family-name:var(--font-archivo)] text-[var(--color-text)]">
         <RefereeAuthProvider>
-          <div style={{ minHeight: "100vh", overflowX: "hidden" }}>
+          <div className="min-h-screen overflow-x-hidden">
             <SiteHeader />
             {children}
             <SiteFooter />
