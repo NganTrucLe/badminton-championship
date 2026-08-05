@@ -6,7 +6,9 @@
 
 **Eligibility (no passcode):** Anyone can sign in with Google, but only allow-listed emails can cast a vote — enforced server-side in `cast_mvp_vote()` via `is_mvp_voter()`. This replaces the passcode entirely: the allow-list is a stronger, per-identity gate than a shared code. The admin builds the allow-list by **picking from everyone who has signed in** (a `SECURITY DEFINER` `list_system_users()` reads `auth.users`, organizer-only), not by typing emails — so players sign in first, then the referee checks off the ~16 voters.
 
-**Architecture:** Add a `gender` column to `players` (every player is a candidate) plus four new tables — `mvp_vote` (singleton state: deadline, status), `mvp_voter_allowlist` (16 eligible emails), `mvp_receipts` (one row per voter — proves participation, no choice) and `mvp_ballots` (choices — gender + candidate, **no voter reference**). Anonymity is structural: a single `SECURITY DEFINER` RPC `cast_mvp_vote()` writes one receipt + two ballots in one transaction, so the app can never join a person to their choice. Reads that gate results-by-time go through `SECURITY DEFINER` RPCs (`get_mvp_status`, `get_mvp_results`). Referee turnout is live via Supabase Realtime on `mvp_receipts`. UI follows the existing organizer-gated client-mutation pattern and the landing-page `<Suspense>` streaming pattern.
+**Architecture:** Add a `gender` column to `players` (every player is a candidate) plus four new tables — `mvp_vote` (singleton state: deadline, status), `mvp_voter_allowlist` (16 eligible emails), `mvp_receipts` (one row per voter — proves participation, no choice) and `mvp_ballots` (choices — gender + candidate, **no voter reference, no timestamp**). A single `SECURITY DEFINER` RPC `cast_mvp_vote()` writes one receipt + two ballots in one transaction. Reads that gate results-by-time go through `SECURITY DEFINER` RPCs (`get_mvp_status`, `get_mvp_results`). Referee turnout is live via Supabase Realtime on `mvp_receipts`. UI follows the existing organizer-gated client-mutation pattern and the landing-page `<Suspense>` streaming pattern.
+
+**Anonymity is access-control level, not information-theoretic** (be explicit in copy and threat model): no Data-API role (`anon`/`authenticated`) — and no application code path — can join a voter to their choice, because `mvp_ballots` holds no voter reference, has no SELECT grant and no RLS policy, and is read only via `get_mvp_results()`. It is **not** anonymous against a raw-database actor (`service_role`, `postgres`): ballots commit in stable pairs, so physical row order (`ctid`) still correlates with `mvp_receipts` insertion order. To blunt even that, `mvp_receipts` stores **no `created_at`** (turnout needs only `COUNT(*)`), removing the timestamp key that would make the correlation trivial. This is the right posture for a club prize; do not describe it as unbreakable.
 
 **Tech Stack:** Next.js 16 (App Router) · React 19 · TypeScript 5 · Tailwind v4 (inline-style + CSS-var tokens) · Supabase (`@supabase/ssr`, Postgres + RLS + Realtime + Google OAuth) · Vitest 4 + Testing Library.
 
@@ -14,6 +16,8 @@
 
 - **All user-facing copy is Vietnamese.** Match the tone of existing screens.
 - **RLS-first / default-deny.** Every new table has explicit RLS. No table is public-writable; every write goes through an organizer-gated policy or a `SECURITY DEFINER` RPC. `mvp_ballots` has **no** SELECT policy for anyone — it is read only via `get_mvp_results()`.
+- **Grants are required in addition to RLS.** This project does not auto-expose new `public` tables to `anon`/`authenticated` (see `init_schema.sql`); RLS gates rows, `GRANT` gates table access, and every client-touched table needs both. `mvp_ballots` is deliberately granted to no Data-API role. Missing grants fail loudly at runtime but pass `SECURITY DEFINER` psql tests — verify grants explicitly.
+- **Anonymity is access-control level, not information-theoretic.** Copy and threat-model language must not claim ballots are unlinkable against a raw-DB actor (`service_role`/superuser) — only against Data-API roles and app code. `mvp_receipts` stores no timestamp to blunt physical-order correlation.
 - **Migrations are the only way to change schema.** Files in `supabase/migrations/`, naming `YYYYMMDDHHMMSS_description.sql`. Also add a matching cloud snapshot `supabase/cloud-phase7-mvp-voting.sql` (mirrors the migration verbatim) — this repo keeps parallel `cloud-*.sql` snapshots applied to the cloud project.
 - **`SECURITY DEFINER` function template** (copy exactly): `language sql|plpgsql security definer set search_path = public [stable]`, then `revoke all on function ... from public;` and `grant execute on function ... to anon|authenticated;`. Organizer-write RPCs start with `if not public.is_organizer() then raise exception 'not authorized' using errcode = '42501'; end if;`.
 - **Types:** `TEXT` not `VARCHAR`; `uuid` PKs via `gen_random_uuid()`; soft-delete via `deleted_at timestamptz` where a domain record can be removed. Singleton tables use `id boolean primary key default true check (id)`.
@@ -134,6 +138,12 @@ alter table public.players
   add column if not exists gender text
   check (gender is null or gender in ('male', 'female'));
 
+-- Composite-unique so mvp_ballots can reference (id, gender) — see table 5. This makes a
+-- ballot's stored gender referentially match the candidate's gender, and blocks re-gendering
+-- or hard-deleting a candidate while any ballot points at them.
+alter table public.players
+  add constraint players_id_gender_key unique (id, gender);
+
 -- 2. Singleton vote state (mirrors public.tournament).
 create table if not exists public.mvp_vote (
   id boolean primary key default true check (id),
@@ -151,16 +161,25 @@ create table if not exists public.mvp_voter_allowlist (
 );
 
 -- 4. Receipts: one row per voter. Proves participation + blocks double-vote. NO choice stored.
+--    Deliberately NO created_at (deviates from the house audit-column convention): turnout
+--    needs only COUNT(*), and omitting the timestamp removes the key that would let a
+--    raw-DB actor correlate receipts with ballots by time. Do not re-add it.
 create table if not exists public.mvp_receipts (
-  email text primary key,
-  created_at timestamptz not null default now()
+  email text primary key
 );
 
--- 5. Ballots: the choices. NO voter reference and NO timestamp (anonymity hardening).
+-- 5. Ballots: the choices. NO voter reference and NO timestamp (anonymity: see header).
+--    Composite FK (candidate_id, gender) -> players(id, gender) forces ballot.gender to equal
+--    the candidate's gender and blocks re-gendering / hard-deleting a referenced candidate.
+--    !! INVARIANT: this table must NEVER receive an INSERT/SELECT grant or an RLS policy. !!
+--    Writes happen ONLY through cast_mvp_vote() (SECURITY DEFINER); reads ONLY through
+--    get_mvp_results() (SECURITY DEFINER). All ballot integrity ("2 per voter, 1 male + 1
+--    female") rests on this being the sole writer — a grant or policy here silently destroys it.
 create table if not exists public.mvp_ballots (
   id uuid primary key default gen_random_uuid(),
   gender text not null check (gender in ('male', 'female')),
-  candidate_id uuid not null references public.players(id)
+  candidate_id uuid not null,
+  foreign key (candidate_id, gender) references public.players (id, gender)
 );
 create index if not exists mvp_ballots_gender_candidate_idx
   on public.mvp_ballots (gender, candidate_id);
@@ -203,6 +222,15 @@ create policy "organizers read receipts" on public.mvp_receipts
 
 -- mvp_ballots: NO policies at all -> default deny for everyone. Read only via get_mvp_results().
 
+-- Table grants. This project does NOT auto-expose new public tables to the Data API roles
+-- (see init_schema.sql) — RLS gates rows, grants gate table access; both are required.
+-- Without these, the allow-list editor and realtime turnout fail with "permission denied"
+-- even though the SECURITY DEFINER RPCs keep working (which hides the gap in psql tests).
+grant select, insert, delete on public.mvp_voter_allowlist to authenticated;  -- organizer picker
+grant select on public.mvp_receipts to authenticated;                          -- turnout + realtime
+grant select on public.mvp_vote to authenticated;                              -- organizer manage
+-- mvp_ballots: intentionally granted to NO Data API role (see INVARIANT comment on the table).
+
 -- Realtime: referee turnout subscribes to receipt inserts (organizer has SELECT).
 alter publication supabase_realtime add table public.mvp_receipts;
 ```
@@ -235,6 +263,15 @@ select tablename, count(*) from pg_policies
 -- realtime publication includes receipts
 select 1 from pg_publication_tables
   where pubname='supabase_realtime' and tablename='mvp_receipts'; -- 1 row
+
+-- allow-list is granted to the Data API role (else the editor 500s)
+select string_agg(privilege_type, ',' order by privilege_type)
+  from information_schema.role_table_grants
+  where grantee='authenticated' and table_name='mvp_voter_allowlist'; -- DELETE,INSERT,SELECT
+
+-- ballots exposed to NO Data API role
+select count(*) from information_schema.role_table_grants
+  where grantee in ('anon','authenticated') and table_name='mvp_ballots';  -- 0
 ```
 Expected: each assertion returns the commented result.
 
@@ -265,12 +302,14 @@ Create `supabase/migrations/20260805110000_mvp_voting_rpcs.sql`:
 -- MVP voting: RPC surface. All SECURITY DEFINER, search_path pinned.
 
 -- Is the current auth email on the allow-list?
+-- Emails are stored lower-cased (see addMvpVoter + cast_mvp_vote) and compared lower-cased,
+-- so a casing/whitespace mismatch can never silently disqualify an eligible voter.
 create or replace function public.is_mvp_voter()
   returns boolean language sql security definer set search_path = public stable
 as $$
   select exists (
     select 1 from public.mvp_voter_allowlist a
-    where a.email = auth.jwt() ->> 'email'
+    where a.email = lower(auth.jwt() ->> 'email')
   );
 $$;
 revoke all on function public.is_mvp_voter() from public;
@@ -306,7 +345,7 @@ as $$
     'total_eligible', (select count(*) from public.mvp_voter_allowlist),
     'is_eligible', public.is_mvp_voter(),
     'has_voted', exists (
-        select 1 from public.mvp_receipts r where r.email = auth.jwt() ->> 'email')
+        select 1 from public.mvp_receipts r where r.email = lower(auth.jwt() ->> 'email'))
   )
   from public.mvp_vote v where v.id = true;
 $$;
@@ -337,7 +376,7 @@ create or replace function public.cast_mvp_vote(
   returns void language plpgsql security definer set search_path = public
 as $$
 declare
-  v_email text := auth.jwt() ->> 'email';
+  v_email text := lower(auth.jwt() ->> 'email');
 begin
   if v_email is null then
     raise exception 'must be signed in' using errcode = '42501';
@@ -360,7 +399,15 @@ begin
     raise exception 'invalid female candidate' using errcode = '22023';
   end if;
 
-  insert into public.mvp_receipts (email) values (v_email);
+  -- Receipt PK on email is the real double-vote guard; the exists() check above is a fast path
+  -- that loses a concurrent race. Translate the unique violation into the friendly error so two
+  -- simultaneous submits from the same account both get "already voted", never a raw 23505.
+  -- Atomicity: if this raises, the whole function rolls back — no orphan ballots.
+  begin
+    insert into public.mvp_receipts (email) values (v_email);
+  exception when unique_violation then
+    raise exception 'already voted' using errcode = '42501';
+  end;
   insert into public.mvp_ballots (gender, candidate_id)
     values ('male', p_male_id), ('female', p_female_id);
 end;
@@ -797,17 +844,38 @@ export async function getMvpStatus(): Promise<IMvpStatus> {
   };
 }
 
-// Returns null while not closed; otherwise male/female results with winners.
+// Resolve candidates by id ignoring deleted_at — used so a candidate soft-deleted AFTER voting
+// still appears in results (their votes must not silently vanish and flip the winner).
+async function getPlayersByIds(ids: string[]): Promise<IMvpCandidate[]> {
+  if (ids.length === 0) return [];
+  const supabase = createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("players")
+    .select("id, name, tier, gender, avatar_key, avatar_url")
+    .in("id", ids)
+    .not("gender", "is", null);
+  if (error) throw new Error(`Failed to resolve candidates: ${error.message}`);
+  return (data ?? []).map((p) => ({
+    id: p.id, name: p.name, gender: p.gender as TGender, tier: p.tier as TTier,
+    avatarKey: p.avatar_key, avatarUrl: p.avatar_url,
+  }));
+}
+
+// Returns male/female results with winners once the vote is closed; the RPC returns no rows
+// while idle/open, which tallies to zero winners (a "no winner yet" render).
 export async function getMvpResults(): Promise<IMvpResults | null> {
   const supabase = createServerSupabaseClient();
   const { data, error } = await supabase.rpc("get_mvp_results");
   if (error) throw new Error(`Failed to load MVP results: ${error.message}`);
   const rows = (data ?? []) as { gender: TGender; candidate_id: string; votes: number }[];
-  if (rows.length === 0) {
-    // Could be genuinely no ballots yet OR not closed. Caller decides via status.
-    // Still return a zero-result so a closed-with-no-votes state renders "no winner".
-  }
-  const candidates = await getMvpCandidates();
+
+  // Union of current candidates (so zero-vote ones still show) + any balloted candidate that
+  // is no longer in the live candidate set (soft-deleted), so no votes are dropped.
+  const current = await getMvpCandidates();
+  const missing = Array.from(new Set(rows.map((r) => r.candidate_id)))
+    .filter((id) => !current.some((c) => c.id === id));
+  const candidates = [...current, ...(await getPlayersByIds(missing))];
+
   return tallyBallots(
     candidates,
     rows.map((r) => ({ gender: r.gender, candidateId: r.candidate_id, votes: Number(r.votes) })),
@@ -870,19 +938,21 @@ export async function getMvpVoterAllowlist(): Promise<string[]> {
   return (data ?? []).map((r) => r.email);
 }
 
+// Emails are stored lower-cased/trimmed so they always match lower(auth.jwt()->>'email').
 // Returns "denied" when RLS filters the write to 0 rows (non-organizer), mirroring
 // the codebase convention of treating an empty write result as "no permission".
 export async function addMvpVoter(email: string): Promise<"ok" | "denied"> {
   const supabase = createBrowserSupabaseClient();
   const { data, error } = await supabase
-    .from("mvp_voter_allowlist").insert({ email }).select();
+    .from("mvp_voter_allowlist").insert({ email: email.trim().toLowerCase() }).select();
   if (error) throw new Error(error.message);
   return data && data.length > 0 ? "ok" : "denied";
 }
 
 export async function removeMvpVoter(email: string): Promise<void> {
   const supabase = createBrowserSupabaseClient();
-  const { error } = await supabase.from("mvp_voter_allowlist").delete().eq("email", email);
+  const { error } = await supabase
+    .from("mvp_voter_allowlist").delete().eq("email", email.trim().toLowerCase());
   if (error) throw new Error(error.message);
 }
 ```
@@ -1151,11 +1221,12 @@ export function MvpVoterAllowlistEditor({ disabled }: { disabled: boolean }) {
       </p>
       <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 4 }}>
         {users.map((u) => {
-          const on = selected.has(u.email);
+          const email = u.email.toLowerCase();      // allow-list stores lower-cased emails
+          const on = selected.has(email);
           return (
             <li key={u.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 10px", background: on ? "var(--color-cream)" : "#fff", borderRadius: 8, border: "1px solid #eee" }}>
-              <input type="checkbox" checked={on} disabled={disabled || busyEmail === u.email}
-                onChange={(e) => toggle(u.email, e.target.checked)} />
+              <input type="checkbox" checked={on} disabled={disabled || busyEmail === email}
+                onChange={(e) => toggle(email, e.target.checked)} />
               <PlayerAvatar name={u.name ?? u.email} avatarKey={null} avatarUrl={u.avatarUrl} />
               <span style={{ display: "flex", flexDirection: "column" }}>
                 <strong style={{ fontSize: 14 }}>{u.name ?? "(chưa có tên)"}</strong>
@@ -1476,7 +1547,21 @@ git commit -m "feat(mvp): add MVP prize and winners section to landing page"
 
 **3. Type consistency:** `IMvpStatus`, `IMvpCandidate`, `IMvpResults`, `IMvpGenderResult`, `TGender`, `TMvpStatus` are defined once in Task 3 and consumed with the same field names in Tasks 4/6/7/8. RPC names match between Task 2 (SQL), Task 4 (`database.types.ts` + wrappers), and callers. `get_mvp_status` JSON keys (`voted_count`, `total_eligible`, `is_eligible`, `has_voted`) are mapped to camelCase in exactly one place (`getMvpStatus`) and the raw keys are reused consistently in `useMvpTurnout`.
 
-**Known follow-ups (out of scope, flag to user):**
-- `reset_tournament()` does not clear the MVP vote. If organizers expect a full reset to wipe MVP state too, add `perform reset_mvp_vote()`-equivalent SQL to it in a later change.
-- Component-level RTL tests for `VoteFlow`/`MvpControlPanel` are not included (only pure logic is unit-tested, matching the current repo where the real tree has no component tests). Add them if the team wants UI regression coverage.
-- Anonymity is app-level (per your decision): a database super-admin could in principle correlate a lone receipt with a lone ballot by insert order. `mvp_ballots` deliberately stores no timestamp to blunt this. Batch/real anonymity (e.g. blind tokens) is a larger effort if ever required.
+## ERD review outcomes (be-architect)
+
+Applied to the plan after review:
+- **B1** — added table `GRANT`s (allow-list `select,insert,delete`; receipts/vote `select`; ballots none). This project doesn't auto-expose new tables; without grants the editor + realtime would 500 while RPCs kept working.
+- **B2** — reworded all "structural/unbreakable anonymity" claims to "access-control level"; dropped `created_at` from `mvp_receipts` to remove the correlation key.
+- **B3 / N4** — loud INVARIANT comment on `mvp_ballots` (never grant/policy it; it's the sole-writer guarantee) and a comment documenting the deliberate audit-column omission.
+- **S1** — `mvp_ballots (candidate_id, gender)` is now a composite FK → `players (id, gender)` (needs `unique(id,gender)` on players), enforcing ballot/candidate gender match and blocking re-gendering or hard-deleting a referenced candidate; `getMvpResults` also resolves soft-deleted candidates so votes never silently vanish.
+- **S2** — emails stored + compared lower-cased/trimmed (`is_mvp_voter`, `has_voted`, `cast_mvp_vote`, `addMvpVoter`).
+- **S4** — `cast_mvp_vote` catches the receipt `unique_violation` and re-raises the friendly "already voted".
+
+**Decisions for the user (not yet applied):**
+- **S3 — `reset_tournament()` vs MVP state.** They're currently decoupled: resetting the tournament leaves MVP receipts/ballots/allow-list intact. Options: (a) leave decoupled + document (recommended — a finished MVP result shouldn't be wiped by a roster redo), or (b) have `reset_tournament()` also call `reset_mvp_vote()`. Needs your call.
+- **N1 — tiny-turnout de-anonymization.** At 1–2 voters the revealed ballots effectively expose those voters' picks (inherent to any vote). Option: suppress `get_mvp_results` below a threshold (e.g. <3 voters). Recommend accepting + documenting for a club prize.
+
+**Known follow-ups (out of scope):**
+- **N2** — `mvp_receipts.email` could FK → `mvp_voter_allowlist.email` (would also block removing an allow-list entry for someone who already voted). Minor; not applied.
+- **N3** — `gender` doubles as the "is-candidate" flag; `open_mvp_vote` only checks ≥1 male/≥1 female, not that every player has a gender. Consider surfacing a "N players missing gender" hint in the admin players editor so the candidate set isn't silently partial.
+- Component-level RTL tests for `VoteFlow`/`MvpControlPanel` are not included (only pure logic is unit-tested, matching the current repo). Add if the team wants UI regression coverage.
