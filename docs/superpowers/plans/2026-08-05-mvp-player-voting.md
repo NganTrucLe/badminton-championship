@@ -479,6 +479,29 @@ end;
 $$;
 revoke all on function public.reset_mvp_vote() from public;
 grant execute on function public.reset_mvp_vote() to authenticated;
+
+-- Couple the tournament reset to the MVP reset: redefine reset_tournament() to also wipe MVP
+-- receipts/ballots and return the vote to 'idle'. Body below is the CURRENT reset_tournament()
+-- from 20260805000000_swiss_generation.sql, verbatim, with `perform public.reset_mvp_vote()`
+-- appended. Must come AFTER reset_mvp_vote is defined (above). If reset_tournament() changes in
+-- a later migration, that migration must re-append this call.
+create or replace function public.reset_tournament()
+  returns void language plpgsql security definer set search_path = public
+as $$
+begin
+  if not public.is_organizer() then
+    raise exception 'not authorized' using errcode = '42501';
+  end if;
+  -- drop generated rounds; zero the round-1 scores; back to setup
+  delete from public.matches where round_n >= 2;
+  update public.matches set score_a = 0, score_b = 0, state = 'next' where round_n = 1 and deleted_at is null;
+  update public.tournament set status = 'setup', updated_at = now() where id = true;
+  -- also clear the MVP vote (receipts, ballots, back to idle)
+  perform public.reset_mvp_vote();
+end;
+$$;
+revoke all on function public.reset_tournament() from public;
+grant execute on function public.reset_tournament() to authenticated;
 ```
 
 - [ ] **Step 2: Apply locally**
@@ -518,6 +541,13 @@ select count(*) from public.mvp_ballots;                          -- 2
 -- close -> results visible
 select public.close_mvp_vote();
 select gender, votes from public.get_mvp_results() order by gender; -- female:1, male:1
+
+-- reset_tournament() also wipes MVP state (organizer), but keeps the allow-list
+select public.reset_tournament();
+select status from public.mvp_vote;                               -- idle
+select count(*) from public.mvp_receipts;                         -- 0
+select count(*) from public.mvp_ballots;                          -- 0
+select count(*) from public.mvp_voter_allowlist;                  -- unchanged (allow-list kept)
 ```
 Expected: each assertion matches the comment; `cast_mvp_vote` from a non-allow-listed email (or while the vote is not open) raises `42501`.
 
@@ -1557,9 +1587,9 @@ Applied to the plan after review:
 - **S2** — emails stored + compared lower-cased/trimmed (`is_mvp_voter`, `has_voted`, `cast_mvp_vote`, `addMvpVoter`).
 - **S4** — `cast_mvp_vote` catches the receipt `unique_violation` and re-raises the friendly "already voted".
 
-**Decisions for the user (not yet applied):**
-- **S3 — `reset_tournament()` vs MVP state.** They're currently decoupled: resetting the tournament leaves MVP receipts/ballots/allow-list intact. Options: (a) leave decoupled + document (recommended — a finished MVP result shouldn't be wiped by a roster redo), or (b) have `reset_tournament()` also call `reset_mvp_vote()`. Needs your call.
-- **N1 — tiny-turnout de-anonymization.** At 1–2 voters the revealed ballots effectively expose those voters' picks (inherent to any vote). Option: suppress `get_mvp_results` below a threshold (e.g. <3 voters). Recommend accepting + documenting for a club prize.
+**Decisions (resolved by user):**
+- **S3 — `reset_tournament()` wipes MVP state.** DECIDED: coupled. The RPC migration redefines `reset_tournament()` to also `perform public.reset_mvp_vote()` (clears receipts + ballots, vote → `idle`). The allow-list is intentionally NOT cleared (a reset is a re-run; keep the picked voters). Note the maintenance coupling: any future `reset_tournament()` change must re-append this call.
+- **N1 — tiny-turnout de-anonymization: ACCEPTED.** No threshold suppression. At very low turnout (1–2 voters) the revealed ballots effectively expose those voters' picks — this is accepted for a club prize and documented here and in the anonymity threat-model note. Do not add a suppression gate.
 
 **Known follow-ups (out of scope):**
 - **N2** — `mvp_receipts.email` could FK → `mvp_voter_allowlist.email` (would also block removing an allow-list entry for someone who already voted). Minor; not applied.
