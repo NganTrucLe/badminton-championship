@@ -6,6 +6,7 @@ export interface IAdminPlayer {
   id: string;
   name: string;
   tier: TTier;
+  gender: "male" | "female" | null;
   avatarKey: string | null;
   avatarUrl: string | null;
 }
@@ -23,7 +24,7 @@ export async function getAdminPlayers(): Promise<IAdminPlayer[]> {
   const supabase = await createAuthServerClient();
   const { data, error } = await supabase
     .from("players")
-    .select("id, name, tier, avatar_key, avatar_url")
+    .select("id, name, tier, gender, avatar_key, avatar_url")
     .is("deleted_at", null)
     .order("name", { ascending: true });
   if (error) {
@@ -33,6 +34,7 @@ export async function getAdminPlayers(): Promise<IAdminPlayer[]> {
     id: p.id,
     name: p.name,
     tier: p.tier as TTier,
+    gender: p.gender as "male" | "female" | null,
     avatarKey: p.avatar_key,
     avatarUrl: p.avatar_url,
   }));
