@@ -7,9 +7,9 @@ import { TIER, type TTier } from "@/lib/tournament/data";
 
 const TIER_ORDER: TTier[] = [1, 2, 3, 4];
 
-// Cache teams data for 1 hour (ISR) — teams are effectively static and rarely change.
-// This serves from cache on navigation, avoiding per-request Supabase round-trips.
-export const revalidate = 3600;
+// Read fresh from Supabase on every request: the roster (đội hình) is edited in the admin during
+// setup, so /teams must reflect pair/player changes immediately (mirrors /schedule).
+export const dynamic = "force-dynamic";
 
 export default async function TeamsPage() {
   const teams = await getTeams();
