@@ -8,13 +8,10 @@
  */
 
 import {
-  TEAMS,
   ROUND_META,
-  getTeam,
-  teamName,
-  teamPlayersLabel,
   type IMatch,
   type IRoundMeta,
+  type ITeam,
   type TMatchState,
 } from "./data";
 
@@ -171,10 +168,21 @@ function pad2(n: number): string {
   return String(n).padStart(2, "0");
 }
 
+/** id -> live team map, used by every name/player-resolving function below. */
+type TTeamById = Map<number, ITeam>;
+
+function buildById(teams: ITeam[]): TTeamById {
+  return new Map(teams.map((t) => [t.id, t]));
+}
+
+function playersLabel(team: ITeam): string {
+  return team.players.map((p) => p.name).join(" & ");
+}
+
 /** Builds a per-team W/L/points-for/points-against record, counting only 'done' matches. */
-export function buildTeamRecords(matches: IMatch[]): TTeamRecords {
+export function buildTeamRecords(matches: IMatch[], teams: ITeam[]): TTeamRecords {
   const table: TTeamRecords = {};
-  TEAMS.forEach((t) => {
+  teams.forEach((t) => {
     table[t.id] = { id: t.id, w: 0, l: 0, pf: 0, pa: 0, hist: {} };
   });
 
@@ -203,31 +211,39 @@ export function buildTeamRecords(matches: IMatch[]): TTeamRecords {
   return table;
 }
 
-export function computeStandingsTable(records: TTeamRecords): IStandingsRow[] {
+export function computeStandingsTable(records: TTeamRecords, teams: ITeam[]): IStandingsRow[] {
+  const byId = buildById(teams);
   return Object.values(records)
     .sort((x, y) => y.w - x.w || x.id - y.id)
-    .map((r, i) => ({
-      rank: pad2(i + 1),
-      rankColor: i < 4 ? "#0B5D4E" : "#B9C4C0",
-      name: teamName(r.id),
-      players: teamPlayersLabel(r.id),
-      w: r.w,
-      l: r.l,
-    }));
+    .map((r, i) => {
+      const team = byId.get(r.id);
+      return {
+        rank: pad2(i + 1),
+        rankColor: i < 4 ? "#0B5D4E" : "#B9C4C0",
+        name: team?.name ?? "",
+        players: team ? playersLabel(team) : "",
+        w: r.w,
+        l: r.l,
+      };
+    });
 }
 
 /** The current live match, or the first upcoming ('next') match if nothing is live. */
-export function computeLiveMatch(matches: IMatch[]): ILiveMatchInfo | undefined {
+export function computeLiveMatch(matches: IMatch[], teams: ITeam[]): ILiveMatchInfo | undefined {
   const liveMatch = matches.find((m) => m.state === "live") ?? matches.find((m) => m.state === "next");
   if (!liveMatch) return undefined;
+
+  const byId = buildById(teams);
+  const teamA = byId.get(liveMatch.a);
+  const teamB = byId.get(liveMatch.b);
 
   return {
     round: "VÒNG " + liveMatch.round,
     court: liveMatch.court,
-    aName: teamName(liveMatch.a),
-    bName: teamName(liveMatch.b),
-    aPlayers: teamPlayersLabel(liveMatch.a),
-    bPlayers: teamPlayersLabel(liveMatch.b),
+    aName: teamA?.name ?? "",
+    bName: teamB?.name ?? "",
+    aPlayers: teamA ? playersLabel(teamA) : "",
+    bPlayers: teamB ? playersLabel(teamB) : "",
     aScore: liveMatch.sa,
     bScore: liveMatch.sb,
     pct: Math.min(100, Math.round((Math.max(liveMatch.sa, liveMatch.sb) / 21) * 100)) + "%",
@@ -235,40 +251,43 @@ export function computeLiveMatch(matches: IMatch[]): ILiveMatchInfo | undefined 
 }
 
 /** The most recent 4 finished matches, newest first. */
-export function computeRecentResults(matches: IMatch[]): IRecentResult[] {
+export function computeRecentResults(matches: IMatch[], teams: ITeam[]): IRecentResult[] {
+  const byId = buildById(teams);
   return matches
     .filter((m) => m.state === "done")
     .slice(-4)
     .reverse()
     .map((m) => ({
       code: m.id,
-      aName: teamName(m.a),
-      bName: teamName(m.b),
+      aName: byId.get(m.a)?.name ?? "",
+      bName: byId.get(m.b)?.name ?? "",
       score: `${m.sa} – ${m.sb}`,
     }));
 }
 
-function teamChip(id: number, records: TTeamRecords): ITeamChip {
-  const team = getTeam(id);
+function teamChip(id: number, records: TTeamRecords, byId: TTeamById): ITeamChip {
+  const team = byId.get(id);
   const r = records[id];
-  return { teamId: id, letter: team.letter, name: team.name, rec: `${r.w}–${r.l}` };
+  return { teamId: id, letter: team?.letter ?? "", name: team?.name ?? "", rec: `${r.w}–${r.l}` };
 }
 
 /** Teams that have reached 3 wins (advance to Board 2 / playoffs). */
-export function computeQualified(records: TTeamRecords): ITeamChip[] {
-  return TEAMS.filter((t) => records[t.id].w >= 3).map((t) => teamChip(t.id, records));
+export function computeQualified(records: TTeamRecords, teams: ITeam[]): ITeamChip[] {
+  const byId = buildById(teams);
+  return teams.filter((t) => records[t.id].w >= 3).map((t) => teamChip(t.id, records, byId));
 }
 
 /** Teams that have reached 3 losses (eliminated from the Swiss stage). */
-export function computeEliminated(records: TTeamRecords): ITeamChip[] {
-  return TEAMS.filter((t) => records[t.id].l >= 3).map((t) => teamChip(t.id, records));
+export function computeEliminated(records: TTeamRecords, teams: ITeam[]): ITeamChip[] {
+  const byId = buildById(teams);
+  return teams.filter((t) => records[t.id].l >= 3).map((t) => teamChip(t.id, records, byId));
 }
 
 function isAlive(records: TTeamRecords, id: number): boolean {
   return records[id].w < 3 && records[id].l < 3;
 }
 
-function matchDisplay(m: IMatch): ISwissMatchDisplay {
+function matchDisplay(m: IMatch, byId: TTeamById): ISwissMatchDisplay {
   const fin = m.state === "done";
   const aWins = fin && m.sa > m.sb;
   const bWins = fin && m.sb > m.sa;
@@ -290,8 +309,8 @@ function matchDisplay(m: IMatch): ISwissMatchDisplay {
     stateColor: meta.color,
     aTeamId: m.a,
     bTeamId: m.b,
-    aName: teamName(m.a),
-    bName: teamName(m.b),
+    aName: byId.get(m.a)?.name ?? "",
+    bName: byId.get(m.b)?.name ?? "",
     sa: m.state === "next" ? "–" : m.sa,
     sb: m.state === "next" ? "–" : m.sb,
     aBg: A.bg,
@@ -317,7 +336,8 @@ function roundStatus(matches: IMatch[]): { status: string; statusColor: string }
  * previous round count) — matches within a group come from the seeded schedule, and any
  * team in the group with no scheduled match that round shows up as an unpaired chip.
  */
-export function computeSwissColumns(matches: IMatch[], records: TTeamRecords): ISwissColumn[] {
+export function computeSwissColumns(matches: IMatch[], records: TTeamRecords, teams: ITeam[]): ISwissColumn[] {
+  const byId = buildById(teams);
   return ROUND_META.map((round: IRoundMeta) => {
     const roundMatches = matches.filter((m) => m.round === round.n);
     const groups: ISwissGroup[] = [];
@@ -329,12 +349,12 @@ export function computeSwissColumns(matches: IMatch[], records: TTeamRecords): I
         bg: "#EEF3F7",
         border: "#B9CBD8",
         fg: "#2A5470",
-        matches: roundMatches.map(matchDisplay),
+        matches: roundMatches.map((m) => matchDisplay(m, byId)),
         chips: [],
       });
     } else {
       const keys: string[] = [];
-      TEAMS.forEach((t) => {
+      teams.forEach((t) => {
         const r = records[t.id];
         if (!isAlive(records, t.id) || r.w + r.l !== round.n - 1) return;
         const key = `${r.w}-${r.l}`;
@@ -344,9 +364,9 @@ export function computeSwissColumns(matches: IMatch[], records: TTeamRecords): I
 
       keys.forEach((key) => {
         const [w, l] = key.split("-").map(Number);
-        const ids = TEAMS.filter(
-          (t) => records[t.id].w === w && records[t.id].l === l && isAlive(records, t.id),
-        ).map((t) => t.id);
+        const ids = teams
+          .filter((t) => records[t.id].w === w && records[t.id].l === l && isAlive(records, t.id))
+          .map((t) => t.id);
         const groupMatches = roundMatches.filter((m) => ids.includes(m.a) && ids.includes(m.b));
         const paired: number[] = [];
         groupMatches.forEach((m) => paired.push(m.a, m.b));
@@ -355,8 +375,8 @@ export function computeSwissColumns(matches: IMatch[], records: TTeamRecords): I
           label: `NHÓM ${w}–${l}`,
           sub: `${ids.length} đội · thắng đi tiếp ${w + 1}–${l}`,
           ...style,
-          matches: groupMatches.map(matchDisplay),
-          chips: ids.filter((id) => !paired.includes(id)).map((id) => teamChip(id, records)),
+          matches: groupMatches.map((m) => matchDisplay(m, byId)),
+          chips: ids.filter((id) => !paired.includes(id)).map((id) => teamChip(id, records, byId)),
         });
       });
 
@@ -396,8 +416,8 @@ export function computeSemis(qualified: ITeamChip[]): ISemiMatch[] {
 }
 
 /** Per-round tracking table: one row per team, W/T-B history, and current status. */
-export function computeTrackRows(records: TTeamRecords): ITrackRow[] {
-  return TEAMS.map((t) => {
+export function computeTrackRows(records: TTeamRecords, teams: ITeam[]): ITrackRow[] {
+  return teams.map((t) => {
     const r = records[t.id];
     const status =
       r.w >= 3

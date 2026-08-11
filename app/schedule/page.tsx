@@ -1,6 +1,6 @@
 import { Reveal } from "@/components/motion";
 import { Badge } from "@/components/ui/badge";
-import { getMatches, getPairIdToTeamId } from "@/lib/supabase/tournament";
+import { getMatches, getPairIdToTeamId, getTeams } from "@/lib/supabase/tournament";
 import { ScheduleBoard } from "./ScheduleBoard";
 
 // Read fresh from Supabase on every request for a correct first paint — the Swiss board,
@@ -9,7 +9,7 @@ import { ScheduleBoard } from "./ScheduleBoard";
 export const dynamic = "force-dynamic";
 
 export default async function SchedulePage() {
-  const [matches, pairIdToTeamId] = await Promise.all([getMatches(), getPairIdToTeamId()]);
+  const [matches, pairIdToTeamId, teams] = await Promise.all([getMatches(), getPairIdToTeamId(), getTeams()]);
 
   return (
     <div className="mx-auto max-w-[1240px] px-5 pt-[34px] pb-[60px]">
@@ -48,7 +48,7 @@ export default async function SchedulePage() {
         </div>
       </Reveal>
 
-      <ScheduleBoard initialMatches={matches} pairIdToTeamId={pairIdToTeamId} />
+      <ScheduleBoard initialMatches={matches} pairIdToTeamId={pairIdToTeamId} teams={teams} />
     </div>
   );
 }

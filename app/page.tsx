@@ -11,7 +11,7 @@ import { HomeLiveSection } from "@/app/HomeLiveSection";
 import { HomeLiveSkeleton } from "@/app/HomeLiveSkeleton";
 import { MvpPrizeSection } from "./MvpPrizeSection";
 import { RewardsPodium } from "@/app/RewardsPodium";
-import { getMatches, getPairIdToTeamId } from "@/lib/supabase/tournament";
+import { getMatches, getPairIdToTeamId, getTeams } from "@/lib/supabase/tournament";
 
 const EVENT_START = "2026-08-15T09:00:00+07:00";
 
@@ -21,8 +21,8 @@ const EVENT_START = "2026-08-15T09:00:00+07:00";
 export const dynamic = "force-dynamic";
 
 async function HomeLiveData() {
-	const [matches, pairIdToTeamId] = await Promise.all([getMatches(), getPairIdToTeamId()]);
-	return <HomeLiveSection initialMatches={matches} pairIdToTeamId={pairIdToTeamId} />;
+	const [matches, pairIdToTeamId, teams] = await Promise.all([getMatches(), getPairIdToTeamId(), getTeams()]);
+	return <HomeLiveSection initialMatches={matches} pairIdToTeamId={pairIdToTeamId} teams={teams} />;
 }
 
 export default function HomePage() {

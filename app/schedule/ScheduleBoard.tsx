@@ -14,8 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useLiveMatches } from "@/lib/supabase/useLiveMatches";
-import { getTeam } from "@/lib/tournament/data";
-import type { IMatch } from "@/lib/tournament/data";
+import type { IMatch, ITeam } from "@/lib/tournament/data";
 import {
   buildTeamRecords,
   computeEliminated,
@@ -26,8 +25,10 @@ import {
   type ISwissMatchDisplay,
   type ITeamChip,
 } from "@/lib/tournament/standings";
+import { TeamLookupProvider, useTeamLookup } from "@/lib/tournament/teamLookup";
 
 function TeamAvatars({ teamId, size = 20 }: { teamId: number; size?: number }) {
+  const getTeam = useTeamLookup();
   const team = getTeam(teamId);
   return (
     <div className="flex flex-none gap-0.5">
@@ -130,6 +131,7 @@ function EliminatedChip({ chip }: { chip: ITeamChip }) {
 interface IScheduleBoardProps {
   initialMatches: IMatch[];
   pairIdToTeamId: Record<string, number>;
+  teams: ITeam[];
 }
 
 /**
@@ -141,17 +143,18 @@ interface IScheduleBoardProps {
  * no duplicated Swiss logic. The page header/intro/legend above stay server-rendered in
  * app/schedule/page.tsx since they never change during the event.
  */
-export function ScheduleBoard({ initialMatches, pairIdToTeamId }: IScheduleBoardProps) {
+export function ScheduleBoard({ initialMatches, pairIdToTeamId, teams }: IScheduleBoardProps) {
   const [matches] = useLiveMatches(initialMatches, pairIdToTeamId);
-  const records = buildTeamRecords(matches);
-  const swissCols = computeSwissColumns(matches, records);
-  const qualified = computeQualified(records);
-  const eliminated = computeEliminated(records);
+  const records = buildTeamRecords(matches, teams);
+  const swissCols = computeSwissColumns(matches, records, teams);
+  const qualified = computeQualified(records, teams);
+  const eliminated = computeEliminated(records, teams);
   const semis = computeSemis(qualified);
-  const trackRows = computeTrackRows(records);
+  const trackRows = computeTrackRows(records, teams);
 
   return (
-    <>
+    <TeamLookupProvider teams={teams}>
+      <>
       {/* Board 1 · Swiss stage */}
       <div className="mt-5 rounded-[22px] border border-[rgba(10,31,26,.12)] bg-[#FFFDF7] p-5">
         <div className="mb-4 flex flex-wrap items-baseline gap-3">
@@ -341,6 +344,7 @@ export function ScheduleBoard({ initialMatches, pairIdToTeamId }: IScheduleBoard
           </TableBody>
         </Table>
       </div>
-    </>
+      </>
+    </TeamLookupProvider>
   );
 }

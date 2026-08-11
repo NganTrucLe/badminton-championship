@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { MATCHES, type IMatch } from "../data";
+import { MATCHES, TEAMS, type IMatch, type ITeam } from "../data";
 import {
   buildTeamRecords,
   computeStandingsTable,
@@ -14,7 +14,7 @@ import {
 
 describe("buildTeamRecords", () => {
   it("only counts done matches, ignoring live/next", () => {
-    const records = buildTeamRecords(MATCHES);
+    const records = buildTeamRecords(MATCHES, TEAMS);
 
     // Round 1 (all done): 1 beats 5, 2 beats 6, 3 beats 7, 4 beats 8.
     expect(records[1]).toMatchObject({ w: 1, l: 0 });
@@ -32,7 +32,7 @@ describe("buildTeamRecords", () => {
   });
 
   it("tracks points for/against and per-round win/loss history", () => {
-    const records = buildTeamRecords(MATCHES);
+    const records = buildTeamRecords(MATCHES, TEAMS);
     expect(records[1].pf).toBe(21);
     expect(records[1].pa).toBe(15);
     expect(records[1].hist[1]).toBe("T");
@@ -40,7 +40,7 @@ describe("buildTeamRecords", () => {
   });
 
   it("seeds every team with a zeroed record even with no matches", () => {
-    const records = buildTeamRecords([]);
+    const records = buildTeamRecords([], TEAMS);
     expect(Object.keys(records)).toHaveLength(8);
     expect(records[1]).toMatchObject({ w: 0, l: 0, pf: 0, pa: 0 });
   });
@@ -48,8 +48,8 @@ describe("buildTeamRecords", () => {
 
 describe("computeStandingsTable", () => {
   it("sorts by wins desc, then by team id asc, and colors top 4", () => {
-    const records = buildTeamRecords(MATCHES);
-    const table = computeStandingsTable(records);
+    const records = buildTeamRecords(MATCHES, TEAMS);
+    const table = computeStandingsTable(records, TEAMS);
     expect(table.map((r) => r.name)).toEqual([
       "Trung – Kiên",
       "Minh Anh – Bình",
@@ -68,7 +68,7 @@ describe("computeStandingsTable", () => {
 
 describe("computeLiveMatch", () => {
   it("prefers a live match over a next one", () => {
-    const live = computeLiveMatch(MATCHES);
+    const live = computeLiveMatch(MATCHES, TEAMS);
     expect(live).toBeDefined();
     expect(live!.aName).toBe("Trung – Kiên");
     expect(live!.bName).toBe("Vũ – Quang Hào");
@@ -81,19 +81,19 @@ describe("computeLiveMatch", () => {
     const noLive: IMatch[] = MATCHES.map((m) =>
       m.state === "live" ? { ...m, state: "done", sa: 21, sb: 14 } : m,
     );
-    const live = computeLiveMatch(noLive);
+    const live = computeLiveMatch(noLive, TEAMS);
     expect(live!.aName).toBe("Minh Anh – Bình");
     expect(live!.bName).toBe("Vinh – Trúc");
   });
 
   it("returns undefined when there are no matches at all", () => {
-    expect(computeLiveMatch([])).toBeUndefined();
+    expect(computeLiveMatch([], TEAMS)).toBeUndefined();
   });
 });
 
 describe("computeRecentResults", () => {
   it("returns the last 4 done matches, most recent first", () => {
-    const recent = computeRecentResults(MATCHES);
+    const recent = computeRecentResults(MATCHES, TEAMS);
     expect(recent).toHaveLength(4);
     expect(recent[0].code).toBe("M4");
     expect(recent[0].score).toBe("21 – 17");
@@ -103,9 +103,9 @@ describe("computeRecentResults", () => {
 
 describe("qualified / eliminated", () => {
   it("is empty when no team has reached 3 wins or 3 losses", () => {
-    const records = buildTeamRecords(MATCHES);
-    expect(computeQualified(records)).toEqual([]);
-    expect(computeEliminated(records)).toEqual([]);
+    const records = buildTeamRecords(MATCHES, TEAMS);
+    expect(computeQualified(records, TEAMS)).toEqual([]);
+    expect(computeEliminated(records, TEAMS)).toEqual([]);
   });
 
   it("qualifies teams with >=3 wins and eliminates teams with >=3 losses", () => {
@@ -116,9 +116,9 @@ describe("qualified / eliminated", () => {
       { id: "S4", round: 1, court: 2, time: "09:00", a: 5, b: 2, sa: 21, sb: 10, state: "done" },
       { id: "S5", round: 2, court: 2, time: "09:20", a: 6, b: 2, sa: 21, sb: 10, state: "done" },
     ];
-    const records = buildTeamRecords(synthetic);
-    const qualified = computeQualified(records);
-    const eliminated = computeEliminated(records);
+    const records = buildTeamRecords(synthetic, TEAMS);
+    const qualified = computeQualified(records, TEAMS);
+    const eliminated = computeEliminated(records, TEAMS);
     expect(qualified.map((c) => c.letter)).toEqual(["A"]);
     expect(eliminated.map((c) => c.letter)).toEqual(["B"]);
     expect(qualified[0].rec).toBe("3–0");
@@ -128,7 +128,7 @@ describe("qualified / eliminated", () => {
 
 describe("computeSwissColumns", () => {
   it("groups round 1 as a single 'all teams' column with no record split", () => {
-    const columns = computeSwissColumns(MATCHES, buildTeamRecords(MATCHES));
+    const columns = computeSwissColumns(MATCHES, buildTeamRecords(MATCHES, TEAMS), TEAMS);
     const round1 = columns.find((c) => c.round === 1)!;
     expect(round1.groups).toHaveLength(1);
     expect(round1.groups[0].label).toBe("TẤT CẢ 8 ĐỘI · 0–0");
@@ -137,7 +137,7 @@ describe("computeSwissColumns", () => {
   });
 
   it("groups round 2 by record (1-0 vs 0-1), pairing everyone with no leftover chips", () => {
-    const columns = computeSwissColumns(MATCHES, buildTeamRecords(MATCHES));
+    const columns = computeSwissColumns(MATCHES, buildTeamRecords(MATCHES, TEAMS), TEAMS);
     const round2 = columns.find((c) => c.round === 2)!;
     expect(round2.status).toBe("ĐANG DIỄN RA");
     expect(round2.groups.map((g) => g.label)).toEqual(["NHÓM 1–0", "NHÓM 0–1"]);
@@ -147,7 +147,7 @@ describe("computeSwissColumns", () => {
   });
 
   it("shows a placeholder group for a round with no matches yet", () => {
-    const columns = computeSwissColumns(MATCHES, buildTeamRecords(MATCHES));
+    const columns = computeSwissColumns(MATCHES, buildTeamRecords(MATCHES, TEAMS), TEAMS);
     const round3 = columns.find((c) => c.round === 3)!;
     expect(round3.status).toBe("CHƯA BẮT ĐẦU");
     expect(round3.groups).toHaveLength(1);
@@ -162,7 +162,7 @@ describe("computeSwissColumns", () => {
       // instead removing team 7's round-2 match so it shows as an unpaired chip.
     ];
     const withoutM8: IMatch[] = oddOut.filter((m) => m.id !== "M8");
-    const columns = computeSwissColumns(withoutM8, buildTeamRecords(withoutM8));
+    const columns = computeSwissColumns(withoutM8, buildTeamRecords(withoutM8, TEAMS), TEAMS);
     const round2 = columns.find((c) => c.round === 2)!;
     const loseGroup = round2.groups.find((g) => g.label === "NHÓM 0–1")!;
     expect(loseGroup.chips.map((c) => c.letter)).toEqual(expect.arrayContaining(["F", "G"]));
@@ -195,8 +195,8 @@ describe("computeSemis", () => {
 
 describe("computeTrackRows", () => {
   it("marks a team's status as in-progress, qualified, or eliminated", () => {
-    const records = buildTeamRecords(MATCHES);
-    const rows = computeTrackRows(records);
+    const records = buildTeamRecords(MATCHES, TEAMS);
+    const rows = computeTrackRows(records, TEAMS);
     const teamA = rows.find((r) => r.letter === "A")!;
     expect(teamA.status).toBe("Đang đấu");
     expect(teamA.cells[0]).toMatchObject({ v: "T", color: "#1F7A45" });
@@ -209,7 +209,26 @@ describe("computeTrackRows", () => {
       { id: "S2", round: 2, court: 1, time: "09:20", a: 1, b: 3, sa: 21, sb: 10, state: "done" },
       { id: "S3", round: 3, court: 1, time: "09:40", a: 1, b: 4, sa: 21, sb: 10, state: "done" },
     ];
-    const rows = computeTrackRows(buildTeamRecords(synthetic));
+    const rows = computeTrackRows(buildTeamRecords(synthetic, TEAMS), TEAMS);
     expect(rows.find((r) => r.letter === "A")!.status).toBe("Qualified");
+  });
+});
+
+describe("live team names", () => {
+  it("flows a renamed/edited team through computeRecentResults and computeSwissColumns instead of the static seed", () => {
+    const renamedTeams: ITeam[] = TEAMS.map((t) =>
+      t.id === 1 ? { ...t, name: "X – Y", players: [{ name: "X", tier: 1 }, { name: "Y", tier: 4 }] } : t,
+    );
+
+    const recent = computeRecentResults(MATCHES, renamedTeams);
+    const m1 = recent.find((r) => r.code === "M1")!;
+    expect(m1.aName).toBe("X – Y");
+    expect(m1.aName).not.toBe("Trung – Kiên");
+
+    const records = buildTeamRecords(MATCHES, renamedTeams);
+    const columns = computeSwissColumns(MATCHES, records, renamedTeams);
+    const round1 = columns.find((c) => c.round === 1)!;
+    const m1Display = round1.groups[0].matches.find((m) => m.code === "M1")!;
+    expect(m1Display.aName).toBe("X – Y");
   });
 });

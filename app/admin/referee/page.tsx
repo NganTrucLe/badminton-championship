@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getMatches, getPairIdToTeamId, getTournament } from "@/lib/supabase/tournament";
+import { getMatches, getPairIdToTeamId, getTeams, getTournament } from "@/lib/supabase/tournament";
 import { AdminSectionSkeleton } from "../AdminSectionSkeleton";
 import { ensureNextRound } from "./ensureNextRound";
 import { RefereeScoringPanel } from "./RefereeScoringPanel";
@@ -23,6 +23,6 @@ async function RefereeData() {
   // Self-heal a missed generation when an organizer opens the page; idempotent
   // no-op when nothing is due.
   await ensureNextRound();
-  const [matches, pairIdToTeamId] = await Promise.all([getMatches(), getPairIdToTeamId()]);
-  return <RefereeScoringPanel initialMatches={matches} pairIdToTeamId={pairIdToTeamId} />;
+  const [matches, pairIdToTeamId, teams] = await Promise.all([getMatches(), getPairIdToTeamId(), getTeams()]);
+  return <RefereeScoringPanel initialMatches={matches} pairIdToTeamId={pairIdToTeamId} teams={teams} />;
 }
