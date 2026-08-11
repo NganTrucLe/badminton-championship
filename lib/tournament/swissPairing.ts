@@ -129,7 +129,7 @@ export function generateNextRound(matches: IMatch[]): IGenerationResult | null {
   const round = latestRound(matches);
   if (round === 0 || !isRoundComplete(matches, round)) return null;
 
-  const records = buildTeamRecords(matches);
+  const records = buildTeamRecords(matches, TEAMS);
   const aliveIds = TEAMS.map((t) => t.id).filter((id) => alive(records, id));
   const qualified = TEAMS.filter((t) => records[t.id].w >= 3).length;
   if (aliveIds.length < 2 || qualified >= 4) return null;

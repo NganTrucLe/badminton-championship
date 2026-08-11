@@ -2,11 +2,13 @@
 
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { Badge } from "@/components/ui/badge";
-import { getTeam, type IMatch } from "@/lib/tournament/data";
+import type { IMatch, ITeam } from "@/lib/tournament/data";
 import { buildTeamRecords, computeSwissColumns, type ISwissMatchDisplay, type ITeamChip } from "@/lib/tournament/standings";
+import { useTeamLookup } from "@/lib/tournament/teamLookup";
 import { isSelectable } from "./refereeControls";
 
 function TeamAvatars({ teamId, size = 18 }: { teamId: number; size?: number }) {
+  const getTeam = useTeamLookup();
   const team = getTeam(teamId);
   return (
     <div className="flex flex-none gap-[2px]">
@@ -86,6 +88,7 @@ interface IRefereeSwissPickerProps {
   activeId: string;
   liveMatchId: string | null;
   onSelect: (id: string) => void;
+  teams: ITeam[];
 }
 
 /**
@@ -96,9 +99,9 @@ interface IRefereeSwissPickerProps {
  * match is mapped back to its live `IMatch` by `code` (which is the match `id`) purely to read
  * `state` for the selectability rule from `refereeControls.isSelectable`.
  */
-export function RefereeSwissPicker({ matches, activeId, liveMatchId, onSelect }: IRefereeSwissPickerProps) {
-  const records = buildTeamRecords(matches);
-  const swissCols = computeSwissColumns(matches, records);
+export function RefereeSwissPicker({ matches, activeId, liveMatchId, onSelect, teams }: IRefereeSwissPickerProps) {
+  const records = buildTeamRecords(matches, teams);
+  const swissCols = computeSwissColumns(matches, records, teams);
   const liveMatch = liveMatchId ? { id: liveMatchId } : undefined;
 
   return (

@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { IMatch } from "@/lib/tournament/data";
-import { getTeam } from "@/lib/tournament/data";
+import { getTeam, TEAMS } from "@/lib/tournament/data";
 import { HomeLiveSection } from "../HomeLiveSection";
 
 // Echo the seeded matches straight back — no Supabase Realtime in tests. computeLiveMatch /
@@ -26,7 +26,7 @@ const noLiveMatches: IMatch[] = [
 
 describe("HomeLiveSection", () => {
   it("renders the live match card with current teams, score, and the live label", () => {
-    render(<HomeLiveSection initialMatches={liveMatches} pairIdToTeamId={{}} />);
+    render(<HomeLiveSection initialMatches={liveMatches} pairIdToTeamId={{}} teams={TEAMS} />);
 
     expect(screen.getByText("ĐANG THI ĐẤU")).toBeInTheDocument();
     expect(screen.getByText("VÒNG 2 · SÂN 1")).toBeInTheDocument();
@@ -42,7 +42,7 @@ describe("HomeLiveSection", () => {
   });
 
   it("renders no live card and the empty recent-results state when nothing is live or upcoming", () => {
-    render(<HomeLiveSection initialMatches={noLiveMatches} pairIdToTeamId={{}} />);
+    render(<HomeLiveSection initialMatches={noLiveMatches} pairIdToTeamId={{}} teams={TEAMS} />);
 
     expect(screen.queryByText("ĐANG THI ĐẤU")).not.toBeInTheDocument();
     expect(screen.getByText("21 – 15")).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe("HomeLiveSection", () => {
 
   it("renders the empty-results placeholder when there are no finished matches either", () => {
     const emptyMatches: IMatch[] = [{ id: "M6", round: 2, court: 2, time: "09:40", a: 2, b: 3, sa: 0, sb: 0, state: "next" }];
-    render(<HomeLiveSection initialMatches={emptyMatches} pairIdToTeamId={{}} />);
+    render(<HomeLiveSection initialMatches={emptyMatches} pairIdToTeamId={{}} teams={TEAMS} />);
 
     expect(screen.getByText("Chưa có kết quả nào.")).toBeInTheDocument();
   });

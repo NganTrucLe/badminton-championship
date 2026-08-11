@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { IMatch } from "@/lib/tournament/data";
-import { getTeam } from "@/lib/tournament/data";
+import { getTeam, TEAMS } from "@/lib/tournament/data";
 import { ScheduleBoard } from "../ScheduleBoard";
 
 // Echo the seeded matches straight back — no Supabase Realtime in tests. Standings + getTeam stay
@@ -26,7 +26,7 @@ const initialMatches: IMatch[] = [
 
 describe("ScheduleBoard", () => {
   it("renders the board sections, a resolved team name, and the tracking table", () => {
-    render(<ScheduleBoard initialMatches={initialMatches} pairIdToTeamId={{}} />);
+    render(<ScheduleBoard initialMatches={initialMatches} pairIdToTeamId={{}} teams={TEAMS} />);
 
     // The three board sections all render (VERBATIM Vietnamese labels).
     expect(screen.getByText("BOARD 1 · SWISS STAGE")).toBeInTheDocument();
@@ -46,7 +46,7 @@ describe("ScheduleBoard", () => {
   });
 
   it("renders the Swiss qualified/eliminated result columns", () => {
-    render(<ScheduleBoard initialMatches={initialMatches} pairIdToTeamId={{}} />);
+    render(<ScheduleBoard initialMatches={initialMatches} pairIdToTeamId={{}} teams={TEAMS} />);
 
     expect(screen.getByText("Kết quả Swiss")).toBeInTheDocument();
     expect(screen.getByText("QUALIFIED · 3 THẮNG")).toBeInTheDocument();

@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import { Loader2, Minus, Plus, Play, Square } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
 import { useLiveMatches } from "@/lib/supabase/useLiveMatches";
-import { getTeam, teamName, type IMatch, type TMatchState } from "@/lib/tournament/data";
+import { getTeam as staticGetTeam, type IMatch, type ITeam, type TMatchState } from "@/lib/tournament/data";
+import { TeamLookupProvider } from "@/lib/tournament/teamLookup";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ const STATE_LABEL: Record<string, { label: string; color: string }> = {
 interface IRefereeScoringPanelProps {
   initialMatches: IMatch[];
   pairIdToTeamId: Record<string, number>;
+  teams: ITeam[];
 }
 
 /**
@@ -49,8 +51,15 @@ interface IRefereeScoringPanelProps {
  * last-write-wins on the whole score/state row. A per-match lock/claim is an explicitly deferred
  * follow-up, not this phase.
  */
-export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IRefereeScoringPanelProps) {
+export function RefereeScoringPanel({ initialMatches, pairIdToTeamId, teams }: IRefereeScoringPanelProps) {
   const [matches, setMatches] = useLiveMatches(initialMatches, pairIdToTeamId);
+
+  // Resolved directly from the live `teams` prop (already available here — no need to go through
+  // TeamLookupProvider/useTeamLookup, which is for descendants like RefereeSwissPicker's
+  // TeamAvatars that don't receive `teams` directly).
+  const teamsById = useMemo(() => new Map(teams.map((t) => [t.id, t])), [teams]);
+  const getTeam = (id: number): ITeam => teamsById.get(id) ?? staticGetTeam(id);
+  const teamName = (id: number): string => getTeam(id).name;
 
   const liveMatch = useMemo(() => matches.find((m) => m.state === "live"), [matches]);
   const [selectedId, setSelectedId] = useState<string>("");
@@ -241,6 +250,7 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
   }
 
   return (
+    <TeamLookupProvider teams={teams}>
     <div>
       <div className="flex flex-wrap items-baseline gap-[14px]">
         <h2 className="m-0 font-[family-name:var(--font-bricolage)] text-[clamp(28px,4vw,44px)] font-black tracking-[-.035em]">
@@ -259,6 +269,7 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
               activeId={activeMatch?.id ?? ""}
               liveMatchId={liveMatch?.id ?? null}
               onSelect={selectMatch}
+              teams={teams}
             />
           </div>
         </Card>
@@ -463,5 +474,6 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId }: IReferee
         </Card>
       </div>
     </div>
+    </TeamLookupProvider>
   );
 }

@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RefereeScoringPanel } from "@/app/admin/referee/RefereeScoringPanel";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
-import type { IMatch } from "@/lib/tournament/data";
+import { TEAMS, type IMatch } from "@/lib/tournament/data";
 
 // The panel writes through the authenticated browser client — mock it so we can
 // control the UPDATE result (success / zero-row RLS reject).
@@ -54,7 +54,7 @@ describe("RefereeScoringPanel (characterization: optimistic + rollback)", () => 
     const { update, eq } = makeSupabase({ data: [{}], error: null });
 
     const user = userEvent.setup();
-    render(<RefereeScoringPanel initialMatches={[LIVE_MATCH]} pairIdToTeamId={{}} />);
+    render(<RefereeScoringPanel initialMatches={[LIVE_MATCH]} pairIdToTeamId={{}} teams={TEAMS} />);
 
     // Side A starts at its server-confirmed value (sa: 5).
     expect(screen.getByTestId("ref-score-a")).toHaveTextContent("5");
@@ -76,7 +76,7 @@ describe("RefereeScoringPanel (characterization: optimistic + rollback)", () => 
     makeSupabase({ data: [], error: null });
 
     const user = userEvent.setup();
-    render(<RefereeScoringPanel initialMatches={[LIVE_MATCH]} pairIdToTeamId={{}} />);
+    render(<RefereeScoringPanel initialMatches={[LIVE_MATCH]} pairIdToTeamId={{}} teams={TEAMS} />);
 
     await user.click(screen.getByRole("button", { name: "Tăng điểm đội A" }));
 
@@ -93,7 +93,7 @@ describe("RefereeScoringPanel (characterization: optimistic + rollback)", () => 
     makeSupabase({ data: [{}], error: null });
 
     const user = userEvent.setup();
-    render(<RefereeScoringPanel initialMatches={[LIVE_MATCH]} pairIdToTeamId={{}} />);
+    render(<RefereeScoringPanel initialMatches={[LIVE_MATCH]} pairIdToTeamId={{}} teams={TEAMS} />);
 
     await user.click(screen.getByRole("button", { name: /Kết thúc trận/i }));
 

@@ -2,7 +2,7 @@
 
 import { useLiveMatches } from "@/lib/supabase/useLiveMatches";
 import { computeLiveMatch, computeRecentResults } from "@/lib/tournament/standings";
-import type { IMatch } from "@/lib/tournament/data";
+import type { IMatch, ITeam } from "@/lib/tournament/data";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LivePulse } from "@/components/brand/LivePulse";
@@ -10,6 +10,7 @@ import { LivePulse } from "@/components/brand/LivePulse";
 interface IHomeLiveSectionProps {
   initialMatches: IMatch[];
   pairIdToTeamId: Record<string, number>;
+  teams: ITeam[];
 }
 
 /**
@@ -19,10 +20,10 @@ interface IHomeLiveSectionProps {
  * without a reload. The hero, location, and rewards blocks stay server-rendered in app/page.tsx —
  * they never change during the event, so there's no reason to ship them as client JS.
  */
-export function HomeLiveSection({ initialMatches, pairIdToTeamId }: IHomeLiveSectionProps) {
+export function HomeLiveSection({ initialMatches, pairIdToTeamId, teams }: IHomeLiveSectionProps) {
   const [matches] = useLiveMatches(initialMatches, pairIdToTeamId);
-  const live = computeLiveMatch(matches);
-  const recent = computeRecentResults(matches);
+  const live = computeLiveMatch(matches, teams);
+  const recent = computeRecentResults(matches, teams);
 
   return (
     <>
