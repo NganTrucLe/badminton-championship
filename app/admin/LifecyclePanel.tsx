@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Loader2, Play, RotateCcw } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
+import { regenerateRoundOne } from "@/app/admin/regenerateRoundOne";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,13 @@ export function LifecyclePanel({
     setBusy(true);
     setMsg("");
     try {
+      // 1) Rebuild round-1 matches from the current đội hình (only allowed in setup).
+      const regen = await regenerateRoundOne();
+      if (!regen.ok) {
+        setMsg(`Không thể xếp lịch: ${regen.error}`);
+        return;
+      }
+      // 2) Lock the roster and go live.
       const supabase = createBrowserSupabaseClient();
       const { error } = await supabase.rpc("start_tournament");
       if (error) {
@@ -50,7 +58,7 @@ export function LifecyclePanel({
         return;
       }
       setStatus("live");
-      setMsg("Đã khoá đội hình và bắt đầu giải đấu.");
+      setMsg("Đã xếp lịch vòng 1, khoá đội hình và bắt đầu giải đấu.");
       router.refresh();
     } finally {
       setBusy(false);

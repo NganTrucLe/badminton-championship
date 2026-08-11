@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LifecyclePanel } from "@/app/admin/LifecyclePanel";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
+import { regenerateRoundOne } from "@/app/admin/regenerateRoundOne";
 
 vi.mock("@/lib/supabase/browserClient", () => ({
   createBrowserSupabaseClient: vi.fn(),
@@ -9,6 +10,10 @@ vi.mock("@/lib/supabase/browserClient", () => ({
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),
+}));
+
+vi.mock("@/app/admin/regenerateRoundOne", () => ({
+  regenerateRoundOne: vi.fn().mockResolvedValue({ ok: true }),
 }));
 
 const mockedCreateBrowserSupabaseClient = vi.mocked(createBrowserSupabaseClient);
@@ -29,6 +34,7 @@ describe("LifecyclePanel (characterization)", () => {
     await user.click(screen.getByRole("button", { name: /Gửi đội hình & bắt đầu giải/i }));
 
     await waitFor(() => expect(rpc).toHaveBeenCalledWith("start_tournament"));
+    expect(vi.mocked(regenerateRoundOne)).toHaveBeenCalled();
   });
 
   it("requires opening the AlertDialog and confirming before calling reset_tournament", async () => {
