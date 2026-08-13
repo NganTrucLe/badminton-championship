@@ -173,7 +173,7 @@ describe("computeSwissColumns", () => {
 
 describe("computeSemis", () => {
   it("seeds 1v4 and 2v3 in qualification order, falling back to placeholder labels", () => {
-    const noQualified = computeSemis([]);
+    const noQualified = computeSemis([], [], TEAMS);
     expect(noQualified[0].aName).toBe("Hạt giống #1");
     expect(noQualified[0].bName).toBe("Hạt giống #4");
     expect(noQualified[1].aName).toBe("Hạt giống #2");
@@ -187,7 +187,7 @@ describe("computeSemis", () => {
       { teamId: 3, letter: "C", name: "Team C", rec: "3–2" },
       { teamId: 4, letter: "D", name: "Team D", rec: "3–2" },
     ];
-    const semis = computeSemis(qualified);
+    const semis = computeSemis(qualified, [], TEAMS);
     expect(semis[0].aName).toBe("A · Team A");
     expect(semis[0].bName).toBe("D · Team D");
     expect(semis[1].aName).toBe("B · Team B");
@@ -289,14 +289,14 @@ describe("computeSeeds", () => {
 describe("computeSemis (seeded)", () => {
   it("ghép seed1×seed4, seed2×seed3 và gắn teamId khi đủ", () => {
     const fakeSeeds = [1, 2, 3, 4].map((id) => ({ teamId: id, letter: "", name: `T${id}`, rec: "3–0" }));
-    const semis = computeSemis(fakeSeeds);
+    const semis = computeSemis(fakeSeeds, [], TEAMS);
     expect(semis).toHaveLength(2);
     expect(semis[0]).toMatchObject({ aTeamId: 1, bTeamId: 4 });
     expect(semis[1]).toMatchObject({ aTeamId: 2, bTeamId: 3 });
   });
 
   it("hiện placeholder hạt giống + teamId=0 khi chưa đủ đội", () => {
-    const semis = computeSemis([]);
+    const semis = computeSemis([], [], TEAMS);
     expect(semis[0].aName).toBe("Hạt giống #1");
     expect(semis[0].aTeamId).toBe(0);
   });
@@ -304,13 +304,42 @@ describe("computeSemis (seeded)", () => {
 
 describe("computeFinals", () => {
   it("trả placeholder Chung kết = thắng 2 bán kết, Hạng 3 = thua 2 bán kết", () => {
-    const semis = computeSemis([]);
-    const { final, third } = computeFinals(semis);
+    const semis = computeSemis([], [], TEAMS);
+    const { final, third } = computeFinals(semis, [], TEAMS);
     expect(final.aName).toBe("Thắng Bán kết 1");
     expect(final.bName).toBe("Thắng Bán kết 2");
     expect(third.aName).toBe("Thua Bán kết 1");
     expect(third.bName).toBe("Thua Bán kết 2");
     expect(final.aTeamId).toBe(0);
+  });
+});
+
+describe("computeSemis/computeFinals resolve real playoff rows", () => {
+  const semiRows: IMatch[] = [
+    { id: "R6-1", round: 6, court: 1, time: "", a: 1, b: 4, sa: 21, sb: 15, state: "done" },
+    { id: "R6-2", round: 6, court: 2, time: "", a: 2, b: 3, sa: 21, sb: 18, state: "done" },
+  ];
+  it("semis hiện đội + tỉ số thật khi có round 6", () => {
+    const semis = computeSemis([], semiRows, TEAMS); // seeds bỏ qua khi có row thật
+    expect(semis[0]).toMatchObject({ aTeamId: 1, bTeamId: 4 });
+    expect(semis[0].aName).toContain(TEAMS[0].name);
+  });
+  it("finals resolve thắng/thua khi có round 7", () => {
+    const finalRows: IMatch[] = [
+      ...semiRows,
+      { id: "R7-1", round: 7, court: 1, time: "", a: 1, b: 2, sa: 0, sb: 0, state: "next" },
+      { id: "R7-2", round: 7, court: 2, time: "", a: 4, b: 3, sa: 0, sb: 0, state: "next" },
+    ];
+    const semis = computeSemis([], finalRows, TEAMS);
+    const { final, third } = computeFinals(semis, finalRows, TEAMS);
+    expect(final).toMatchObject({ aTeamId: 1, bTeamId: 2 });
+    expect(third).toMatchObject({ aTeamId: 4, bTeamId: 3 });
+  });
+  it("giữ placeholder khi chưa có round 6/7", () => {
+    const semis = computeSemis([], [], TEAMS);
+    expect(semis[0].aName).toBe("Hạt giống #1");
+    const { final } = computeFinals(semis, [], TEAMS);
+    expect(final.aName).toBe("Thắng Bán kết 1");
   });
 });
 

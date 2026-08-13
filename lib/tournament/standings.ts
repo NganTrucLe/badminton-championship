@@ -471,8 +471,24 @@ export function computeSwissColumns(matches: IMatch[], records: TTeamRecords, te
   });
 }
 
-/** Board 2 semifinal seeding: seed 1 vs seed 4, seed 2 vs seed 3, in qualification order. */
-export function computeSemis(qualified: ITeamChip[]): ISemiMatch[] {
+/**
+ * Board 2 semifinals. Resolves to the real `round_n=6` match rows (name + score + teamId) once
+ * `ensurePlayoffs()` has inserted them; falls back to the Plan A seed-based placeholder (seed 1
+ * vs seed 4, seed 2 vs seed 3, in qualification order) until then.
+ */
+export function computeSemis(qualified: ITeamChip[], matches: IMatch[], teams: ITeam[]): ISemiMatch[] {
+  const byId = buildById(teams);
+  const nameOf = (id: number) => (byId.get(id) ? `${byId.get(id)!.letter} · ${byId.get(id)!.name}` : "");
+
+  const bk1 = matches.find((m) => m.round === 6 && m.court === 1);
+  const bk2 = matches.find((m) => m.round === 6 && m.court === 2);
+  if (bk1 && bk2) {
+    return [
+      { code: "BÁN KẾT 1", time: "SÂN 1", aName: nameOf(bk1.a), bName: nameOf(bk1.b), aTeamId: bk1.a, bTeamId: bk1.b },
+      { code: "BÁN KẾT 2", time: "SÂN 2", aName: nameOf(bk2.a), bName: nameOf(bk2.b), aTeamId: bk2.a, bTeamId: bk2.b },
+    ];
+  }
+
   const seedName = (i: number) => (qualified[i] ? `${qualified[i].letter} · ${qualified[i].name}` : `Hạt giống #${i + 1}`);
   const seedTeamId = (i: number) => qualified[i]?.teamId ?? 0;
   return [
@@ -496,29 +512,47 @@ export function computeSemis(qualified: ITeamChip[]): ISemiMatch[] {
 }
 
 /**
- * Board 2 chung kết + tranh hạng 3. Plan A: placeholder tĩnh; Plan B sẽ resolve đội thật từ
- * `semis` (đã thắng/thua) — chữ ký hàm giữ nguyên `semis` để Plan B không phải đổi call site.
+ * Board 2 chung kết + tranh hạng 3. Resolves to the real `round_n=7` match rows once
+ * `ensurePlayoffs()` has inserted them (linked to the semis by the round_n+court convention, see
+ * `.memory/knowledge/swiss-format.md`); falls back to the Plan A static placeholder otherwise.
+ * The round 7 rows are pre-resolved by `generateFinals` (Board 2 engine, `lib/tournament/
+ * playoffs.ts`) at insert time — `aTeamId`/`bTeamId` there already ARE the winner/loser, so no
+ * winner/loser derivation is needed here. This module deliberately does NOT import
+ * `lib/tournament/playoffs.ts` (which imports this module) to avoid a cycle.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for Plan B's real resolution.
-export function computeFinals(semis: ISemiMatch[]): { final: IFinalMatch; third: IFinalMatch } {
-  return {
-    final: {
-      code: "CHUNG KẾT",
-      time: "SÂN 1",
-      aName: "Thắng Bán kết 1",
-      bName: "Thắng Bán kết 2",
-      aTeamId: 0,
-      bTeamId: 0,
-    },
-    third: {
-      code: "TRANH HẠNG 3",
-      time: "SÂN 2",
-      aName: "Thua Bán kết 1",
-      bName: "Thua Bán kết 2",
-      aTeamId: 0,
-      bTeamId: 0,
-    },
-  };
+export function computeFinals(
+  semis: ISemiMatch[],
+  matches: IMatch[],
+  teams: ITeam[],
+): { final: IFinalMatch; third: IFinalMatch } {
+  const byId = buildById(teams);
+  const nameOf = (id: number) => (byId.get(id) ? `${byId.get(id)!.letter} · ${byId.get(id)!.name}` : "");
+
+  const ck = matches.find((m) => m.round === 7 && m.court === 1);
+  const h3 = matches.find((m) => m.round === 7 && m.court === 2);
+
+  const final: IFinalMatch = ck
+    ? { code: "CHUNG KẾT", time: "SÂN 1", aName: nameOf(ck.a), bName: nameOf(ck.b), aTeamId: ck.a, bTeamId: ck.b }
+    : {
+        code: "CHUNG KẾT",
+        time: "SÂN 1",
+        aName: "Thắng Bán kết 1",
+        bName: "Thắng Bán kết 2",
+        aTeamId: 0,
+        bTeamId: 0,
+      };
+  const third: IFinalMatch = h3
+    ? { code: "TRANH HẠNG 3", time: "SÂN 2", aName: nameOf(h3.a), bName: nameOf(h3.b), aTeamId: h3.a, bTeamId: h3.b }
+    : {
+        code: "TRANH HẠNG 3",
+        time: "SÂN 2",
+        aName: "Thua Bán kết 1",
+        bName: "Thua Bán kết 2",
+        aTeamId: 0,
+        bTeamId: 0,
+      };
+
+  return { final, third };
 }
 
 /** Per-round tracking table: one row per team, W/T-B history, and current status. */

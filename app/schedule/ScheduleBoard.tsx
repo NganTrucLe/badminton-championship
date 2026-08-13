@@ -162,8 +162,8 @@ export function ScheduleBoard({ initialMatches, pairIdToTeamId, teams }: ISchedu
   const qualified = computeQualified(records, teams);
   const eliminated = computeEliminated(records, teams);
   const seeds = computeSeeds(matches, records, teams);
-  const semis = computeSemis(seeds);
-  const { final, third } = computeFinals(semis);
+  const semis = computeSemis(seeds, matches, teams);
+  const { final, third } = computeFinals(semis, matches, teams);
   const trackRows = computeTrackRows(records, teams);
 
   return (
