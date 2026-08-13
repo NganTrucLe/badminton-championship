@@ -18,7 +18,9 @@ import type { IMatch, ITeam } from "@/lib/tournament/data";
 import {
   buildTeamRecords,
   computeEliminated,
+  computeFinals,
   computeQualified,
+  computeSeeds,
   computeSemis,
   computeSwissColumns,
   computeTrackRows,
@@ -79,6 +81,16 @@ function SwissMatchCard({ m }: { m: ISwissMatchDisplay }) {
         </span>
       </div>
     </Card>
+  );
+}
+
+function PlaceholderMatchRow() {
+  return (
+    <div className="flex items-center gap-[7px] rounded-[9px] border border-dashed border-[rgba(10,31,26,.2)] bg-white/60 px-2 py-1.5">
+      <span className="min-w-0 flex-1 text-[11.5px] text-[#8AA39C] italic">Chờ đội</span>
+      <span className="font-[family-name:var(--font-jetbrains)] text-[10px] text-[#B4BEBA]">vs</span>
+      <span className="min-w-0 flex-1 text-right text-[11.5px] text-[#8AA39C] italic">Chờ đội</span>
+    </div>
   );
 }
 
@@ -149,7 +161,9 @@ export function ScheduleBoard({ initialMatches, pairIdToTeamId, teams }: ISchedu
   const swissCols = computeSwissColumns(matches, records, teams);
   const qualified = computeQualified(records, teams);
   const eliminated = computeEliminated(records, teams);
-  const semis = computeSemis(qualified);
+  const seeds = computeSeeds(matches, records, teams);
+  const semis = computeSemis(seeds);
+  const { final, third } = computeFinals(semis);
   const trackRows = computeTrackRows(records, teams);
 
   return (
@@ -195,6 +209,9 @@ export function ScheduleBoard({ initialMatches, pairIdToTeamId, teams }: ISchedu
                         ))}
                         {g.chips.map((c) => (
                           <ChipRow key={c.teamId} chip={c} />
+                        ))}
+                        {Array.from({ length: g.placeholderPairs }).map((_, i) => (
+                          <PlaceholderMatchRow key={`ph-${i}`} />
                         ))}
                       </div>
                     </div>
@@ -256,9 +273,13 @@ export function ScheduleBoard({ initialMatches, pairIdToTeamId, teams }: ISchedu
                 <div className="bg-black/[.18] px-3 py-[7px] font-[family-name:var(--font-jetbrains)] text-[9.5px] tracking-[.1em] text-[#8FBCB0]">
                   {m.code}
                 </div>
-                <div className="px-3 py-2.5 text-sm font-bold text-[#FFFDF7]">{m.aName}</div>
-                <div className="border-t border-white/[.14] px-3 py-2.5 text-sm font-bold text-[#FFFDF7]">
-                  {m.bName}
+                <div className="flex items-center gap-2 px-3 py-2.5">
+                  {m.aTeamId > 0 && <TeamAvatars teamId={m.aTeamId} size={18} />}
+                  <span className="text-sm font-bold text-[#FFFDF7]">{m.aName}</span>
+                </div>
+                <div className="flex items-center gap-2 border-t border-white/[.14] px-3 py-2.5">
+                  {m.bTeamId > 0 && <TeamAvatars teamId={m.bTeamId} size={18} />}
+                  <span className="text-sm font-bold text-[#FFFDF7]">{m.bName}</span>
                 </div>
               </Card>
             ))}
@@ -267,17 +288,29 @@ export function ScheduleBoard({ initialMatches, pairIdToTeamId, teams }: ISchedu
           <div className="flex flex-col justify-center gap-3.5 pl-4">
             <Card className="gap-0 rounded-xl border-transparent bg-secondary p-4 text-secondary-foreground">
               <div className="font-[family-name:var(--font-jetbrains)] text-[9.5px] tracking-[.14em]">
-                CHUNG KẾT · SÂN 1
+                <span>{final.code}</span> · <span>{final.time}</span>
               </div>
-              <div className="mt-2.5 text-base font-extrabold">Thắng Bán kết 1</div>
-              <div className="mt-[7px] text-base font-extrabold">Thắng Bán kết 2</div>
+              <div className="mt-2.5 flex items-center gap-2 text-base font-extrabold">
+                {final.aTeamId > 0 && <TeamAvatars teamId={final.aTeamId} size={18} />}
+                {final.aName}
+              </div>
+              <div className="mt-[7px] flex items-center gap-2 text-base font-extrabold">
+                {final.bTeamId > 0 && <TeamAvatars teamId={final.bTeamId} size={18} />}
+                {final.bName}
+              </div>
             </Card>
             <Card className="gap-0 rounded-xl border-white/[.18] bg-white/[.08] p-4 text-[#DCEDE7]">
               <div className="font-[family-name:var(--font-jetbrains)] text-[9.5px] tracking-[.14em] text-[#8FBCB0]">
-                TRANH HẠNG 3 · SÂN 2
+                <span>{third.code}</span> · <span>{third.time}</span>
               </div>
-              <div className="mt-2.5 text-base font-extrabold">Thua Bán kết 1</div>
-              <div className="mt-[7px] text-base font-extrabold">Thua Bán kết 2</div>
+              <div className="mt-2.5 flex items-center gap-2 text-base font-extrabold">
+                {third.aTeamId > 0 && <TeamAvatars teamId={third.aTeamId} size={18} />}
+                {third.aName}
+              </div>
+              <div className="mt-[7px] flex items-center gap-2 text-base font-extrabold">
+                {third.bTeamId > 0 && <TeamAvatars teamId={third.bTeamId} size={18} />}
+                {third.bName}
+              </div>
             </Card>
           </div>
         </div>
