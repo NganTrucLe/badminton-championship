@@ -10,6 +10,7 @@ import {
   computeSwissColumns,
   computeSemis,
   computeSeeds,
+  computeFinals,
   computeTrackRows,
 } from "../standings";
 
@@ -298,5 +299,17 @@ describe("computeSemis (seeded)", () => {
     const semis = computeSemis([]);
     expect(semis[0].aName).toBe("Hạt giống #1");
     expect(semis[0].aTeamId).toBe(0);
+  });
+});
+
+describe("computeFinals", () => {
+  it("trả placeholder Chung kết = thắng 2 bán kết, Hạng 3 = thua 2 bán kết", () => {
+    const semis = computeSemis([]);
+    const { final, third } = computeFinals(semis);
+    expect(final.aName).toBe("Thắng Bán kết 1");
+    expect(final.bName).toBe("Thắng Bán kết 2");
+    expect(third.aName).toBe("Thua Bán kết 1");
+    expect(third.bName).toBe("Thua Bán kết 2");
+    expect(final.aTeamId).toBe(0);
   });
 });

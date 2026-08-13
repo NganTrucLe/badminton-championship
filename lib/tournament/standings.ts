@@ -476,6 +476,32 @@ export function computeSemis(qualified: ITeamChip[]): ISemiMatch[] {
   ];
 }
 
+/**
+ * Board 2 chung kết + tranh hạng 3. Plan A: placeholder tĩnh; Plan B sẽ resolve đội thật từ
+ * `semis` (đã thắng/thua) — chữ ký hàm giữ nguyên `semis` để Plan B không phải đổi call site.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for Plan B's real resolution.
+export function computeFinals(semis: ISemiMatch[]): { final: IFinalMatch; third: IFinalMatch } {
+  return {
+    final: {
+      code: "CHUNG KẾT",
+      time: "SÂN 1",
+      aName: "Thắng Bán kết 1",
+      bName: "Thắng Bán kết 2",
+      aTeamId: 0,
+      bTeamId: 0,
+    },
+    third: {
+      code: "TRANH HẠNG 3",
+      time: "SÂN 2",
+      aName: "Thua Bán kết 1",
+      bName: "Thua Bán kết 2",
+      aTeamId: 0,
+      bTeamId: 0,
+    },
+  };
+}
+
 /** Per-round tracking table: one row per team, W/T-B history, and current status. */
 export function computeTrackRows(records: TTeamRecords, teams: ITeam[]): ITrackRow[] {
   return teams.map((t) => {
