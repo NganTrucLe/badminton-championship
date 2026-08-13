@@ -284,3 +284,19 @@ describe("computeSeeds", () => {
     expect(i3).toBeLessThan(i2);
   });
 });
+
+describe("computeSemis (seeded)", () => {
+  it("ghép seed1×seed4, seed2×seed3 và gắn teamId khi đủ", () => {
+    const fakeSeeds = [1, 2, 3, 4].map((id) => ({ teamId: id, letter: "", name: `T${id}`, rec: "3–0" }));
+    const semis = computeSemis(fakeSeeds);
+    expect(semis).toHaveLength(2);
+    expect(semis[0]).toMatchObject({ aTeamId: 1, bTeamId: 4 });
+    expect(semis[1]).toMatchObject({ aTeamId: 2, bTeamId: 3 });
+  });
+
+  it("hiện placeholder hạt giống + teamId=0 khi chưa đủ đội", () => {
+    const semis = computeSemis([]);
+    expect(semis[0].aName).toBe("Hạt giống #1");
+    expect(semis[0].aTeamId).toBe(0);
+  });
+});
