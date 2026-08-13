@@ -148,12 +148,12 @@ describe("computeSwissColumns", () => {
     expect(round2.groups[1].matches).toHaveLength(2);
   });
 
-  it("shows a placeholder group for a round with no matches yet", () => {
+  it("shows anticipated record-bucket placeholder groups for a round with no matches yet", () => {
     const columns = computeSwissColumns(MATCHES, buildTeamRecords(MATCHES, TEAMS), TEAMS);
     const round3 = columns.find((c) => c.round === 3)!;
     expect(round3.status).toBe("CHƯA BẮT ĐẦU");
-    expect(round3.groups).toHaveLength(1);
-    expect(round3.groups[0].label).toBe("CHỜ VÒNG TRƯỚC");
+    expect(round3.groups.map((g) => g.label)).toEqual(["NHÓM 2–0", "NHÓM 1–1", "NHÓM 0–2"]);
+    expect(round3.groups.every((g) => g.placeholderPairs > 0)).toBe(true);
   });
 
   it("surfaces an unpaired team as a chip when a record group has an odd team out", () => {
@@ -311,5 +311,25 @@ describe("computeFinals", () => {
     expect(third.aName).toBe("Thua Bán kết 1");
     expect(third.bName).toBe("Thua Bán kết 2");
     expect(final.aTeamId).toBe(0);
+  });
+});
+
+describe("computeSwissColumns anticipated buckets", () => {
+  it("vòng chưa có dữ liệu hiện nhóm thành tích dự kiến, không phải ô rỗng", () => {
+    // MATCHES gốc: R1 done, R2 mới có live/next => R3+ chưa populate.
+    const records = buildTeamRecords(MATCHES, TEAMS);
+    const cols = computeSwissColumns(MATCHES, records, TEAMS);
+    const r3 = cols.find((c) => c.round === 3)!;
+    expect(r3.groups.map((g) => g.label)).toEqual(["NHÓM 2–0", "NHÓM 1–1", "NHÓM 0–2"]);
+    expect(r3.groups.every((g) => g.placeholderPairs > 0)).toBe(true);
+    // không còn nhóm "CHỜ VÒNG TRƯỚC"
+    expect(r3.groups.some((g) => g.label === "CHỜ VÒNG TRƯỚC")).toBe(false);
+  });
+
+  it("nhóm thật (đã populate) có placeholderPairs = 0", () => {
+    const records = buildTeamRecords(MATCHES, TEAMS);
+    const cols = computeSwissColumns(MATCHES, records, TEAMS);
+    const r1 = cols.find((c) => c.round === 1)!;
+    expect(r1.groups[0].placeholderPairs).toBe(0);
   });
 });
