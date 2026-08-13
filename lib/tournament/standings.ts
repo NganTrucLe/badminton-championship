@@ -373,6 +373,24 @@ function roundStatus(matches: IMatch[]): { status: string; statusColor: string }
   return { status: "CHƯA BẮT ĐẦU", statusColor: "#B4BEBA" };
 }
 
+/** Nhóm thành tích dự kiến theo vòng cho giải 8 đội (xem .memory/knowledge/swiss-format.md). */
+const ANTICIPATED_BUCKETS: Record<number, Array<{ w: number; l: number; pairs: number }>> = {
+  2: [
+    { w: 1, l: 0, pairs: 2 },
+    { w: 0, l: 1, pairs: 2 },
+  ],
+  3: [
+    { w: 2, l: 0, pairs: 1 },
+    { w: 1, l: 1, pairs: 2 },
+    { w: 0, l: 2, pairs: 1 },
+  ],
+  4: [
+    { w: 2, l: 1, pairs: 1 },
+    { w: 1, l: 2, pairs: 2 },
+  ],
+  5: [{ w: 2, l: 2, pairs: 1 }],
+};
+
 /**
  * The Board 1 Swiss stage: one column per round, each grouped by record. Record groups are
  * derived purely from standings (teams still alive whose total games played equals the
@@ -426,15 +444,16 @@ export function computeSwissColumns(matches: IMatch[], records: TTeamRecords, te
       });
 
       if (groups.length === 0) {
-        groups.push({
-          label: "CHỜ VÒNG TRƯỚC",
-          sub: "Ghép cặp khi có đủ kết quả",
-          bg: "#F4F4F1",
-          border: "#DEDED7",
-          fg: "#8AA39C",
-          matches: [],
-          chips: [],
-          placeholderPairs: 0,
+        (ANTICIPATED_BUCKETS[round.n] ?? []).forEach(({ w, l, pairs }) => {
+          const style = groupStyle(w, l);
+          groups.push({
+            label: `NHÓM ${w}–${l}`,
+            sub: "Dự kiến · ghép khi có kết quả vòng trước",
+            ...style,
+            matches: [],
+            chips: [],
+            placeholderPairs: pairs,
+          });
         });
       }
     }
