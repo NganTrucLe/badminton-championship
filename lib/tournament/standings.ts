@@ -90,6 +90,8 @@ export interface ISwissGroup {
   fg: string;
   matches: ISwissMatchDisplay[];
   chips: ITeamChip[];
+  /** Số dòng "chờ đội – chờ đội" dashed để render (0 với nhóm thật). */
+  placeholderPairs: number;
 }
 
 export interface ISwissColumn {
@@ -107,6 +109,19 @@ export interface ISemiMatch {
   time: string;
   aName: string;
   bName: string;
+  /** Team id khi đã biết đội; 0 khi còn là placeholder hạt giống. */
+  aTeamId: number;
+  bTeamId: number;
+}
+
+export interface IFinalMatch {
+  code: string;
+  time: string;
+  aName: string;
+  bName: string;
+  /** Team id khi đã biết đội; 0 khi còn là placeholder. */
+  aTeamId: number;
+  bTeamId: number;
 }
 
 export interface ITrackCell {
@@ -277,6 +292,34 @@ export function computeQualified(records: TTeamRecords, teams: ITeam[]): ITeamCh
   return teams.filter((t) => records[t.id].w >= 3).map((t) => teamChip(t.id, records, byId));
 }
 
+/** −1 nếu a thắng b trực tiếp, 1 nếu b thắng a, 0 nếu chưa gặp / hòa (không xảy ra: no deuce). */
+function headToHead(matches: IMatch[], a: number, b: number): number {
+  for (const m of matches) {
+    if (m.state !== "done") continue;
+    const isAB = (m.a === a && m.b === b) || (m.a === b && m.b === a);
+    if (!isAB) continue;
+    const aScore = m.a === a ? m.sa : m.sb;
+    const bScore = m.a === a ? m.sb : m.sa;
+    if (aScore > bScore) return -1;
+    if (bScore > aScore) return 1;
+  }
+  return 0;
+}
+
+/** Đội qualified (w≥3) theo thứ tự seed: wins desc → (pf−pa) desc → head-to-head → id asc. */
+export function computeSeeds(matches: IMatch[], records: TTeamRecords, teams: ITeam[]): ITeamChip[] {
+  const byId = buildById(teams);
+  return teams
+    .filter((t) => records[t.id].w >= 3)
+    .map((t) => t.id)
+    .sort((x, y) => {
+      const rx = records[x];
+      const ry = records[y];
+      return ry.w - rx.w || ry.pf - ry.pa - (rx.pf - rx.pa) || headToHead(matches, x, y) || x - y;
+    })
+    .map((id) => teamChip(id, records, byId));
+}
+
 /** Teams that have reached 3 losses (eliminated from the Swiss stage). */
 export function computeEliminated(records: TTeamRecords, teams: ITeam[]): ITeamChip[] {
   const byId = buildById(teams);
@@ -351,6 +394,7 @@ export function computeSwissColumns(matches: IMatch[], records: TTeamRecords, te
         fg: "#2A5470",
         matches: roundMatches.map((m) => matchDisplay(m, byId)),
         chips: [],
+        placeholderPairs: 0,
       });
     } else {
       const keys: string[] = [];
@@ -377,6 +421,7 @@ export function computeSwissColumns(matches: IMatch[], records: TTeamRecords, te
           ...style,
           matches: groupMatches.map((m) => matchDisplay(m, byId)),
           chips: ids.filter((id) => !paired.includes(id)).map((id) => teamChip(id, records, byId)),
+          placeholderPairs: 0,
         });
       });
 
@@ -389,6 +434,7 @@ export function computeSwissColumns(matches: IMatch[], records: TTeamRecords, te
           fg: "#8AA39C",
           matches: [],
           chips: [],
+          placeholderPairs: 0,
         });
       }
     }
@@ -409,9 +455,24 @@ export function computeSwissColumns(matches: IMatch[], records: TTeamRecords, te
 /** Board 2 semifinal seeding: seed 1 vs seed 4, seed 2 vs seed 3, in qualification order. */
 export function computeSemis(qualified: ITeamChip[]): ISemiMatch[] {
   const seedName = (i: number) => (qualified[i] ? `${qualified[i].letter} · ${qualified[i].name}` : `Hạt giống #${i + 1}`);
+  const seedTeamId = (i: number) => qualified[i]?.teamId ?? 0;
   return [
-    { code: "BÁN KẾT 1", time: "11:30 · Sân 1", aName: seedName(0), bName: seedName(3) },
-    { code: "BÁN KẾT 2", time: "11:30 · Sân 2", aName: seedName(1), bName: seedName(2) },
+    {
+      code: "BÁN KẾT 1",
+      time: "11:30 · Sân 1",
+      aName: seedName(0),
+      bName: seedName(3),
+      aTeamId: seedTeamId(0),
+      bTeamId: seedTeamId(3),
+    },
+    {
+      code: "BÁN KẾT 2",
+      time: "11:30 · Sân 2",
+      aName: seedName(1),
+      bName: seedName(2),
+      aTeamId: seedTeamId(1),
+      bTeamId: seedTeamId(2),
+    },
   ];
 }
 
