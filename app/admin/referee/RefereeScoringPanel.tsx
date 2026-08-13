@@ -23,6 +23,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ensureNextRound } from "./ensureNextRound";
+import { ensurePlayoffs } from "./ensurePlayoffs";
 import { isSelectable, matchWinnerSide, primaryAction, showScoreControls } from "./refereeControls";
 import { RefereeSwissPicker } from "./RefereeSwissPicker";
 
@@ -201,6 +202,7 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId, teams }: I
         // generated round (if this was the round's last match) to all viewers,
         // including this panel via useLiveMatches.
         void ensureNextRound();
+        void ensurePlayoffs();
       }
       setSavedMsg(
         state === "done"
