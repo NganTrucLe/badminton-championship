@@ -184,6 +184,17 @@ export const ROUND_META: IRoundMeta[] = [
   { n: 5, title: "Round 5", time: "11:10 – 11:25", sub: "Chốt suất cuối" },
 ];
 
+/**
+ * Board 2 playoff round meta (bán kết + chung kết/hạng 3), mirroring
+ * `supabase/migrations/20260813120000_playoffs_rounds.sql` for local/seed parity. Not currently
+ * consumed by ROUND_META-driven UI (Board 1 Swiss columns only render n=1..5) — kept for future
+ * consumers that need the DB-equivalent title/time/sub for round_n=6/7.
+ */
+export const PLAYOFF_ROUND_META: IRoundMeta[] = [
+  { n: 6, title: "Bán kết", time: "11:30", sub: "Board 2 · 4 đội qualified" },
+  { n: 7, title: "Chung kết / Hạng 3", time: "12:15", sub: "Board 2 · tranh cúp" },
+];
+
 /** 1 -> 'A', 2 -> 'B', ... 8 -> 'H'. Inverse of the letter->id mapping in lib/supabase/tournament.ts. */
 export function teamIdToLetter(id: number): string {
   return String.fromCharCode(64 + id);
