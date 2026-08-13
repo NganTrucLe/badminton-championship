@@ -9,6 +9,7 @@ import {
   computeEliminated,
   computeSwissColumns,
   computeSemis,
+  computeSeeds,
   computeTrackRows,
 } from "../standings";
 
@@ -230,5 +231,56 @@ describe("live team names", () => {
     const round1 = columns.find((c) => c.round === 1)!;
     const m1Display = round1.groups[0].matches.find((m) => m.code === "M1")!;
     expect(m1Display.aName).toBe("X – Y");
+  });
+});
+
+describe("computeSeeds", () => {
+  const teams = TEAMS;
+  const done = (id: string, r: number, a: number, b: number, sa: number, sb: number): IMatch => ({
+    id,
+    round: r,
+    court: 1,
+    time: "",
+    a,
+    b,
+    sa,
+    sb,
+    state: "done",
+  });
+  // 4 đội qualified (1,2,3,4) đều 3 thắng.
+  // team1: diff +47 (cao nhất). team4: diff +16 (thấp nhất).
+  // team2 & team3: cùng diff +30 — nhưng team3 thắng team2 đối đầu trực tiếp (H23) nên xếp trên.
+  const matches: IMatch[] = [
+    // Round 1
+    done("W1", 1, 1, 5, 21, 3),
+    done("W4", 1, 4, 8, 21, 15),
+    done("W7", 1, 2, 6, 21, 9),
+    done("W10", 1, 3, 7, 21, 9),
+    // Round 2
+    done("W2", 2, 1, 6, 21, 5),
+    done("W5", 2, 4, 7, 21, 16),
+    done("W8", 2, 2, 5, 21, 9),
+    done("W11", 2, 3, 8, 21, 9),
+    // Round 3
+    done("W3", 3, 1, 7, 21, 8),
+    done("W6", 3, 4, 5, 21, 16),
+    done("H23", 3, 3, 2, 21, 15),
+    // Round 4
+    done("W9", 4, 2, 8, 21, 9),
+  ];
+
+  it("chỉ trả đội đủ 3 thắng, đúng thứ tự seed (thắng→hiệu số→đối đầu)", () => {
+    const records = buildTeamRecords(matches, teams);
+    const seeds = computeSeeds(matches, records, teams);
+    expect(seeds.map((s) => s.teamId)).toEqual([1, 3, 2, 4]);
+  });
+
+  it("đối đầu phá hòa khi hiệu số bằng nhau", () => {
+    const records = buildTeamRecords(matches, teams);
+    // team2 và team3 có cùng hiệu số (+30); team3 thắng trực tiếp (H23) => team3 trên team2.
+    const seeds = computeSeeds(matches, records, teams);
+    const i2 = seeds.findIndex((s) => s.teamId === 2);
+    const i3 = seeds.findIndex((s) => s.teamId === 3);
+    expect(i3).toBeLessThan(i2);
   });
 });
