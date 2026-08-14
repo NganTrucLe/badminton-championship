@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RefereeScoringPanel } from "@/app/admin/referee/RefereeScoringPanel";
+import { ensurePlayoffs } from "@/app/admin/referee/ensurePlayoffs";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browserClient";
 import { TEAMS, type IMatch } from "@/lib/tournament/data";
 
@@ -20,6 +21,11 @@ vi.mock("@/lib/supabase/useLiveMatches", () => ({
 // Avoid ensureNextRound's Supabase side effects on the commit("done") path.
 vi.mock("@/app/admin/referee/ensureNextRound", () => ({
   ensureNextRound: vi.fn(),
+}));
+
+// Avoid ensurePlayoffs's Supabase side effects on the commit("done") path.
+vi.mock("@/app/admin/referee/ensurePlayoffs", () => ({
+  ensurePlayoffs: vi.fn(),
 }));
 
 const mockedCreateBrowserSupabaseClient = vi.mocked(createBrowserSupabaseClient);
@@ -100,5 +106,6 @@ describe("RefereeScoringPanel (characterization: optimistic + rollback)", () => 
     await waitFor(() =>
       expect(screen.getByText(/Đã kết thúc .* · 5–3/)).toBeInTheDocument(),
     );
+    expect(ensurePlayoffs).toHaveBeenCalled();
   });
 });

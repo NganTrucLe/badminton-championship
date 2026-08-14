@@ -65,6 +65,7 @@ export interface ITeamChip {
 
 export interface ISwissMatchDisplay {
   code: string;
+  no: number;
   meta: string;
   state: string;
   stateColor: string;
@@ -90,6 +91,8 @@ export interface ISwissGroup {
   fg: string;
   matches: ISwissMatchDisplay[];
   chips: ITeamChip[];
+  /** Các trận dự kiến (nhãn nguồn "Thắng/Thua trận N") — rỗng với nhóm thật. */
+  placeholders: Array<{ no: number; aLabel: string; bLabel: string }>;
 }
 
 export interface ISwissColumn {
@@ -107,6 +110,19 @@ export interface ISemiMatch {
   time: string;
   aName: string;
   bName: string;
+  /** Team id khi đã biết đội; 0 khi còn là placeholder hạt giống. */
+  aTeamId: number;
+  bTeamId: number;
+}
+
+export interface IFinalMatch {
+  code: string;
+  time: string;
+  aName: string;
+  bName: string;
+  /** Team id khi đã biết đội; 0 khi còn là placeholder. */
+  aTeamId: number;
+  bTeamId: number;
 }
 
 export interface ITrackCell {
@@ -277,6 +293,34 @@ export function computeQualified(records: TTeamRecords, teams: ITeam[]): ITeamCh
   return teams.filter((t) => records[t.id].w >= 3).map((t) => teamChip(t.id, records, byId));
 }
 
+/** −1 nếu a thắng b trực tiếp, 1 nếu b thắng a, 0 nếu chưa gặp / hòa (không xảy ra: no deuce). */
+function headToHead(matches: IMatch[], a: number, b: number): number {
+  for (const m of matches) {
+    if (m.state !== "done") continue;
+    const isAB = (m.a === a && m.b === b) || (m.a === b && m.b === a);
+    if (!isAB) continue;
+    const aScore = m.a === a ? m.sa : m.sb;
+    const bScore = m.a === a ? m.sb : m.sa;
+    if (aScore > bScore) return -1;
+    if (bScore > aScore) return 1;
+  }
+  return 0;
+}
+
+/** Đội qualified (w≥3) theo thứ tự seed: wins desc → (pf−pa) desc → head-to-head → id asc. */
+export function computeSeeds(matches: IMatch[], records: TTeamRecords, teams: ITeam[]): ITeamChip[] {
+  const byId = buildById(teams);
+  return teams
+    .filter((t) => records[t.id].w >= 3)
+    .map((t) => t.id)
+    .sort((x, y) => {
+      const rx = records[x];
+      const ry = records[y];
+      return ry.w - rx.w || ry.pf - ry.pa - (rx.pf - rx.pa) || headToHead(matches, x, y) || x - y;
+    })
+    .map((id) => teamChip(id, records, byId));
+}
+
 /** Teams that have reached 3 losses (eliminated from the Swiss stage). */
 export function computeEliminated(records: TTeamRecords, teams: ITeam[]): ITeamChip[] {
   const byId = buildById(teams);
@@ -287,7 +331,7 @@ function isAlive(records: TTeamRecords, id: number): boolean {
   return records[id].w < 3 && records[id].l < 3;
 }
 
-function matchDisplay(m: IMatch, byId: TTeamById): ISwissMatchDisplay {
+function matchDisplay(m: IMatch, byId: TTeamById, no: number): ISwissMatchDisplay {
   const fin = m.state === "done";
   const aWins = fin && m.sa > m.sb;
   const bWins = fin && m.sb > m.sa;
@@ -304,7 +348,8 @@ function matchDisplay(m: IMatch, byId: TTeamById): ISwissMatchDisplay {
 
   return {
     code: m.id,
-    meta: `Sân ${m.court}`,
+    no,
+    meta: `Trận ${no} · Sân ${m.court}`,
     state: meta.label,
     stateColor: meta.color,
     aTeamId: m.a,
@@ -330,6 +375,34 @@ function roundStatus(matches: IMatch[]): { status: string; statusColor: string }
   return { status: "CHƯA BẮT ĐẦU", statusColor: "#B4BEBA" };
 }
 
+/** Số trận toàn giải bắt đầu mỗi vòng (cấu trúc cố định 8 đội — xem swiss-format.md). */
+const ROUND_START: Record<number, number> = { 1: 1, 2: 5, 3: 9, 4: 13, 5: 16 };
+
+/**
+ * Các trận dự kiến theo vòng cho giải 8 đội: số trận toàn giải + nhãn nguồn ("Thắng/Thua trận N").
+ * Vòng 4–5 là dự kiến tương đối do luật trôi nhóm Swiss (xem .memory/knowledge/swiss-format.md).
+ */
+const ANTICIPATED_MATCHES: Record<number, Array<{ w: number; l: number; no: number; a: string; b: string }>> = {
+  2: [
+    { w: 1, l: 0, no: 5, a: "Thắng trận 1", b: "Thắng trận 2" },
+    { w: 1, l: 0, no: 6, a: "Thắng trận 3", b: "Thắng trận 4" },
+    { w: 0, l: 1, no: 7, a: "Thua trận 1", b: "Thua trận 2" },
+    { w: 0, l: 1, no: 8, a: "Thua trận 3", b: "Thua trận 4" },
+  ],
+  3: [
+    { w: 2, l: 0, no: 9, a: "Thắng trận 5", b: "Thắng trận 6" },
+    { w: 1, l: 1, no: 10, a: "Thua trận 5", b: "Thắng trận 7" },
+    { w: 1, l: 1, no: 11, a: "Thua trận 6", b: "Thắng trận 8" },
+    { w: 0, l: 2, no: 12, a: "Thua trận 7", b: "Thua trận 8" },
+  ],
+  4: [
+    { w: 2, l: 1, no: 13, a: "Thắng trận 10", b: "Thắng trận 11" },
+    { w: 1, l: 2, no: 14, a: "Thua trận 10", b: "Thắng trận 12" },
+    { w: 1, l: 2, no: 15, a: "Thua trận 11", b: "Thua trận 9" },
+  ],
+  5: [{ w: 2, l: 2, no: 16, a: "Thắng trận 14", b: "Thắng trận 15" }],
+};
+
 /**
  * The Board 1 Swiss stage: one column per round, each grouped by record. Record groups are
  * derived purely from standings (teams still alive whose total games played equals the
@@ -340,6 +413,11 @@ export function computeSwissColumns(matches: IMatch[], records: TTeamRecords, te
   const byId = buildById(teams);
   return ROUND_META.map((round: IRoundMeta) => {
     const roundMatches = matches.filter((m) => m.round === round.n);
+    // Số trận toàn giải cho các trận thật: sắp theo sân rồi mã trận, bắt đầu từ ROUND_START.
+    const start = ROUND_START[round.n] ?? 0;
+    const ordered = [...roundMatches].sort((x, y) => x.court - y.court || x.id.localeCompare(y.id));
+    const noById = new Map<string, number>(ordered.map((m, i) => [m.id, start + i]));
+    const display = (m: IMatch) => matchDisplay(m, byId, noById.get(m.id) ?? 0);
     const groups: ISwissGroup[] = [];
 
     if (round.n === 1) {
@@ -349,8 +427,9 @@ export function computeSwissColumns(matches: IMatch[], records: TTeamRecords, te
         bg: "#EEF3F7",
         border: "#B9CBD8",
         fg: "#2A5470",
-        matches: roundMatches.map((m) => matchDisplay(m, byId)),
+        matches: roundMatches.map(display),
         chips: [],
+        placeholders: [],
       });
     } else {
       const keys: string[] = [];
@@ -375,20 +454,31 @@ export function computeSwissColumns(matches: IMatch[], records: TTeamRecords, te
           label: `NHÓM ${w}–${l}`,
           sub: `${ids.length} đội · thắng đi tiếp ${w + 1}–${l}`,
           ...style,
-          matches: groupMatches.map((m) => matchDisplay(m, byId)),
+          matches: groupMatches.map(display),
           chips: ids.filter((id) => !paired.includes(id)).map((id) => teamChip(id, records, byId)),
+          placeholders: [],
         });
       });
 
       if (groups.length === 0) {
-        groups.push({
-          label: "CHỜ VÒNG TRƯỚC",
-          sub: "Ghép cặp khi có đủ kết quả",
-          bg: "#F4F4F1",
-          border: "#DEDED7",
-          fg: "#8AA39C",
-          matches: [],
-          chips: [],
+        const bucketKeys: string[] = [];
+        (ANTICIPATED_MATCHES[round.n] ?? []).forEach(({ w, l }) => {
+          const k = `${w}-${l}`;
+          if (!bucketKeys.includes(k)) bucketKeys.push(k);
+        });
+        bucketKeys.forEach((k) => {
+          const [w, l] = k.split("-").map(Number);
+          const style = groupStyle(w, l);
+          groups.push({
+            label: `NHÓM ${w}–${l}`,
+            sub: "Dự kiến · ghép khi có kết quả vòng trước",
+            ...style,
+            matches: [],
+            chips: [],
+            placeholders: (ANTICIPATED_MATCHES[round.n] ?? [])
+              .filter((e) => e.w === w && e.l === l)
+              .map((e) => ({ no: e.no, aLabel: e.a, bLabel: e.b })),
+          });
         });
       }
     }
@@ -406,13 +496,88 @@ export function computeSwissColumns(matches: IMatch[], records: TTeamRecords, te
   });
 }
 
-/** Board 2 semifinal seeding: seed 1 vs seed 4, seed 2 vs seed 3, in qualification order. */
-export function computeSemis(qualified: ITeamChip[]): ISemiMatch[] {
+/**
+ * Board 2 semifinals. Resolves to the real `round_n=6` match rows (name + score + teamId) once
+ * `ensurePlayoffs()` has inserted them; falls back to the Plan A seed-based placeholder (seed 1
+ * vs seed 4, seed 2 vs seed 3, in qualification order) until then.
+ */
+export function computeSemis(qualified: ITeamChip[], matches: IMatch[], teams: ITeam[]): ISemiMatch[] {
+  const byId = buildById(teams);
+  const nameOf = (id: number) => (byId.get(id) ? `${byId.get(id)!.letter} · ${byId.get(id)!.name}` : "");
+
+  const bk1 = matches.find((m) => m.round === 6 && m.court === 1);
+  const bk2 = matches.find((m) => m.round === 6 && m.court === 2);
+  if (bk1 && bk2) {
+    return [
+      { code: "BÁN KẾT 1", time: "SÂN 1", aName: nameOf(bk1.a), bName: nameOf(bk1.b), aTeamId: bk1.a, bTeamId: bk1.b },
+      { code: "BÁN KẾT 2", time: "SÂN 2", aName: nameOf(bk2.a), bName: nameOf(bk2.b), aTeamId: bk2.a, bTeamId: bk2.b },
+    ];
+  }
+
   const seedName = (i: number) => (qualified[i] ? `${qualified[i].letter} · ${qualified[i].name}` : `Hạt giống #${i + 1}`);
+  const seedTeamId = (i: number) => qualified[i]?.teamId ?? 0;
   return [
-    { code: "BÁN KẾT 1", time: "11:30 · Sân 1", aName: seedName(0), bName: seedName(3) },
-    { code: "BÁN KẾT 2", time: "11:30 · Sân 2", aName: seedName(1), bName: seedName(2) },
+    {
+      code: "BÁN KẾT 1",
+      time: "11:30 · Sân 1",
+      aName: seedName(0),
+      bName: seedName(3),
+      aTeamId: seedTeamId(0),
+      bTeamId: seedTeamId(3),
+    },
+    {
+      code: "BÁN KẾT 2",
+      time: "11:30 · Sân 2",
+      aName: seedName(1),
+      bName: seedName(2),
+      aTeamId: seedTeamId(1),
+      bTeamId: seedTeamId(2),
+    },
   ];
+}
+
+/**
+ * Board 2 chung kết + tranh hạng 3. Resolves to the real `round_n=7` match rows once
+ * `ensurePlayoffs()` has inserted them (linked to the semis by the round_n+court convention, see
+ * `.memory/knowledge/swiss-format.md`); falls back to the Plan A static placeholder otherwise.
+ * The round 7 rows are pre-resolved by `generateFinals` (Board 2 engine, `lib/tournament/
+ * playoffs.ts`) at insert time — `aTeamId`/`bTeamId` there already ARE the winner/loser, so no
+ * winner/loser derivation is needed here. This module deliberately does NOT import
+ * `lib/tournament/playoffs.ts` (which imports this module) to avoid a cycle.
+ */
+export function computeFinals(
+  semis: ISemiMatch[],
+  matches: IMatch[],
+  teams: ITeam[],
+): { final: IFinalMatch; third: IFinalMatch } {
+  const byId = buildById(teams);
+  const nameOf = (id: number) => (byId.get(id) ? `${byId.get(id)!.letter} · ${byId.get(id)!.name}` : "");
+
+  const ck = matches.find((m) => m.round === 7 && m.court === 1);
+  const h3 = matches.find((m) => m.round === 7 && m.court === 2);
+
+  const final: IFinalMatch = ck
+    ? { code: "CHUNG KẾT", time: "SÂN 1", aName: nameOf(ck.a), bName: nameOf(ck.b), aTeamId: ck.a, bTeamId: ck.b }
+    : {
+        code: "CHUNG KẾT",
+        time: "SÂN 1",
+        aName: "Thắng Bán kết 1",
+        bName: "Thắng Bán kết 2",
+        aTeamId: 0,
+        bTeamId: 0,
+      };
+  const third: IFinalMatch = h3
+    ? { code: "TRANH HẠNG 3", time: "SÂN 2", aName: nameOf(h3.a), bName: nameOf(h3.b), aTeamId: h3.a, bTeamId: h3.b }
+    : {
+        code: "TRANH HẠNG 3",
+        time: "SÂN 2",
+        aName: "Thua Bán kết 1",
+        bName: "Thua Bán kết 2",
+        aTeamId: 0,
+        bTeamId: 0,
+      };
+
+  return { final, third };
 }
 
 /** Per-round tracking table: one row per team, W/T-B history, and current status. */

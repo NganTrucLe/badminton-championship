@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { IMatch } from "@/lib/tournament/data";
-import { getTeam, TEAMS } from "@/lib/tournament/data";
+import { getTeam, MATCHES, TEAMS } from "@/lib/tournament/data";
 import { ScheduleBoard } from "../ScheduleBoard";
 
 // Echo the seeded matches straight back — no Supabase Realtime in tests. Standings + getTeam stay
@@ -51,5 +51,14 @@ describe("ScheduleBoard", () => {
     expect(screen.getByText("Kết quả Swiss")).toBeInTheDocument();
     expect(screen.getByText("QUALIFIED · 3 THẮNG")).toBeInTheDocument();
     expect(screen.getByText("ELIMINATED · 3 THUA")).toBeInTheDocument();
+  });
+
+  it("hiện dòng placeholder cho vòng Swiss dự kiến và cụm Chung kết", () => {
+    const pairIdToTeamId = Object.fromEntries(TEAMS.map((t) => [String(t.id), t.id]));
+    render(<ScheduleBoard initialMatches={MATCHES} pairIdToTeamId={pairIdToTeamId} teams={TEAMS} />);
+    // MATCHES có R2 là trận thật -> placeholder xuất hiện từ R3 trở đi.
+    expect(screen.getByText("Thắng trận 5")).toBeInTheDocument();
+    expect(screen.getByText("Thua trận 8")).toBeInTheDocument();
+    expect(screen.getByText("CHUNG KẾT")).toBeInTheDocument();
   });
 });
