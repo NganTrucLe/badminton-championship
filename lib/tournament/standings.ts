@@ -65,6 +65,7 @@ export interface ITeamChip {
 
 export interface ISwissMatchDisplay {
   code: string;
+  no: number;
   meta: string;
   state: string;
   stateColor: string;
@@ -90,8 +91,8 @@ export interface ISwissGroup {
   fg: string;
   matches: ISwissMatchDisplay[];
   chips: ITeamChip[];
-  /** Số dòng "chờ đội – chờ đội" dashed để render (0 với nhóm thật). */
-  placeholderPairs: number;
+  /** Các trận dự kiến (nhãn nguồn "Thắng/Thua trận N") — rỗng với nhóm thật. */
+  placeholders: Array<{ no: number; aLabel: string; bLabel: string }>;
 }
 
 export interface ISwissColumn {
@@ -330,7 +331,7 @@ function isAlive(records: TTeamRecords, id: number): boolean {
   return records[id].w < 3 && records[id].l < 3;
 }
 
-function matchDisplay(m: IMatch, byId: TTeamById): ISwissMatchDisplay {
+function matchDisplay(m: IMatch, byId: TTeamById, no: number): ISwissMatchDisplay {
   const fin = m.state === "done";
   const aWins = fin && m.sa > m.sb;
   const bWins = fin && m.sb > m.sa;
@@ -347,7 +348,8 @@ function matchDisplay(m: IMatch, byId: TTeamById): ISwissMatchDisplay {
 
   return {
     code: m.id,
-    meta: `Sân ${m.court}`,
+    no,
+    meta: `Trận ${no} · Sân ${m.court}`,
     state: meta.label,
     stateColor: meta.color,
     aTeamId: m.a,
@@ -373,22 +375,32 @@ function roundStatus(matches: IMatch[]): { status: string; statusColor: string }
   return { status: "CHƯA BẮT ĐẦU", statusColor: "#B4BEBA" };
 }
 
-/** Nhóm thành tích dự kiến theo vòng cho giải 8 đội (xem .memory/knowledge/swiss-format.md). */
-const ANTICIPATED_BUCKETS: Record<number, Array<{ w: number; l: number; pairs: number }>> = {
+/** Số trận toàn giải bắt đầu mỗi vòng (cấu trúc cố định 8 đội — xem swiss-format.md). */
+const ROUND_START: Record<number, number> = { 1: 1, 2: 5, 3: 9, 4: 13, 5: 16 };
+
+/**
+ * Các trận dự kiến theo vòng cho giải 8 đội: số trận toàn giải + nhãn nguồn ("Thắng/Thua trận N").
+ * Vòng 4–5 là dự kiến tương đối do luật trôi nhóm Swiss (xem .memory/knowledge/swiss-format.md).
+ */
+const ANTICIPATED_MATCHES: Record<number, Array<{ w: number; l: number; no: number; a: string; b: string }>> = {
   2: [
-    { w: 1, l: 0, pairs: 2 },
-    { w: 0, l: 1, pairs: 2 },
+    { w: 1, l: 0, no: 5, a: "Thắng trận 1", b: "Thắng trận 2" },
+    { w: 1, l: 0, no: 6, a: "Thắng trận 3", b: "Thắng trận 4" },
+    { w: 0, l: 1, no: 7, a: "Thua trận 1", b: "Thua trận 2" },
+    { w: 0, l: 1, no: 8, a: "Thua trận 3", b: "Thua trận 4" },
   ],
   3: [
-    { w: 2, l: 0, pairs: 1 },
-    { w: 1, l: 1, pairs: 2 },
-    { w: 0, l: 2, pairs: 1 },
+    { w: 2, l: 0, no: 9, a: "Thắng trận 5", b: "Thắng trận 6" },
+    { w: 1, l: 1, no: 10, a: "Thua trận 5", b: "Thắng trận 7" },
+    { w: 1, l: 1, no: 11, a: "Thua trận 6", b: "Thắng trận 8" },
+    { w: 0, l: 2, no: 12, a: "Thua trận 7", b: "Thua trận 8" },
   ],
   4: [
-    { w: 2, l: 1, pairs: 1 },
-    { w: 1, l: 2, pairs: 2 },
+    { w: 2, l: 1, no: 13, a: "Thắng trận 10", b: "Thắng trận 11" },
+    { w: 1, l: 2, no: 14, a: "Thua trận 10", b: "Thắng trận 12" },
+    { w: 1, l: 2, no: 15, a: "Thua trận 11", b: "Thua trận 9" },
   ],
-  5: [{ w: 2, l: 2, pairs: 1 }],
+  5: [{ w: 2, l: 2, no: 16, a: "Thắng trận 14", b: "Thắng trận 15" }],
 };
 
 /**
@@ -401,6 +413,11 @@ export function computeSwissColumns(matches: IMatch[], records: TTeamRecords, te
   const byId = buildById(teams);
   return ROUND_META.map((round: IRoundMeta) => {
     const roundMatches = matches.filter((m) => m.round === round.n);
+    // Số trận toàn giải cho các trận thật: sắp theo sân rồi mã trận, bắt đầu từ ROUND_START.
+    const start = ROUND_START[round.n] ?? 0;
+    const ordered = [...roundMatches].sort((x, y) => x.court - y.court || x.id.localeCompare(y.id));
+    const noById = new Map<string, number>(ordered.map((m, i) => [m.id, start + i]));
+    const display = (m: IMatch) => matchDisplay(m, byId, noById.get(m.id) ?? 0);
     const groups: ISwissGroup[] = [];
 
     if (round.n === 1) {
@@ -410,9 +427,9 @@ export function computeSwissColumns(matches: IMatch[], records: TTeamRecords, te
         bg: "#EEF3F7",
         border: "#B9CBD8",
         fg: "#2A5470",
-        matches: roundMatches.map((m) => matchDisplay(m, byId)),
+        matches: roundMatches.map(display),
         chips: [],
-        placeholderPairs: 0,
+        placeholders: [],
       });
     } else {
       const keys: string[] = [];
@@ -437,14 +454,20 @@ export function computeSwissColumns(matches: IMatch[], records: TTeamRecords, te
           label: `NHÓM ${w}–${l}`,
           sub: `${ids.length} đội · thắng đi tiếp ${w + 1}–${l}`,
           ...style,
-          matches: groupMatches.map((m) => matchDisplay(m, byId)),
+          matches: groupMatches.map(display),
           chips: ids.filter((id) => !paired.includes(id)).map((id) => teamChip(id, records, byId)),
-          placeholderPairs: 0,
+          placeholders: [],
         });
       });
 
       if (groups.length === 0) {
-        (ANTICIPATED_BUCKETS[round.n] ?? []).forEach(({ w, l, pairs }) => {
+        const bucketKeys: string[] = [];
+        (ANTICIPATED_MATCHES[round.n] ?? []).forEach(({ w, l }) => {
+          const k = `${w}-${l}`;
+          if (!bucketKeys.includes(k)) bucketKeys.push(k);
+        });
+        bucketKeys.forEach((k) => {
+          const [w, l] = k.split("-").map(Number);
           const style = groupStyle(w, l);
           groups.push({
             label: `NHÓM ${w}–${l}`,
@@ -452,7 +475,9 @@ export function computeSwissColumns(matches: IMatch[], records: TTeamRecords, te
             ...style,
             matches: [],
             chips: [],
-            placeholderPairs: pairs,
+            placeholders: (ANTICIPATED_MATCHES[round.n] ?? [])
+              .filter((e) => e.w === w && e.l === l)
+              .map((e) => ({ no: e.no, aLabel: e.a, bLabel: e.b })),
           });
         });
       }
