@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isSelectable, matchWinnerSide, primaryAction, showScoreControls } from "../refereeControls";
+import { isSelectable, matchWinnerSide, parseScoreInput, primaryAction, sanitizeScoreDigits, showScoreControls } from "../refereeControls";
 
 describe("primaryAction", () => {
   it("returns 'start' for a next match", () => {
@@ -64,5 +64,28 @@ describe("matchWinnerSide", () => {
 
   it("returns null for a next match regardless of score", () => {
     expect(matchWinnerSide("next", 21, 15)).toBeNull();
+  });
+});
+
+describe("sanitizeScoreDigits", () => {
+  it("keeps only digit characters", () => {
+    expect(sanitizeScoreDigits("21")).toBe("21");
+    expect(sanitizeScoreDigits("2a1")).toBe("21");
+    expect(sanitizeScoreDigits("-5")).toBe("5");
+    expect(sanitizeScoreDigits("")).toBe("");
+  });
+});
+
+describe("parseScoreInput", () => {
+  it("parses digit strings to integers", () => {
+    expect(parseScoreInput("21")).toBe(21);
+    expect(parseScoreInput("007")).toBe(7);
+  });
+  it("treats empty / non-digit input as 0", () => {
+    expect(parseScoreInput("")).toBe(0);
+    expect(parseScoreInput("abc")).toBe(0);
+  });
+  it("never returns a negative number", () => {
+    expect(parseScoreInput("-5")).toBe(5);
   });
 });
