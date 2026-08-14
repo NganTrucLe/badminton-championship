@@ -40,12 +40,18 @@ makes must trace to a rule here — if a needed rule is missing, add it here fir
    unchanged, and it is paired normally in the next round. No synthetic opponent, no free win, no
    match row is created for the bye.
 
-## Terminal / playoffs
-- Round generation stops when fewer than 2 alive pairs remain, OR 4 pairs have Qualified.
-- When 4 pairs are Qualified, the Swiss stage is over. Semifinal seeding would be seed1 vs seed4,
-  seed2 vs seed3 (seed order = qualification order; ties broken by wins desc → differential desc →
-  letter). **Playoff (semifinal/final) match generation is OUT OF SCOPE for the current plan** — the
-  existing static playoff bracket on `/schedule` stays as-is. Generation simply stops.
+## Terminal / playoffs (approved 2026-08-13 — now IN scope)
+- Swiss round generation stops when <2 alive pairs remain OR 4 pairs Qualified.
+- **Seeding** (4 qualified → seed1..4): wins desc → point differential (pf−pa) desc →
+  head-to-head (đội thắng trực tiếp trên) → letter A→H asc.
+- **Semifinals** (`round_n=6`, generated when 4 qualified, none exist yet):
+  - Sân 1 = Bán kết 1 = seed1 vs seed4; Sân 2 = Bán kết 2 = seed2 vs seed3.
+- **Final + 3rd place** (`round_n=7`, generated when BOTH semis `done`, none exist yet):
+  - Sân 1 = Chung kết = thắng BK1 vs thắng BK2.
+  - Sân 2 = Tranh hạng 3 = thua BK1 vs thua BK2.
+- Bo1, no deuce → mọi trận playoff luôn có đúng 1 đội thắng (không bye, không hòa).
+- Sinh trận idempotent qua `ensurePlayoffs()` (giống `ensureNextRound()`), gọi sau mỗi trận kết thúc.
+- Liên kết Final/3rd → bán kết theo quy ước `round_n`+`court` (không lưu cột nguồn).
 
 ## Worked example (why odd groups occur)
 - R1: 8 alive → 4 matches. R2 groups: {1-0}×4, {0-1}×4 (even).

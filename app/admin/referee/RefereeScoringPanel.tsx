@@ -23,7 +23,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ensureNextRound } from "./ensureNextRound";
+import { ensurePlayoffs } from "./ensurePlayoffs";
 import { isSelectable, matchWinnerSide, primaryAction, showScoreControls } from "./refereeControls";
+import { RefereePlayoffPicker } from "./RefereePlayoffPicker";
 import { RefereeSwissPicker } from "./RefereeSwissPicker";
 
 const STATE_LABEL: Record<string, { label: string; color: string }> = {
@@ -62,6 +64,7 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId, teams }: I
   const teamName = (id: number): string => getTeam(id).name;
 
   const liveMatch = useMemo(() => matches.find((m) => m.state === "live"), [matches]);
+  const playoffMatches = useMemo(() => matches.filter((m) => m.round === 6 || m.round === 7), [matches]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [confirmingReset, setConfirmingReset] = useState(false);
 
@@ -201,6 +204,7 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId, teams }: I
         // generated round (if this was the round's last match) to all viewers,
         // including this panel via useLiveMatches.
         void ensureNextRound();
+        void ensurePlayoffs();
       }
       setSavedMsg(
         state === "done"
@@ -270,6 +274,12 @@ export function RefereeScoringPanel({ initialMatches, pairIdToTeamId, teams }: I
               liveMatchId={liveMatch?.id ?? null}
               onSelect={selectMatch}
               teams={teams}
+            />
+            <RefereePlayoffPicker
+              matches={playoffMatches}
+              activeId={activeMatch?.id ?? ""}
+              liveMatchId={liveMatch?.id ?? null}
+              onSelect={selectMatch}
             />
           </div>
         </Card>
