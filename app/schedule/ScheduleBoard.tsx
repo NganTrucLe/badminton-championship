@@ -84,12 +84,17 @@ function SwissMatchCard({ m }: { m: ISwissMatchDisplay }) {
   );
 }
 
-function PlaceholderMatchRow() {
+function PlaceholderMatchRow({ no, aLabel, bLabel }: { no: number; aLabel: string; bLabel: string }) {
   return (
-    <div className="flex items-center gap-[7px] rounded-[9px] border border-dashed border-[rgba(10,31,26,.2)] bg-white/60 px-2 py-1.5">
-      <span className="min-w-0 flex-1 text-[11.5px] text-[#8AA39C] italic">Chờ đội</span>
-      <span className="font-[family-name:var(--font-jetbrains)] text-[10px] text-[#B4BEBA]">vs</span>
-      <span className="min-w-0 flex-1 text-right text-[11.5px] text-[#8AA39C] italic">Chờ đội</span>
+    <div className="overflow-hidden rounded-[9px] border border-dashed border-[rgba(10,31,26,.2)] bg-white/60">
+      <div className="bg-[rgba(10,31,26,.035)] px-2 py-[4px] font-[family-name:var(--font-jetbrains)] text-[8.5px] text-[#8AA39C]">
+        Trận {no} · dự kiến
+      </div>
+      <div className="flex items-center gap-[7px] px-2 py-1.5">
+        <span className="min-w-0 flex-1 text-[11.5px] font-medium text-[#5B7A72] italic">{aLabel}</span>
+        <span className="font-[family-name:var(--font-jetbrains)] text-[10px] text-[#B4BEBA]">vs</span>
+        <span className="min-w-0 flex-1 text-right text-[11.5px] font-medium text-[#5B7A72] italic">{bLabel}</span>
+      </div>
     </div>
   );
 }
@@ -210,8 +215,8 @@ export function ScheduleBoard({ initialMatches, pairIdToTeamId, teams }: ISchedu
                         {g.chips.map((c) => (
                           <ChipRow key={c.teamId} chip={c} />
                         ))}
-                        {Array.from({ length: g.placeholderPairs }).map((_, i) => (
-                          <PlaceholderMatchRow key={`ph-${i}`} />
+                        {g.placeholders.map((p) => (
+                          <PlaceholderMatchRow key={`ph-${p.no}`} no={p.no} aLabel={p.aLabel} bLabel={p.bLabel} />
                         ))}
                       </div>
                     </div>
