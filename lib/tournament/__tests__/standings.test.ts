@@ -153,7 +153,16 @@ describe("computeSwissColumns", () => {
     const round3 = columns.find((c) => c.round === 3)!;
     expect(round3.status).toBe("CHƯA BẮT ĐẦU");
     expect(round3.groups.map((g) => g.label)).toEqual(["NHÓM 2–0", "NHÓM 1–1", "NHÓM 0–2"]);
-    expect(round3.groups.every((g) => g.placeholderPairs > 0)).toBe(true);
+    expect(round3.groups.every((g) => g.placeholders.length > 0)).toBe(true);
+    expect(round3.groups[0].placeholders).toEqual([{ no: 9, aLabel: "Thắng trận 5", bLabel: "Thắng trận 6" }]);
+  });
+
+  it("numbers real matches across the tournament (round 1 = 1..4)", () => {
+    const columns = computeSwissColumns(MATCHES, buildTeamRecords(MATCHES, TEAMS), TEAMS);
+    const round1 = columns.find((c) => c.round === 1)!;
+    const nums = round1.groups[0].matches.map((m) => m.no).sort((a, b) => a - b);
+    expect(nums).toEqual([1, 2, 3, 4]);
+    expect(round1.groups[0].matches.every((m) => m.meta.startsWith("Trận "))).toBe(true);
   });
 
   it("surfaces an unpaired team as a chip when a record group has an odd team out", () => {
@@ -350,7 +359,7 @@ describe("computeSwissColumns anticipated buckets", () => {
     const cols = computeSwissColumns(MATCHES, records, TEAMS);
     const r3 = cols.find((c) => c.round === 3)!;
     expect(r3.groups.map((g) => g.label)).toEqual(["NHÓM 2–0", "NHÓM 1–1", "NHÓM 0–2"]);
-    expect(r3.groups.every((g) => g.placeholderPairs > 0)).toBe(true);
+    expect(r3.groups.every((g) => g.placeholders.length > 0)).toBe(true);
     // không còn nhóm "CHỜ VÒNG TRƯỚC"
     expect(r3.groups.some((g) => g.label === "CHỜ VÒNG TRƯỚC")).toBe(false);
   });
@@ -359,6 +368,6 @@ describe("computeSwissColumns anticipated buckets", () => {
     const records = buildTeamRecords(MATCHES, TEAMS);
     const cols = computeSwissColumns(MATCHES, records, TEAMS);
     const r1 = cols.find((c) => c.round === 1)!;
-    expect(r1.groups[0].placeholderPairs).toBe(0);
+    expect(r1.groups[0].placeholders).toEqual([]);
   });
 });
