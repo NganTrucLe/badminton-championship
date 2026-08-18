@@ -43,3 +43,19 @@ export function matchWinnerSide(state: string, sa: number, sb: number): "a" | "b
   if (sb > sa) return "b";
   return null;
 }
+
+/** Strip every non-digit from raw input; used to sanitize the editable score field as the user types. */
+export function sanitizeScoreDigits(raw: string): string {
+  return raw.replace(/\D/g, "");
+}
+
+/**
+ * Parse a typed score field into the integer to commit. Non-digits are stripped first,
+ * an empty field commits as 0, and the result is never negative.
+ */
+export function parseScoreInput(raw: string): number {
+  const digits = sanitizeScoreDigits(raw);
+  if (digits === "") return 0;
+  const n = Number.parseInt(digits, 10);
+  return Number.isNaN(n) || n < 0 ? 0 : n;
+}

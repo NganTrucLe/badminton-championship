@@ -62,13 +62,13 @@ describe("RefereeScoringPanel (characterization: optimistic + rollback)", () => 
     const user = userEvent.setup();
     render(<RefereeScoringPanel initialMatches={[LIVE_MATCH]} pairIdToTeamId={{}} teams={TEAMS} />);
 
-    // Side A starts at its server-confirmed value (sa: 5).
-    expect(screen.getByTestId("ref-score-a")).toHaveTextContent("5");
+    // Side A starts at its server-confirmed value (sa: 5). The score is now an editable input.
+    expect(screen.getByTestId("ref-score-a")).toHaveValue("5");
 
     await user.click(screen.getByRole("button", { name: "Tăng điểm đội A" }));
 
     // Optimistic: the display shows 6 immediately.
-    expect(screen.getByTestId("ref-score-a")).toHaveTextContent("6");
+    expect(screen.getByTestId("ref-score-a")).toHaveValue("6");
 
     // The background write persists the new score, state stays "live".
     await waitFor(() =>
@@ -89,10 +89,28 @@ describe("RefereeScoringPanel (characterization: optimistic + rollback)", () => 
     // After the rejected write (zero rows), the draft rolls back to activeMatch.sa (5).
     // (The transient optimistic 6 is asserted in the success test; here the synchronous
     // mock resolves before we can observe it, and the observable outcome is the rollback.)
-    await waitFor(() => expect(screen.getByTestId("ref-score-a")).toHaveTextContent("5"));
+    await waitFor(() => expect(screen.getByTestId("ref-score-a")).toHaveValue("5"));
     expect(
       screen.getByText("Không thể lưu: tài khoản này không có quyền trọng tài."),
     ).toBeInTheDocument();
+  });
+
+  it("types a score directly and commits it on blur", async () => {
+    const { update, eq } = makeSupabase({ data: [{}], error: null });
+
+    const user = userEvent.setup();
+    render(<RefereeScoringPanel initialMatches={[LIVE_MATCH]} pairIdToTeamId={{}} teams={TEAMS} />);
+
+    const inputA = screen.getByTestId("ref-score-a");
+    await user.clear(inputA);
+    await user.type(inputA, "21");
+    await user.tab(); // blur
+
+    expect(inputA).toHaveValue("21");
+    await waitFor(() =>
+      expect(update).toHaveBeenCalledWith({ score_a: 21, score_b: 3, state: "live" }),
+    );
+    expect(eq).toHaveBeenCalledWith("code", "M1");
   });
 
   it("ends the match and shows the finished message on commit(\"done\")", async () => {
